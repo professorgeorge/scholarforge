@@ -579,7 +579,7 @@ export async function resolveGoogleScholarDossier(
   // If no papers could be fetched or parsed, NEVER allow the LLM to invent random publications.
   if (rawPapers.length === 0) {
     throw new Error(
-      "Google Scholar's bot firewall blocked direct automated reading from this static web browser. Please paste your Google Scholar profile page text or citations table (open your profile, press Ctrl+A, then Ctrl+C) into the fallback field below for instant 100% extraction of all 405+ publications."
+      "Google Scholar's bot firewall blocked direct automated reading from this static web browser. Please upload your exported Google Scholar CSV or BibTeX file (or paste its content) above for instant 100% extraction of your complete publication catalog."
     );
   }
 

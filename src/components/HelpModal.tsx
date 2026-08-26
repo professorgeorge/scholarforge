@@ -136,7 +136,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   <span>ScholarImpact Pro: Advanced Scientometrics &amp; Career Dossier</span>
                 </div>
                 <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
-                  Autonomous multi-page Google Scholar profile crawler (ingesting 400+ publications). Computes advanced indices that Google Scholar lacks:
+                  Comprehensive Google Scholar profile intelligence engine. Computes advanced indices that Google Scholar lacks:
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
                   <div className="p-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
@@ -157,7 +157,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                   <ol className="list-decimal pl-4 space-y-0.5 text-slate-700 dark:text-slate-300">
                     <li>Open your profile on Google Scholar and click the <strong>top-left checkbox</strong> above the articles list to select all works.</li>
                     <li>Click <strong>Export</strong> $\rightarrow$ Choose <strong>CSV</strong> (or <strong>BibTeX</strong>).</li>
-                    <li>Upload or drop the file into ScholarImpact Pro to instantly compute all 400+ publications with zero bot blocks!</li>
+                    <li>Upload or drop the file into ScholarImpact Pro to instantly compute your complete publication catalog with zero bot blocks!</li>
                   </ol>
                 </div>
                 <p className="text-[11px] text-slate-500 font-sans pt-1">
