@@ -23,7 +23,8 @@ import {
   Award,
   GraduationCap,
   Link2,
-  BadgeCheck
+  BadgeCheck,
+  FileText
 } from 'lucide-react';
 import { 
   verifyReferenceBatch, 
@@ -851,12 +852,12 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
               {/* Google Scholar Input Form */}
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-4 text-xs">
                 
-                {/* Google Scholar Profile URL */}
+                {/* Method 1: Google Scholar Profile URL */}
                 <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-800/80 space-y-2">
                   <label className="font-bold text-blue-950 dark:text-blue-300 flex items-center justify-between font-serif">
                     <span className="flex items-center gap-1.5">
                       <Link2 className="w-4 h-4 text-blue-600" />
-                      <span>Google Scholar Profile URL or User ID:</span>
+                      <span>Google Scholar Profile Link or User ID:</span>
                     </span>
                     <span className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-950 px-2 py-0.5 rounded">
                       Profile Link
@@ -866,12 +867,36 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
                   <input
                     type="text"
                     value={scholarInput.scholarUrlOrId || ''}
-                    onChange={(e) => setScholarInput({ scholarUrlOrId: e.target.value })}
+                    onChange={(e) => setScholarInput({ ...scholarInput, scholarUrlOrId: e.target.value })}
                     placeholder="e.g. https://scholar.google.com/citations?user=1knki-oAAAAJ&hl=en or 1knki-oAAAAJ"
                     className="w-full px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-600"
                   />
                   <span className="text-[11px] text-slate-500 block">
-                    Direct link to your public Google Scholar profile. The engine crawls and ingests your complete multi-page publication catalog.
+                    Direct link to your public Google Scholar profile.
+                  </span>
+                </div>
+
+                {/* Method 2: Instant 100% Fail-Safe Profile Text / Table Copy */}
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+                  <label className="font-bold text-slate-900 dark:text-white flex items-center justify-between font-serif">
+                    <span className="flex items-center gap-1.5">
+                      <FileText className="w-4 h-4 text-emerald-600" />
+                      <span>Instant Profile Text / Citations Table Paste (100% Fail-Safe):</span>
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded">
+                      Zero-Block Direct Ingest
+                    </span>
+                  </label>
+                  
+                  <textarea
+                    rows={3}
+                    value={scholarInput.pastedScholarText || ''}
+                    onChange={(e) => setScholarInput({ ...scholarInput, pastedScholarText: e.target.value })}
+                    placeholder="Open your Google Scholar profile page, press Ctrl+A, then Ctrl+C, and paste here to instantly parse all 405+ publications with zero bot blocks..."
+                    className="w-full px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-sans text-xs focus:outline-none focus:border-emerald-600 leading-relaxed"
+                  />
+                  <span className="text-[11px] text-slate-500 block">
+                    Tip: If Google Scholar blocks direct URL access in your browser, simply paste your profile page text here for instant calculation of all metrics ($g$-index, $e$-index, $m$-quotient, tiers).
                   </span>
                 </div>
 
@@ -879,13 +904,13 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
                   <div className="text-[11px] text-slate-500 font-sans flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                    <span>Automatically crawls all publications, verifies h-index and citation velocity, and generates an executive CV dossier.</span>
+                    <span>Parses complete catalog, computes advanced scientometrics, and generates multi-format CV dossiers.</span>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => handleExecuteImpactSearch()}
-                    disabled={isFetchingImpact || !scholarInput.scholarUrlOrId?.trim()}
+                    disabled={isFetchingImpact || (!scholarInput.scholarUrlOrId?.trim() && !scholarInput.pastedScholarText?.trim())}
                     className="btn-academic-primary px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-md"
                   >
                     {isFetchingImpact ? (
