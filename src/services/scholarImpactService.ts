@@ -287,32 +287,43 @@ export function parseGoogleScholarProfileText(text: string): {
   let hIndex = 0;
   let i10Index = 0;
 
-  // Extract author header info
-  for (let i = 0; i < lines.length; i++) {
+  // Extract author header info & metric table
+  for (let i = 0; i < Math.min(lines.length, 35); i++) {
     const l = lines[i];
-    if (!name && l.length > 2 && l.length < 60 && !l.includes('TITLE') && !l.includes('CITED BY') && !l.includes('Verified email') && !l.includes('http') && !l.includes('All\tSince')) {
+    if (!name && l.length > 2 && l.length < 60 && !l.includes('TITLE') && !l.includes('CITED BY') && !l.includes('All\tSince') && !l.toLowerCase().includes('citations') && !l.includes('Verified email') && !l.includes('http')) {
       name = l;
       continue;
     }
-    if (name && !affiliation && l.length > 2 && l.length < 120 && !l.includes('TITLE') && !l.includes('CITED BY') && !l.includes('Verified email') && !l.includes('http') && !l.includes('All\tSince')) {
+    if (name && !affiliation && l.length > 2 && l.length < 120 && !l.includes('TITLE') && !l.includes('CITED BY') && !l.includes('All\tSince') && !l.toLowerCase().includes('citations') && !l.includes('Verified email') && !l.includes('http')) {
       affiliation = l;
       continue;
     }
 
-    // Check stats block
-    const citeMatch = l.match(/citations\s*[:\t]?\s*(\d[\d,]*)/i) || (l.toLowerCase() === 'citations' && lines[i + 1]?.match(/^(\d[\d,]*)/));
+    // 1. Citations
+    const citeMatch = l.match(/citations\s*[:\t\s]+(\d[\d,]*)/i);
     if (citeMatch && !citations) {
-      citations = parseInt((citeMatch[1] || '').replace(/,/g, ''), 10);
+      citations = parseInt(citeMatch[1].replace(/,/g, ''), 10);
+    } else if (l.toLowerCase() === 'citations' && lines[i + 1]) {
+      const nextNums = lines[i + 1].match(/^(\d[\d,]*)/);
+      if (nextNums && !citations) citations = parseInt(nextNums[1].replace(/,/g, ''), 10);
     }
 
-    const hMatch = l.match(/h-index\s*[:\t]?\s*(\d+)/i) || (l.toLowerCase() === 'h-index' && lines[i + 1]?.match(/^(\d+)/));
+    // 2. h-index
+    const hMatch = l.match(/h-index\s*[:\t\s]+(\d+)/i);
     if (hMatch && !hIndex) {
       hIndex = parseInt(hMatch[1], 10);
+    } else if (l.toLowerCase() === 'h-index' && lines[i + 1]) {
+      const nextNums = lines[i + 1].match(/^(\d+)/);
+      if (nextNums && !hIndex) hIndex = parseInt(nextNums[1], 10);
     }
 
-    const i10Match = l.match(/i10-index\s*[:\t]?\s*(\d+)/i) || (l.toLowerCase() === 'i10-index' && lines[i + 1]?.match(/^(\d+)/));
+    // 3. i10-index
+    const i10Match = l.match(/i10-index\s*[:\t\s]+(\d+)/i);
     if (i10Match && !i10Index) {
       i10Index = parseInt(i10Match[1], 10);
+    } else if (l.toLowerCase() === 'i10-index' && lines[i + 1]) {
+      const nextNums = lines[i + 1].match(/^(\d+)/);
+      if (nextNums && !i10Index) i10Index = parseInt(nextNums[1], 10);
     }
   }
 
