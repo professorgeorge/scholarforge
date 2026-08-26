@@ -267,6 +267,9 @@ export async function fetchCompleteGoogleScholarCatalog(userId: string): Promise
 /**
  * Parses raw text copied directly from a Google Scholar profile page or citations table.
  */
+/**
+ * Parses raw text copied directly from a Google Scholar profile page or citations table.
+ */
 export function parseGoogleScholarProfileText(text: string): {
   name?: string;
   affiliation?: string;
@@ -285,41 +288,38 @@ export function parseGoogleScholarProfileText(text: string): {
   let i10Index = 0;
 
   // Extract author header info
-  for (let i = 0; i < Math.min(lines.length, 25); i++) {
+  for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
-    if (!name && l.length > 2 && l.length < 60 && !l.toLowerCase().includes('citations') && !l.toLowerCase().includes('verified email') && !l.includes('http') && !l.includes('All\tSince')) {
+    if (!name && l.length > 2 && l.length < 60 && !l.includes('TITLE') && !l.includes('CITED BY') && !l.includes('Verified email') && !l.includes('http') && !l.includes('All\tSince')) {
       name = l;
       continue;
     }
-    if (name && !affiliation && l.length > 2 && l.length < 120 && !l.toLowerCase().includes('verified email') && !l.toLowerCase().includes('citations') && !l.includes('All\tSince')) {
+    if (name && !affiliation && l.length > 2 && l.length < 120 && !l.includes('TITLE') && !l.includes('CITED BY') && !l.includes('Verified email') && !l.includes('http') && !l.includes('All\tSince')) {
       affiliation = l;
       continue;
     }
-    if (l.toLowerCase().startsWith('citations') || l.toLowerCase().startsWith('all\tsince') || l.includes('\t')) {
-      const match = l.match(/citations\s*[:\t]?\s*(\d[\d,]*)/i) || lines[i + 1]?.match(/^(\d[\d,]*)/);
-      if (match && !citations) {
-        citations = parseInt(match[1].replace(/,/g, ''), 10);
-      }
+
+    // Check stats block
+    const citeMatch = l.match(/citations\s*[:\t]?\s*(\d[\d,]*)/i) || (l.toLowerCase() === 'citations' && lines[i + 1]?.match(/^(\d[\d,]*)/));
+    if (citeMatch && !citations) {
+      citations = parseInt((citeMatch[1] || '').replace(/,/g, ''), 10);
     }
-    if (l.toLowerCase().startsWith('h-index')) {
-      const match = l.match(/h-index\s*[:\t]?\s*(\d+)/i) || lines[i + 1]?.match(/^(\d+)/);
-      if (match && !hIndex) {
-        hIndex = parseInt(match[1], 10);
-      }
+
+    const hMatch = l.match(/h-index\s*[:\t]?\s*(\d+)/i) || (l.toLowerCase() === 'h-index' && lines[i + 1]?.match(/^(\d+)/));
+    if (hMatch && !hIndex) {
+      hIndex = parseInt(hMatch[1], 10);
     }
-    if (l.toLowerCase().startsWith('i10-index')) {
-      const match = l.match(/i10-index\s*[:\t]?\s*(\d+)/i) || lines[i + 1]?.match(/^(\d+)/);
-      if (match && !i10Index) {
-        i10Index = parseInt(match[1], 10);
-      }
+
+    const i10Match = l.match(/i10-index\s*[:\t]?\s*(\d+)/i) || (l.toLowerCase() === 'i10-index' && lines[i + 1]?.match(/^(\d+)/));
+    if (i10Match && !i10Index) {
+      i10Index = parseInt(i10Match[1], 10);
     }
   }
 
-  // Parse papers
+  // Pass 1: Tab-separated table parser
   for (const line of lines) {
     if (line.toLowerCase().includes('title\tcited by') || line.toLowerCase().startsWith('show more')) continue;
     
-    // Tab-separated: Title \t CitedBy \t Year
     const tabParts = line.split('\t').map((p) => p.trim());
     if (tabParts.length >= 2) {
       const titleCandidate = tabParts[0];
@@ -341,11 +341,43 @@ export function parseGoogleScholarProfileText(text: string): {
           venue: tabParts.length > 3 ? tabParts[1] : 'Peer-Reviewed Publication',
           source: 'Google Scholar',
         });
-        continue;
       }
     }
+  }
 
-    // Single line regex: Title (Year) ... cites
+  // Pass 2: Multi-line consecutive block scanner (Title -> Authors -> Venue -> Citations -> Year)
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line === 'TITLE' || line === 'CITED BY' || line === 'YEAR' || line.startsWith('Verified email') || line.startsWith('artificial intelligence')) continue;
+    if (line.toLowerCase().startsWith('citations') || line.toLowerCase().startsWith('h-index') || line.toLowerCase().startsWith('i10-index')) continue;
+
+    for (let offset = 1; offset <= 4 && i + offset < lines.length; offset++) {
+      const citeCand = lines[i + offset];
+      const yearCand = lines[i + offset + 1] || '';
+
+      const isCite = /^\*?\s*(\d+)\s*$/.test(citeCand);
+      const isYear = /^(19\d\d|20\d\d)$/.test(yearCand.trim());
+
+      if (isCite && isYear && line.length > 5 && !/^\d+$/.test(line) && !isParatextOrNoise(line)) {
+        const venue = offset >= 2 ? lines[i + offset - 1] : 'Peer-Reviewed Publication';
+        const cites = parseInt(citeCand.replace(/\*/g, '').trim(), 10);
+        const yr = parseInt(yearCand.trim(), 10);
+
+        papers.push({
+          title: line,
+          citationCount: cites,
+          year: yr,
+          venue,
+          source: 'Google Scholar',
+        });
+        i += offset + 1;
+        break;
+      }
+    }
+  }
+
+  // Pass 3: Single line regex: Title (Year) ... cites
+  for (const line of lines) {
     const match = line.match(/^(.+?)(?:\s*\((\d{4})\)|\s+(\d{4}))?\s*(?:—|-|–|\t|\s{2,})(\d+)\s*(?:citations?|cites)?$/i);
     if (match && match[1].trim().length > 5 && !isParatextOrNoise(match[1].trim())) {
       papers.push({
@@ -359,6 +391,72 @@ export function parseGoogleScholarProfileText(text: string): {
   }
 
   return { name, affiliation, citations, hIndex, i10Index, papers };
+}
+
+/**
+ * Intelligent LLM-assisted parser for messy or non-standard Google Scholar text.
+ */
+async function parseScholarWithLLMAssist(
+  rawText: string,
+  llmConfig: LLMConfig
+): Promise<{
+  name?: string;
+  affiliation?: string;
+  citations?: number;
+  hIndex?: number;
+  i10Index?: number;
+  papers: AuthorImpactPaper[];
+}> {
+  try {
+    const snippet = rawText.slice(0, 7000);
+    const systemPrompt = `You are a high-precision scientometrics data extraction engine.
+Your task is to parse raw text copied from Google Scholar profile pages and extract structured author metadata and publications.
+Output ONLY a valid JSON object with EXACTLY this structure:
+{
+  "name": "Author Full Name",
+  "affiliation": "University or Institution",
+  "citations": 7448,
+  "hIndex": 42,
+  "i10Index": 129,
+  "papers": [
+    {
+      "title": "Exact Title of Paper",
+      "year": 2023,
+      "citationCount": 961,
+      "venue": "Journal Name"
+    }
+  ]
+}
+DO NOT fabricate papers. Extract strictly genuine entries present in the text.`;
+
+    const userPrompt = `Parse this Google Scholar text and return the structured JSON:\n\n${snippet}`;
+    const rawJson = await callRawLLM(systemPrompt, userPrompt, llmConfig);
+
+    const jsonMatch = rawJson.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        name: parsed.name,
+        affiliation: parsed.affiliation,
+        citations: typeof parsed.citations === 'number' ? parsed.citations : undefined,
+        hIndex: typeof parsed.hIndex === 'number' ? parsed.hIndex : undefined,
+        i10Index: typeof parsed.i10Index === 'number' ? parsed.i10Index : undefined,
+        papers: Array.isArray(parsed.papers)
+          ? parsed.papers.map((p: any) => ({
+              title: p.title || 'Scholarly Work',
+              year: Number(p.year) || 0,
+              citationCount: Number(p.citationCount) || 0,
+              venue: p.venue || 'Peer-Reviewed Publication',
+              source: 'Google Scholar' as const,
+            }))
+          : [],
+      };
+    }
+  } catch (err) {
+    console.warn('LLM scholar text parsing fallback failed:', err);
+  }
+
+  return { papers: [] };
 }
 
 /**
@@ -394,7 +492,7 @@ export async function resolveGoogleScholarDossier(
     if (liveProfile.papers.length > 0) rawPapers.push(...liveProfile.papers);
   }
 
-  // 2. Ingest Pasted Profile Text / Citations Table
+  // 2. Ingest Pasted Profile Text with Multi-Pass Regex Parser
   if (input.pastedScholarText?.trim()) {
     const textParsed = parseGoogleScholarProfileText(input.pastedScholarText);
     if (textParsed.name && !canonicalName) canonicalName = textParsed.name;
@@ -403,6 +501,17 @@ export async function resolveGoogleScholarDossier(
     if (textParsed.hIndex) verifiedHIndex = Math.max(verifiedHIndex, textParsed.hIndex);
     if (textParsed.i10Index) verifiedI10Index = Math.max(verifiedI10Index, textParsed.i10Index);
     if (textParsed.papers.length > 0) rawPapers.push(...textParsed.papers);
+
+    // 3. Intelligent LLM Assistance (if enabled and regex parsed few papers)
+    if (llmConfig.provider !== 'builtin' && rawPapers.length < 5) {
+      const llmParsed = await parseScholarWithLLMAssist(input.pastedScholarText, llmConfig);
+      if (llmParsed.name && (!canonicalName || canonicalName.includes('User ('))) canonicalName = llmParsed.name;
+      if (llmParsed.affiliation && !affiliation) affiliation = llmParsed.affiliation;
+      if (llmParsed.citations) verifiedCitationCount = Math.max(verifiedCitationCount, llmParsed.citations);
+      if (llmParsed.hIndex) verifiedHIndex = Math.max(verifiedHIndex, llmParsed.hIndex);
+      if (llmParsed.i10Index) verifiedI10Index = Math.max(verifiedI10Index, llmParsed.i10Index);
+      if (llmParsed.papers.length > 0) rawPapers.push(...llmParsed.papers);
+    }
   }
 
   // Strict Zero-Hallucination Guardrail:
