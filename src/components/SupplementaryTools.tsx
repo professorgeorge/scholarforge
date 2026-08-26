@@ -942,8 +942,8 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
                         }}
                       />
                     </label>
-                    <span className="text-[11px] text-slate-500">
-                      Export from Google Scholar (select all $\rightarrow$ Export $\rightarrow$ CSV/BibTeX) or EndNote/Zotero.
+                    <span className="text-[11px] text-slate-500 font-sans">
+                      Select your downloaded Google Scholar <strong>citations.csv</strong> or <strong>citations.bib</strong> file for instant 100% precision.
                     </span>
                   </div>
                 </div>
