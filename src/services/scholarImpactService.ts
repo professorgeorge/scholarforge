@@ -327,7 +327,57 @@ export function parseGoogleScholarProfileText(text: string): {
     }
   }
 
-  // Pass 1: Tab-separated table parser
+  // Format A: Google Scholar CSV Export ("Title","Authors","Publication date","Journal",...)
+  const isCsv = lines.some((l) => l.includes('","') || l.includes('Title,Authors'));
+  if (isCsv) {
+    for (const line of lines) {
+      if (line.toLowerCase().startsWith('"title"') || line.toLowerCase().startsWith('title,')) continue;
+      const row = line.match(/(?:\"([^\"]*(?:\"\"[^\"]*)*)\")|([^,]+)/g);
+      if (row && row.length >= 3) {
+        const cleanRow = row.map((cell) => cell.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+        const title = cleanRow[0];
+        const pubDate = cleanRow[2] || '';
+        const journal = cleanRow[3] || 'Peer-Reviewed Publication';
+        const cites = cleanRow[cleanRow.length - 1] || cleanRow[cleanRow.length - 2] || '0';
+
+        const yrMatch = pubDate.match(/\b(19\d\d|20\d\d)$/);
+        const citeNum = parseInt(cites.replace(/\D/g, '') || '0', 10);
+
+        if (title.length > 5 && !isParatextOrNoise(title) && !title.toLowerCase().startsWith('title')) {
+          papers.push({
+            title,
+            year: yrMatch ? parseInt(yrMatch[1], 10) : 0,
+            citationCount: citeNum,
+            venue: journal,
+            source: 'Google Scholar',
+          });
+        }
+      }
+    }
+  }
+
+  // Format B: Google Scholar BibTeX Export (@article{... title={...}, year={...}})
+  if (text.includes('@article') || text.includes('@inproceedings') || text.includes('@book')) {
+    const bibBlocks = text.split(/@\w+\s*\{/g).slice(1);
+    for (const block of bibBlocks) {
+      const titleMatch = block.match(/title\s*=\s*[\{"]([^"\}]+)[\}"]/i);
+      const yearMatch = block.match(/year\s*=\s*[\{"]?(\d{4})[\}"]?/i);
+      const journalMatch = block.match(/(?:journal|booktitle|publisher)\s*=\s*[\{"]([^"\}]+)[\}"]/i);
+      const citeMatch = block.match(/citations?\s*=\s*[\{"]?(\d+)[\}"]?/i);
+
+      if (titleMatch && titleMatch[1].length > 3) {
+        papers.push({
+          title: titleMatch[1].trim(),
+          year: yearMatch ? parseInt(yearMatch[1], 10) : 0,
+          citationCount: citeMatch ? parseInt(citeMatch[1], 10) : 0,
+          venue: journalMatch ? journalMatch[1].trim() : 'Peer-Reviewed Publication',
+          source: 'Google Scholar',
+        });
+      }
+    }
+  }
+
+  // Format C: Tab-separated table parser
   for (const line of lines) {
     if (line.toLowerCase().includes('title\tcited by') || line.toLowerCase().startsWith('show more')) continue;
     
@@ -356,7 +406,7 @@ export function parseGoogleScholarProfileText(text: string): {
     }
   }
 
-  // Pass 2: Multi-line consecutive block scanner (Title -> Authors -> Venue -> Citations -> Year)
+  // Format D: Multi-line consecutive block scanner (Title -> Authors -> Venue -> Citations -> Year)
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (line === 'TITLE' || line === 'CITED BY' || line === 'YEAR' || line.startsWith('Verified email') || line.startsWith('artificial intelligence')) continue;
@@ -387,7 +437,7 @@ export function parseGoogleScholarProfileText(text: string): {
     }
   }
 
-  // Pass 3: Single line regex: Title (Year) ... cites
+  // Format E: Single line regex: Title (Year) ... cites
   for (const line of lines) {
     const match = line.match(/^(.+?)(?:\s*\((\d{4})\)|\s+(\d{4}))?\s*(?:—|-|–|\t|\s{2,})(\d+)\s*(?:citations?|cites)?$/i);
     if (match && match[1].trim().length > 5 && !isParatextOrNoise(match[1].trim())) {

@@ -24,7 +24,8 @@ import {
   GraduationCap,
   Link2,
   BadgeCheck,
-  FileText
+  FileText,
+  Upload
 } from 'lucide-react';
 import { 
   verifyReferenceBatch, 
@@ -234,6 +235,18 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
     } finally {
       setIsFetchingImpact(false);
     }
+  };
+
+  const handleScholarFileUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      if (content) {
+        setScholarInput((prev) => ({ ...prev, pastedScholarText: content }));
+        handleExecuteImpactSearch({ ...scholarInput, pastedScholarText: content });
+      }
+    };
+    reader.readAsText(file);
   };
 
   // Tool 4: Resolver Handler
@@ -876,15 +889,47 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
                   </span>
                 </div>
 
-                {/* Method 2: Instant 100% Fail-Safe Profile Text / Table Copy */}
+                {/* Method 2: 1-Click File Ingest (CSV / BibTeX / RIS / TXT) */}
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-800/80 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 font-serif">
+                    <label className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <Upload className="w-4 h-4 text-emerald-600" />
+                      <span>Upload Exported Catalog (.csv, .bib, .ris, .txt) — 100% Reliable:</span>
+                    </label>
+                    <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded">
+                      Recommended
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="px-4 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-300 font-semibold text-xs flex items-center gap-2 cursor-pointer hover:bg-emerald-100 transition shadow-xs">
+                      <UploadCloud className="w-4 h-4" />
+                      <span>Choose .CSV / .BibTeX / .RIS File</span>
+                      <input
+                        type="file"
+                        accept=".csv,.bib,.ris,.txt"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleScholarFileUpload(file);
+                        }}
+                      />
+                    </label>
+                    <span className="text-[11px] text-slate-500">
+                      Export from Google Scholar (select all $\rightarrow$ Export $\rightarrow$ CSV/BibTeX) or EndNote/Zotero.
+                    </span>
+                  </div>
+                </div>
+
+                {/* Method 3: Instant Profile Text / Citations Table Paste */}
                 <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
                   <label className="font-bold text-slate-900 dark:text-white flex items-center justify-between font-serif">
                     <span className="flex items-center gap-1.5">
-                      <FileText className="w-4 h-4 text-emerald-600" />
-                      <span>Instant Profile Text / Citations Table Paste (100% Fail-Safe):</span>
+                      <FileText className="w-4 h-4 text-blue-600" />
+                      <span>Or Paste Profile Text / Citations Table / CSV Raw Content:</span>
                     </span>
-                    <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded">
-                      Zero-Block Direct Ingest
+                    <span className="text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                      Direct Text Paste
                     </span>
                   </label>
                   
@@ -892,11 +937,11 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
                     rows={3}
                     value={scholarInput.pastedScholarText || ''}
                     onChange={(e) => setScholarInput({ ...scholarInput, pastedScholarText: e.target.value })}
-                    placeholder="Open your Google Scholar profile page, press Ctrl+A, then Ctrl+C, and paste here to instantly parse all 405+ publications with zero bot blocks..."
-                    className="w-full px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-sans text-xs focus:outline-none focus:border-emerald-600 leading-relaxed"
+                    placeholder="Paste copied citations table, CSV rows, or BibTeX entries here..."
+                    className="w-full px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-sans text-xs focus:outline-none focus:border-blue-600 leading-relaxed"
                   />
                   <span className="text-[11px] text-slate-500 block">
-                    Tip: If Google Scholar blocks direct URL access in your browser, simply paste your profile page text here for instant calculation of all metrics ($g$-index, $e$-index, $m$-quotient, tiers).
+                    Parses CSV, BibTeX, tab-separated tables, and web copy with automatic metric extraction.
                   </span>
                 </div>
 
