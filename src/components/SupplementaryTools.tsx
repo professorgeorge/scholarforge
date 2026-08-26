@@ -861,6 +861,33 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
                   </div>
                 </div>
               </div>
+              {/* Step-by-Step Instructions Banner */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 dark:from-emerald-950/40 dark:via-teal-950/40 dark:to-blue-950/40 border border-emerald-200 dark:border-emerald-800 space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
+                <div className="flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-300 font-serif">
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  <span>How to Ingest All 400+ Publications in 3 Simple Steps (100% Reliable):</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <div className="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1">
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300 block">Step 1: Open Google Scholar</span>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                      Open your profile page on Google Scholar and click the <strong>top-left checkbox</strong> above the articles table to select all works.
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1">
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300 block">Step 2: Export CSV or BibTeX</span>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                      Click the blue <strong>EXPORT</strong> button at the top of the table and choose <strong>CSV</strong> (or <strong>BibTeX</strong>).
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-emerald-200/60 dark:border-emerald-900/60 space-y-1">
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300 block">Step 3: Upload or Paste File</span>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                      Upload your downloaded file below (or paste its content). All 400+ works &amp; advanced scientometrics are parsed locally in 1 second!
+                    </p>
+                  </div>
+                </div>
+              </div>
 
               {/* Google Scholar Input Form */}
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-4 text-xs">

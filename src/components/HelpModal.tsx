@@ -152,6 +152,14 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                     <strong>i100 Tier</strong>: Super-Landmarks
                   </div>
                 </div>
+                <div className="p-3 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-[11px] space-y-1">
+                  <strong className="text-emerald-900 dark:text-emerald-300 block">💡 100% Reliable Ingest Guide (CSV / BibTeX Export):</strong>
+                  <ol className="list-decimal pl-4 space-y-0.5 text-slate-700 dark:text-slate-300">
+                    <li>Open your profile on Google Scholar and click the <strong>top-left checkbox</strong> above the articles list to select all works.</li>
+                    <li>Click <strong>Export</strong> $\rightarrow$ Choose <strong>CSV</strong> (or <strong>BibTeX</strong>).</li>
+                    <li>Upload or drop the file into ScholarImpact Pro to instantly compute all 400+ publications with zero bot blocks!</li>
+                  </ol>
+                </div>
                 <p className="text-[11px] text-slate-500 font-sans pt-1">
                   Synthesizes 3 executive bio formats: <em>Tenure &amp; Review Dossier</em>, <em>Keynote Speaker Intro</em>, and <em>Grant / NSF Bio-Sketch</em> with 1-click formatted copy.
                 </p>
