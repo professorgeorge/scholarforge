@@ -1,5 +1,5 @@
 /**
- * ScholarImpact Pro — Google Scholar Profile Intelligence Engine
+ * ScholarImpact Pro - Google Scholar Profile Intelligence Engine
  *
  * Exclusively ingests and analyzes an author's Google Scholar Profile:
  * 1. Google Scholar Profile URL or User ID (automatically fetched live with full multi-page pagination)
@@ -725,7 +725,7 @@ Institution: ${affiliation}
 ${scholarUrl ? `Google Scholar: ${scholarUrl}` : ''}
 Verified Metrics: ${totalCitations.toLocaleString()} citations, ${totalPublications} papers, h-index ${finalHIndex}, g-index ${finalGIndex}, e-index ${finalEIndex}, m-quotient ${mQuotient}, ~${citationVelocity.toLocaleString()} cites/yr, ${i100Index} papers >100 cites.
 Top Landmark Works:
-${top3.map((p, i) => `${i + 1}. "${p.title}" (${p.year}) — ${p.citationCount.toLocaleString()} citations [${p.venue}]`).join('\n')}
+${top3.map((p, i) => `${i + 1}. "${p.title}" (${p.year}) : ${p.citationCount.toLocaleString()} citations [${p.venue}]`).join('\n')}
 
 Please generate the executive CV Bio Dossier paragraph now:`;
 

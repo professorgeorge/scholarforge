@@ -14,7 +14,7 @@ export const CITATION_STYLES: CitationStyleInfo[] = [
     shortName: 'APA 7',
     category: 'Author-Date',
     inTextExample: '(Vaswani et al., 2017)',
-    referenceExample: 'Vaswani, A., Shazeer, N., & Parmar, N. (2017). Attention is all you need. Advances in Neural Information Processing Systems, 30, 5998–6008.',
+    referenceExample: 'Vaswani, A., Shazeer, N., & Parmar, N. (2017). Attention is all you need. Advances in Neural Information Processing Systems, 30, 5998-6008.',
     description: 'American Psychological Association style, standard in social sciences, psychology, health sciences, and education.',
   },
   {
@@ -23,7 +23,7 @@ export const CITATION_STYLES: CitationStyleInfo[] = [
     shortName: 'MLA 9',
     category: 'Author-Date',
     inTextExample: '(Vaswani et al.)',
-    referenceExample: 'Vaswani, Ashish, et al. "Attention Is All You Need." Advances in Neural Information Processing Systems, vol. 30, 2017, pp. 5998–6008.',
+    referenceExample: 'Vaswani, Ashish, et al. "Attention Is All You Need." Advances in Neural Information Processing Systems, vol. 30, 2017, pp. 5998-6008.',
     description: 'Modern Language Association style, standard in humanities, literature, linguistics, and cultural studies.',
   },
   {
@@ -32,7 +32,7 @@ export const CITATION_STYLES: CitationStyleInfo[] = [
     shortName: 'Chicago',
     category: 'Author-Date',
     inTextExample: '(Vaswani et al. 2017)',
-    referenceExample: 'Vaswani, Ashish, Noam Shazeer, and Niki Parmar. 2017. "Attention Is All You Need." Advances in Neural Information Processing Systems 30: 5998–6008.',
+    referenceExample: 'Vaswani, Ashish, Noam Shazeer, and Niki Parmar. 2017. "Attention Is All You Need." Advances in Neural Information Processing Systems 30: 5998-6008.',
     description: 'Chicago Manual of Style (Author-Date), common in physical sciences, social sciences, and history.',
   },
   {
@@ -41,7 +41,7 @@ export const CITATION_STYLES: CitationStyleInfo[] = [
     shortName: 'Harvard',
     category: 'Author-Date',
     inTextExample: '(Vaswani et al., 2017)',
-    referenceExample: 'Vaswani, A., Shazeer, N. and Parmar, N. (2017) \'Attention is all you need\', Advances in Neural Information Processing Systems, 30, pp. 5998–6008.',
+    referenceExample: 'Vaswani, A., Shazeer, N. and Parmar, N. (2017) \'Attention is all you need\', Advances in Neural Information Processing Systems, 30, pp. 5998-6008.',
     description: 'Widely used academic author-date citation style across UK, Australian, and international universities.',
   },
   {
@@ -50,7 +50,7 @@ export const CITATION_STYLES: CitationStyleInfo[] = [
     shortName: 'IEEE',
     category: 'Numeric',
     inTextExample: '[1]',
-    referenceExample: '[1] A. Vaswani, N. Shazeer, and N. Parmar, "Attention is all you need," Adv. Neural Inf. Process. Syst., vol. 30, pp. 5998–6008, 2017, doi: 10.5555/3295222.3295349.',
+    referenceExample: '[1] A. Vaswani, N. Shazeer, and N. Parmar, "Attention is all you need," Adv. Neural Inf. Process. Syst., vol. 30, pp. 5998-6008, 2017, doi: 10.5555/3295222.3295349.',
     description: 'Institute of Electrical and Electronics Engineers numeric style for engineering, computer science, and tech fields.',
   },
   {
@@ -68,7 +68,7 @@ export const CITATION_STYLES: CitationStyleInfo[] = [
     shortName: 'Nature',
     category: 'Numeric',
     inTextExample: '¹',
-    referenceExample: '1. Vaswani, A. et al. Attention is all you need. Adv. Neural Inf. Process. Syst. 30, 5998–6008 (2017).',
+    referenceExample: '1. Vaswani, A. et al. Attention is all you need. Adv. Neural Inf. Process. Syst. 30, 5998-6008 (2017).',
     description: 'Standard format used across Nature journals and high-impact physical/biological sciences.',
   },
   {

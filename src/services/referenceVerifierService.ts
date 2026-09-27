@@ -718,7 +718,7 @@ export function generateVerificationWordReport(
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 24pt; font-family: 'Times New Roman', Times, serif; font-size: 10.5pt; border: 1.5pt solid #cbd5e1; background-color: #f8fafc;">
       <tr>
         <td style="padding: 10pt 14pt; border-bottom: 1pt solid #cbd5e1; font-weight: bold; font-size: 11pt; background-color: #f1f5f9; color: #0f172a;">
-          Scholar Reference Verifier — Audit Summary &amp; Authenticity Metrics
+          Scholar Reference Verifier: Audit Summary &amp; Authenticity Metrics
         </td>
       </tr>
       <tr>

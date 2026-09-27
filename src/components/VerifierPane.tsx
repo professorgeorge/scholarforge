@@ -488,7 +488,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = () => {
                     title="Sort references alphabetically by primary author surname"
                   >
                     <ArrowUpDown className="w-3.5 h-3.5" />
-                    <span>Sort A–Z</span>
+                    <span>Sort A-Z</span>
                   </button>
 
                   <button

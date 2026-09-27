@@ -721,7 +721,7 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
                   <label className="font-bold text-blue-900 dark:text-blue-300 uppercase tracking-wider block font-serif">
-                    P — Population / Problem / Cohort:
+                    P: Population / Problem / Cohort:
                   </label>
                   <input
                     type="text"
@@ -735,7 +735,7 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
 
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
                   <label className="font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider block font-serif">
-                    I — Intervention / Treatment / Exposure:
+                    I: Intervention / Treatment / Exposure:
                   </label>
                   <input
                     type="text"
@@ -749,7 +749,7 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
 
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
                   <label className="font-bold text-purple-900 dark:text-purple-300 uppercase tracking-wider block font-serif">
-                    C — Comparison / Control (Optional):
+                    C: Comparison / Control (Optional):
                   </label>
                   <input
                     type="text"
@@ -763,7 +763,7 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
 
                 <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
                   <label className="font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider block font-serif">
-                    O — Outcomes / Clinical Endpoints / Metrics:
+                    O: Outcomes / Clinical Endpoints / Metrics:
                   </label>
                   <input
                     type="text"
@@ -921,7 +921,7 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
                   <div className="flex flex-wrap items-center justify-between gap-2 font-serif">
                     <label className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                       <Upload className="w-4 h-4 text-emerald-600" />
-                      <span>Upload Exported Catalog (.csv, .bib, .ris, .txt) — 100% Reliable:</span>
+                      <span>Upload Exported Catalog (.csv, .bib, .ris, .txt) [100% Reliable]:</span>
                     </label>
                     <span className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded">
                       Recommended
@@ -1032,7 +1032,7 @@ export const SupplementaryTools: React.FC<SupplementaryToolsProps> = ({
                         </div>
 
                         <p className="text-xs text-blue-200 mt-1">
-                          {impactProfile.affiliation} • Active Span: {impactProfile.earliestYear} – {impactProfile.earliestYear + impactProfile.careerSpanYears} ({impactProfile.careerSpanYears} yrs)
+                          {impactProfile.affiliation} • Active Span: {impactProfile.earliestYear} to {impactProfile.earliestYear + impactProfile.careerSpanYears} ({impactProfile.careerSpanYears} yrs)
                         </p>
                       </div>
 

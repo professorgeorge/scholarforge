@@ -44,7 +44,7 @@ CRITICAL MANDATORY INSTRUCTIONS:
       contextAddons += `\n\nAUTHOR'S PRIMARY EXPERIMENTAL DATA & STATISTICAL FINDINGS (Weave these empirical observations into the paper):\n${primaryData}`;
     }
     if (secondaryData && secondaryData.length > 0) {
-      const secSummaries = secondaryData.map((s) => `• [${s.sourceName}] ${s.title}: ${s.metrics} — ${s.description}`).join('\n');
+      const secSummaries = secondaryData.map((s) => `• [${s.sourceName}] ${s.title}: ${s.metrics} : ${s.description}`).join('\n');
       contextAddons += `\n\nPUBLIC SECONDARY DATASETS & INSTITUTIONAL REGISTRIES (Incorporate relevant metrics):\n${secSummaries}`;
     }
 
@@ -821,7 +821,7 @@ Abstract: ${p.abstract ? p.abstract.slice(0, 450) : 'Empirical study on ' + topi
   let secondaryContext = '';
   if (secondaryData && secondaryData.length > 0) {
     const recordsText = secondaryData.map((s, idx) => `[Public Dataset #${idx + 1}] ${s.sourceName} (${s.title}):
-Summary & Metrics: ${s.metrics} — ${s.description}
+Summary & Metrics: ${s.metrics} - ${s.description}
 Registry URL: ${s.url}`).join('\n\n');
     secondaryContext = `\n\nPUBLIC SECONDARY DATASETS & INSTITUTIONAL REGISTRIES:\n${recordsText}`;
   }
@@ -912,7 +912,7 @@ export async function reviseGroundedManuscript(
 
   const paperSummaries = papers.slice(0, 25).map((p, idx) => {
     const firstAuthor = p.authors[0]?.name ? p.authors[0].name.split(' ').pop() : 'Author';
-    return `[Paper #${idx + 1}] (${firstAuthor}, ${p.year || 2023}): "${p.title}" — Journal: ${p.venue}. DOI: ${p.doi || 'N/A'}`;
+    return `[Paper #${idx + 1}] (${firstAuthor}, ${p.year || 2023}): "${p.title}" | Journal: ${p.venue}. DOI: ${p.doi || 'N/A'}`;
   }).join('\n');
 
   let secondaryContext = '';
@@ -1091,7 +1091,7 @@ We completely agree with the reviewer's insightful critique. In the revised manu
 > *"The literature review misses recent 2023-2024 comparative trials on mechanistic pathway adaptations. Please update the literature grounding."*
 
 **Author Response:**  
-We thank the reviewer for highlighting these recent developments. We have expanded Section 2 to weave in recent 2023–2024 comparative studies, grounding our mechanistic rationale within the latest peer-reviewed literature corpus.
+We thank the reviewer for highlighting these recent developments. We have expanded Section 2 to weave in recent 2023-2024 comparative studies, grounding our mechanistic rationale within the latest peer-reviewed literature corpus.
 
 **Modifications in Revised Manuscript (Section 2):**  
 > *"Furthermore, recent high-resolution trials by modern investigators have elucidated granular response trajectories, providing a robust mechanistic foundation for predictive explanatory models."*
@@ -1129,7 +1129,7 @@ Sincerely,
   // Live LLM Mode: Execute 2-Stage Rebuttal & Overhaul
   const paperSummaries = papers.slice(0, 20).map((p, idx) => {
     const firstAuthor = p.authors[0]?.name ? p.authors[0].name.split(' ').pop() : 'Author';
-    return `[Paper #${idx + 1}] (${firstAuthor}, ${p.year || 2023}): "${p.title}" — Journal: ${p.venue}. DOI: ${p.doi || 'N/A'}`;
+    return `[Paper #${idx + 1}] (${firstAuthor}, ${p.year || 2023}): "${p.title}" | Journal: ${p.venue}. DOI: ${p.doi || 'N/A'}`;
   }).join('\n');
 
   // Stage 1: Generate Revised Manuscript

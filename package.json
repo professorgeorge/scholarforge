@@ -1,7 +1,7 @@
 {
   "name": "scholarforge-suite",
   "author": "Professor Babu George",
-  "description": "ScholarForge Suite — Unified Scholarly Intelligence, Federated Extraction & Reference Verification Platform",
+  "description": "ScholarForge Suite: Unified Scholarly Intelligence, Federated Extraction & Reference Verification Platform",
   "private": true,
   "version": "1.0.0",
   "type": "module",

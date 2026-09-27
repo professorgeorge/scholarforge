@@ -1,4 +1,4 @@
-# ScholarForge Suite — Unified Scholarly Intelligence Platform
+# ScholarForge Suite: Unified Scholarly Intelligence Platform
 
 **ScholarForge Suite** is a unified, state-of-the-art academic research platform that integrates federated multi-registry extraction, PRISMA 2020 systematic review tracking, scholarly manuscript grounding, and pre-submission bibliography integrity auditing.
 

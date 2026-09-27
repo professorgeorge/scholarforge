@@ -590,9 +590,9 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
               onChange={(e) => setSearchScope(Number(e.target.value))}
               className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-blue-700"
             >
-              <option value={15}>Brief Search (Focused Discovery, 2–3 Candidates per Claim)</option>
-              <option value={25}>Standard Search (Recommended, 4–5 Candidates per Claim)</option>
-              <option value={35}>Comprehensive Survey (Deep Cross-Disciplinary, 6–8 Candidates per Claim)</option>
+              <option value={15}>Brief Search (Focused Discovery, 2-3 Candidates per Claim)</option>
+              <option value={25}>Standard Search (Recommended, 4-5 Candidates per Claim)</option>
+              <option value={35}>Comprehensive Survey (Deep Cross-Disciplinary, 6-8 Candidates per Claim)</option>
             </select>
           </div>
 
