@@ -2,7 +2,7 @@ import type { AcademicPaper } from '../types/citation';
 import type { SecondaryDataRecord } from './secondaryDataService';
 
 export interface LLMConfig {
-  provider: 'ollama' | 'openai' | 'groq' | 'openrouter' | 'gemini' | 'deepseek' | 'custom' | 'builtin';
+  provider: 'ollama' | 'openai' | 'groq' | 'openrouter' | 'gemini' | 'deepseek' | 'webgpu' | 'custom' | 'builtin';
   baseUrl?: string;
   apiKey?: string;
   model?: string;
@@ -170,6 +170,13 @@ export async function callRawLLM(
   if (config.provider === 'builtin') {
     await new Promise((res) => setTimeout(res, 400));
     return '';
+  }
+
+  // Client-Side WebGPU In-Browser Execution (Zero Install, 100% Private in GPU VRAM)
+  if (config.provider === 'webgpu') {
+    const { callWebLLM, DEFAULT_WEBLM_MODEL } = await import('./webLlmService');
+    const modelId = config.model || DEFAULT_WEBLM_MODEL;
+    return await callWebLLM(systemPrompt, userPrompt, modelId, config.temperature || 0.6);
   }
 
   // Local Ollama (with Installed Model Auto-Detection)
@@ -382,6 +389,41 @@ export async function testLLMConnection(config: LLMConfig): Promise<{
       message: 'Built-in Scholarly Engine active (offline, zero API keys required).',
       latencyMs: 12,
     };
+  }
+
+  // WebGPU In-Browser Engine Verification
+  if (config.provider === 'webgpu') {
+    const { isWebGPUSupported, getWebLlmEngine, DEFAULT_WEBLM_MODEL } = await import('./webLlmService');
+    if (!isWebGPUSupported()) {
+      return {
+        success: false,
+        message: 'WebGPU is not supported by your current browser or graphics card. Please use Google Chrome, Edge, or Arc on desktop, or select another AI provider.',
+        latencyMs: Math.round(performance.now() - startTime),
+      };
+    }
+
+    try {
+      const modelId = config.model || DEFAULT_WEBLM_MODEL;
+      const engine = await getWebLlmEngine(modelId);
+      const reply = await engine.chat.completions.create({
+        messages: [{ role: 'user', content: 'Reply with "ScholarForge Connected".' }],
+        max_tokens: 10,
+      });
+      const latencyMs = Math.round(performance.now() - startTime);
+      const text = reply.choices[0]?.message?.content?.trim() || 'OK';
+      return {
+        success: true,
+        message: `Successfully connected to in-browser WebGPU engine (${latencyMs}ms) using model '${modelId}'. 100% private in GPU memory. Response: "${text}"`,
+        latencyMs,
+        availableModels: ['Qwen2.5-1.5B-Instruct-q4f16_1-MLC', 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', 'SmolLM2-1.7B-Instruct-q4f16_1-MLC'],
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: `WebGPU model loading error: ${err.message}`,
+        latencyMs: Math.round(performance.now() - startTime),
+      };
+    }
   }
 
   if (config.provider === 'ollama') {

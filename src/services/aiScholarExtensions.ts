@@ -25,7 +25,7 @@ export interface CitationForensicReport {
  */
 export function isLlmConfigured(config: LLMConfig = DEFAULT_LLM_CONFIG): boolean {
   if (config.provider === 'builtin') return false;
-  if (config.provider === 'ollama') return true;
+  if (config.provider === 'ollama' || config.provider === 'webgpu') return true;
   return Boolean(config.apiKey && config.apiKey.trim().length > 3);
 }
 

@@ -218,7 +218,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               <span>5. AI Engine Connections &amp; 100% Local Privacy</span>
             </h4>
             <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
-              Connect your own API key for <strong>Gemini (e.g. Gemini 2.5 Flash / Pro)</strong>, <strong>OpenAI (GPT-4o, o3-mini)</strong>, <strong>Groq</strong>, <strong>DeepSeek</strong>, or run <strong>100% Private Local Models with Ollama</strong> (Llama 3, DeepSeek-R1, Mistral) on your own machine. A zero-configuration built-in heuristic engine is also available.
+              Connect your own API key for <strong>Gemini (e.g. Gemini 2.5 Flash / Pro)</strong>, <strong>OpenAI (GPT-4o, o3-mini)</strong>, <strong>Groq</strong>, <strong>DeepSeek</strong>, run <strong>Client-Side WebGPU in your browser</strong> (Qwen 2.5, SmolLM2 under Apache 2.0: zero install), or run <strong>100% Private Local Models with Ollama</strong> on your machine. A zero-configuration built-in heuristic engine is also available.
             </p>
           </div>
 
