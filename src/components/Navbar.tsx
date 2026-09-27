@@ -241,6 +241,56 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         </div>
       </div>
+
+      {/* Mobile Pillar Sub-Navigation Bar */}
+      {onSelectPillar && (
+        <div className="md:hidden flex items-center justify-between gap-1 px-4 py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold overflow-x-auto">
+          <button
+            onClick={() => onSelectPillar('literature')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1 shrink-0 transition ${
+              activePillar === 'literature'
+                ? 'bg-blue-900 text-white font-bold'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <Search className="w-3 h-3" />
+            <span>Literature</span>
+          </button>
+          <button
+            onClick={() => onSelectPillar('studio')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1 shrink-0 transition ${
+              activePillar === 'studio'
+                ? 'bg-blue-900 text-white font-bold'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <BookOpen className="w-3 h-3" />
+            <span>Studio</span>
+          </button>
+          <button
+            onClick={() => onSelectPillar('claims')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1 shrink-0 transition ${
+              activePillar === 'claims'
+                ? 'bg-blue-900 text-white font-bold'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <CheckCircle2 className="w-3 h-3" />
+            <span>Claims</span>
+          </button>
+          <button
+            onClick={() => onSelectPillar('verify')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1 shrink-0 transition ${
+              activePillar === 'verify'
+                ? 'bg-emerald-800 text-white font-bold'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <ShieldCheck className="w-3 h-3" />
+            <span>Verify &amp; Audit</span>
+          </button>
+        </div>
+      )}
     </header>
   );
 };

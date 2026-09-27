@@ -9,6 +9,12 @@ import { SettingsModal } from './components/SettingsModal';
 import { SupplementaryTools } from './components/SupplementaryTools';
 import { ResearchCartDrawer } from './components/ResearchCartDrawer';
 import { VerifierPane } from './components/VerifierPane';
+import { LiteratureFirstPane } from './components/LiteratureFirstPane';
+import { ClaimsWorkbenchPane } from './components/ClaimsWorkbenchPane';
+import { 
+  EXEMPLAR_MANUSCRIPT_TEXT, 
+  getExemplarClaims 
+} from './data/exemplarManuscript';
 import type { 
   AcademicPaper, 
   CitationOptions, 
@@ -243,6 +249,23 @@ export const App: React.FC = () => {
     });
   };
 
+  // Called to load pre-grounded exemplar research paper for instant live studio exploration
+  const handleLoadExemplarManuscript = () => {
+    setInputText(EXEMPLAR_MANUSCRIPT_TEXT);
+    setClaims(getExemplarClaims());
+    setSelectedClaimId(null);
+    setRebuttalPackage(null);
+    setOriginalPreRevisionText('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    confetti({
+      particleCount: 50,
+      spread: 70,
+      origin: { y: 0.8 },
+      colors: ['#0284c7', '#38bdf8', '#c084fc'],
+    });
+  };
+
   // Called when user submits peer-review revisions
   const handleApplyRevision = (revisedManuscript: string) => {
     setInputText(revisedManuscript);
@@ -384,29 +407,38 @@ export const App: React.FC = () => {
         {/* Pillar 1: Literature-First Discovery & Extraction */}
         {activePillar === 'literature' && (
           <div className="py-2 animate-in fade-in duration-200">
-            <ScholarLaunchpad
-              onManuscriptReady={(m, c) => {
+            <LiteratureFirstPane
+              onManuscriptSynthesized={(m, c) => {
                 handleManuscriptReady(m, c);
                 setActivePillar('studio');
               }}
-              onStartGroundingDraft={(d) => {
-                handleStartGroundingDraft(d);
-                setActivePillar('studio');
-              }}
-              onRebuttalPackageReady={(r, o, c) => {
-                handleRebuttalPackageReady(r, o, c);
-                setActivePillar('studio');
-              }}
               options={options}
-              llmConfig={llmConfig}
-              onOpenSettings={() => setIsSettingsOpen(true)}
-              isProcessing={isProcessing}
             />
           </div>
         )}
 
-        {/* Pillar 2 & 3: Manuscript Studio & Claims Workbench */}
-        {(activePillar === 'studio' || activePillar === 'claims') && (
+        {/* Pillar 3: Empirical Claims & Evidence Consensus Workbench */}
+        {activePillar === 'claims' && (
+          <div className="py-2 animate-in fade-in duration-200">
+            <ClaimsWorkbenchPane
+              onSendToStudio={(draft, newClaims) => {
+                setInputText(draft);
+                setClaims(newClaims);
+                setSelectedClaimId(null);
+                setActivePillar('studio');
+                confetti({
+                  particleCount: 50,
+                  spread: 70,
+                  origin: { y: 0.8 },
+                  colors: ['#0284c7', '#38bdf8', '#c084fc'],
+                });
+              }}
+            />
+          </div>
+        )}
+
+        {/* Pillar 2: Manuscript Studio */}
+        {activePillar === 'studio' && (
           <>
             {!hasActiveManuscript ? (
               <div className="py-4 animate-in fade-in duration-200">
@@ -423,6 +455,7 @@ export const App: React.FC = () => {
                     handleRebuttalPackageReady(r, o, c);
                     setActivePillar('studio');
                   }}
+                  onLoadSample={handleLoadExemplarManuscript}
                   options={options}
                   llmConfig={llmConfig}
                   onOpenSettings={() => setIsSettingsOpen(true)}
@@ -478,7 +511,7 @@ export const App: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                   
                   {/* Left 7 Columns: Manuscript Canvas & Export Suite */}
-                  <div className={activePillar === 'claims' ? 'hidden' : 'lg:col-span-7 space-y-4'}>
+                  <div className="lg:col-span-7 space-y-4">
                     <ResultPane
                       originalText={inputText}
                       claims={claims}
@@ -495,8 +528,8 @@ export const App: React.FC = () => {
                     />
                   </div>
 
-                  {/* Right 5 Columns (or full 12 if claims mode): Evidence & Claims Inspector */}
-                  <div className={activePillar === 'claims' ? 'col-span-12 space-y-4' : 'lg:col-span-5 space-y-4'}>
+                  {/* Right 5 Columns: Evidence & Claims Inspector */}
+                  <div className="lg:col-span-5 space-y-4">
                     <EvidencePane
                       claims={claims}
                       uniquePapers={uniquePapers}
