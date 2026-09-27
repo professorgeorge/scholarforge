@@ -10,14 +10,15 @@ import {
   Moon,
   Sun,
   ShoppingCart,
-  Users
+  Users,
+  Compass
 } from 'lucide-react';
 import { CITATION_STYLES } from '../services/citationFormatter';
 import type { CitationOptions } from '../types/citation';
 import { getCartPapers } from '../services/cartService';
 import { Search } from 'lucide-react';
 
-export type AcademicPillar = 'literature' | 'studio' | 'claims' | 'verify' | 'scholars';
+export type AcademicPillar = 'literature' | 'studio' | 'claims' | 'verify' | 'scholars' | 'journal';
 
 interface NavbarProps {
   options: CitationOptions;
@@ -139,6 +140,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Users className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               <span>5. Scholars &amp; Network</span>
+            </button>
+
+            <button
+              onClick={() => onSelectPillar('journal')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer ${
+                activePillar === 'journal'
+                  ? 'bg-white dark:bg-slate-900 text-teal-800 dark:text-teal-400 shadow-xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              <span>6. Journal Sentinel</span>
             </button>
           </nav>
         )}
@@ -312,6 +325,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Users className="w-3 h-3" />
             <span>5. Scholars</span>
+          </button>
+          <button
+            onClick={() => onSelectPillar('journal')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1 shrink-0 transition ${
+              activePillar === 'journal'
+                ? 'bg-teal-800 text-white font-bold'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <Compass className="w-3 h-3" />
+            <span>6. Journal Sentinel</span>
           </button>
         </div>
       )}

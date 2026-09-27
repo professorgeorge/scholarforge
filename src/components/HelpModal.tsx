@@ -9,7 +9,8 @@ import {
   Layers, 
   CheckCircle2, 
   GraduationCap, 
-  ExternalLink
+  ExternalLink,
+  Compass
 } from 'lucide-react';
 
 interface HelpModalProps {
@@ -193,11 +194,30 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Section 4: Citation Standards */}
+          {/* Section 4: The Journal Fit & Desk-Rejection Pre-Flight Sentinel */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 font-serif">
+              <Compass className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+              <span>4. Journal Fit Matchmaker &amp; Desk-Rejection Pre-Flight Sentinel</span>
+            </h4>
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
+              Provides strategic publishing intelligence based on your manuscript title, abstract, and draft:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-sans text-slate-600 dark:text-slate-400 pt-1">
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                <strong>🎯 Scopus Q1-Q4 &amp; APC Matching</strong>: Evaluates journal impact (CiteScore, quartile, review velocity) and filters by maximum author APC budget, highlighting $0 Diamond Open Access journals.
+              </div>
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                <strong>🛡️ 7-Point Pre-Flight Audit</strong>: Scans for missing Data Availability Statements, unstructured abstracts, ethics/IRB declarations, conflicts of interest, and reference recency with 1-click declaration generators.
+              </div>
+            </div>
+          </div>
+
+          {/* Section 5: Citation Standards */}
           <div className="space-y-2">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 font-serif">
               <BookOpen className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-              <span>4. Supported Citation Standards</span>
+              <span>5. Supported Citation Standards</span>
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-xs">
               <div className="p-2 rounded-md bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center font-medium text-slate-800 dark:text-slate-200">APA 7th</div>
@@ -211,11 +231,11 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Section 5: LLM Engines & Privacy */}
+          {/* Section 6: LLM Engines & Privacy */}
           <div className="space-y-2">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 font-serif">
               <Cpu className="w-4 h-4 text-blue-800 dark:text-blue-400" />
-              <span>5. AI Engine Connections &amp; 100% Local Privacy</span>
+              <span>6. AI Engine Connections &amp; 100% Local Privacy</span>
             </h4>
             <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
               Connect your own API key for <strong>Gemini (e.g. Gemini 2.5 Flash / Pro)</strong>, <strong>OpenAI (GPT-4o, o3-mini)</strong>, <strong>Groq</strong>, <strong>DeepSeek</strong>, run <strong>Client-Side WebGPU in your browser</strong> (Qwen 2.5, SmolLM2 under Apache 2.0: zero install), or run <strong>100% Private Local Models with Ollama</strong> on your machine. A zero-configuration built-in heuristic engine is also available.

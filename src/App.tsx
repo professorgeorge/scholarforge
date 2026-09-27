@@ -11,6 +11,7 @@ import { VerifierPane } from './components/VerifierPane';
 import { LiteratureFirstPane } from './components/LiteratureFirstPane';
 import { ClaimsWorkbenchPane } from './components/ClaimsWorkbenchPane';
 import { ScholarSearchPane } from './components/ScholarSearchPane';
+import { JournalSentinelPane } from './components/JournalSentinelPane';
 import { 
   EXEMPLAR_MANUSCRIPT_TEXT, 
   getExemplarClaims 
@@ -30,7 +31,8 @@ import {
   ExternalLink,
   ShieldAlert,
   Lock,
-  Users
+  Users,
+  Compass
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { addMultiplePapersToCart } from './services/cartService';
@@ -460,6 +462,23 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {/* Pillar 6: The Journal Fit & Desk-Rejection Pre-Flight Sentinel */}
+        {activePillar === 'journal' && (
+          <div className="py-2 animate-in fade-in duration-200">
+            <JournalSentinelPane
+              llmConfig={llmConfig}
+              initialTitle={inputText ? inputText.slice(0, 160) : ''}
+              initialAbstract={inputText && inputText.length > 160 ? inputText.slice(160, 1500) : ''}
+              initialFullDraft={inputText}
+              initialReferences={uniquePapers.map(p => `${p.authors.map(a => a.name).join(', ')}. ${p.title}. ${p.venue}, ${p.year}.`)}
+              onAppendToDraft={(declarationText) => {
+                setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
+              }}
+              onNavigateToStudio={() => setActivePillar('studio')}
+            />
+          </div>
+        )}
+
         {/* Pillar 2: Manuscript Studio */}
         {activePillar === 'studio' && (
           <>
@@ -520,6 +539,14 @@ export const App: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setActivePillar('journal')}
+                      className="px-3.5 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/60 text-teal-900 dark:text-teal-300 text-xs font-semibold flex items-center gap-1.5 border border-teal-200 dark:border-teal-800 cursor-pointer transition"
+                      title="Match Scopus journals & run desk-rejection pre-flight audit for this manuscript"
+                    >
+                      <Compass className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                      <span>Journal Fit &amp; Pre-Flight</span>
+                    </button>
                     <button
                       onClick={() => setActivePillar('scholars')}
                       className="px-3.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-900 dark:text-indigo-300 text-xs font-semibold flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800 cursor-pointer transition"
