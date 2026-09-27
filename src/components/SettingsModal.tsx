@@ -172,10 +172,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-sm"
                 >
                   <option value="builtin">Built-in Academic Generator (Instant, Free, Zero Setup)</option>
-                  <option value="gemini">Google Gemini API (Gemini 1.5 Flash / Pro - Fast & High Context)</option>
-                  <option value="ollama">Local Ollama (http://localhost:11434 - 100% Private on Your PC)</option>
-                  <option value="groq">Groq Cloud (Ultra-Fast - Llama 3.3 70B)</option>
-                  <option value="openai">OpenAI API (GPT-4o / GPT-4o-mini)</option>
+                  <option value="gemini">Google Gemini API (Gemini 2.5 Flash / Pro: Fast with 1M Context)</option>
+                  <option value="ollama">Local Ollama (http://localhost:11434: 100% Private on Your PC)</option>
+                  <option value="groq">Groq Cloud (Ultra-Fast: Llama 3.3 70B / 3.1 8B)</option>
+                  <option value="openai">OpenAI API (GPT-4o / GPT-4o-mini / o3-mini)</option>
                   <option value="deepseek">DeepSeek API (DeepSeek-V3 / DeepSeek-R1)</option>
                   <option value="openrouter">OpenRouter (Any open source model)</option>
                   <option value="custom">Custom Server Endpoint (LM Studio / vLLM)</option>
@@ -216,7 +216,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     />
                   </div>
                   <span className="text-[11px] text-slate-500 block">
-                    {tempLLMConfig.provider === 'gemini' ? 'Get a free API key from aistudio.google.com' : 'Stored securely in your local browser storage.'}
+                    {tempLLMConfig.provider === 'gemini' 
+                      ? 'Get a free API key from aistudio.google.com. ScholarForge defaults to Gemini 2.5 Flash for free-tier compatibility.' 
+                      : 'Stored securely in your local browser storage.'}
                   </span>
                 </div>
               )}
@@ -232,9 +234,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onChange={(e) => setTempLLMConfig({ ...tempLLMConfig, model: e.target.value })}
                     placeholder={
                       tempLLMConfig.provider === 'gemini' 
-                        ? 'gemini-3.6-flash (or gemini-2.0-flash)' 
+                        ? 'gemini-2.5-flash (or gemini-2.5-pro)' 
                         : tempLLMConfig.provider === 'ollama' 
-                        ? 'llama3.2:latest (or gemma4:12b)' 
+                        ? 'llama3.2:latest (or mistral, qwen2.5)' 
+                        : tempLLMConfig.provider === 'openai'
+                        ? 'gpt-4o-mini (or gpt-4o, o3-mini)'
+                        : tempLLMConfig.provider === 'groq'
+                        ? 'llama-3.3-70b-versatile'
+                        : tempLLMConfig.provider === 'deepseek'
+                        ? 'deepseek-chat (or deepseek-reasoner)'
                         : 'Default provider model'
                     }
                     className="w-full p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-mono text-xs"

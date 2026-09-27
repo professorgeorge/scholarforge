@@ -70,14 +70,16 @@ export const ACADEMIC_PROMPT_TEMPLATES = [
 
 /**
  * Dynamically queries Google Gemini API to discover supported models for the given API key.
+ * Automatically filters out deprecated 1.5-series models that fail on free-tier keys.
  */
 async function getSupportedGeminiModel(rawKey: string, requestedModel?: string): Promise<{
   activeModel: string;
   allModels: string[];
 }> {
   let cleanRequested = requestedModel?.trim();
-  if (cleanRequested === 'gemini-2.5-flash' || cleanRequested === 'gemini-1.5-flash') {
-    cleanRequested = 'gemini-3.6-flash';
+  // Sanitize any legacy 1.5 or fictitious model requests
+  if (cleanRequested && (cleanRequested.includes('1.5') || cleanRequested.includes('3.6'))) {
+    cleanRequested = '';
   }
 
   try {
@@ -87,25 +89,28 @@ async function getSupportedGeminiModel(rawKey: string, requestedModel?: string):
       const models: string[] = (data.models || [])
         .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent') || !m.supportedGenerationMethods)
         .map((m: any) => m.name.replace(/^models\//, ''))
-        .filter((name: string) => name !== 'gemini-2.5-flash' && name !== 'gemini-1.5-flash');
+        .filter((name: string) => !name.includes('1.5')); // Purge all retired 1.5 variants
 
       if (cleanRequested && models.includes(cleanRequested)) {
         return { activeModel: cleanRequested, allModels: models };
       }
 
-      // Preference hierarchy (gemini-3.6-flash prioritized)
+      // Modern active preference hierarchy for Google AI Studio / Gemini API
       const preferences = [
-        'gemini-3.6-flash',
-        'gemini-3.6-pro',
+        'gemini-2.5-flash',
+        'gemini-2.5-pro',
         'gemini-2.0-flash',
         'gemini-2.0-flash-exp',
-        'gemini-1.5-flash-latest',
-        'gemini-1.5-pro-latest',
+        'gemini-3.5-flash',
+        'gemini-3.8-flash',
       ];
 
       for (const pref of preferences) {
         if (models.includes(pref)) return { activeModel: pref, allModels: models };
       }
+
+      const anyFlash = models.find((m: string) => m.toLowerCase().includes('flash'));
+      if (anyFlash) return { activeModel: anyFlash, allModels: models };
 
       if (models.length > 0) return { activeModel: models[0], allModels: models };
     }
@@ -114,8 +119,8 @@ async function getSupportedGeminiModel(rawKey: string, requestedModel?: string):
   }
 
   return { 
-    activeModel: cleanRequested || 'gemini-3.6-flash', 
-    allModels: ['gemini-3.6-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest'] 
+    activeModel: (cleanRequested && !cleanRequested.includes('1.5')) ? cleanRequested : 'gemini-2.5-flash', 
+    allModels: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'] 
   };
 }
 
@@ -290,10 +295,10 @@ export async function callRawLLM(
       errDetail = await response.text();
     }
 
-    // Auto-retry if Google suggests an updated model (e.g. gemini-3.6-flash)
+    // Auto-retry if Google suggests an updated model or if deprecated 1.5 was rejected
     const suggestedMatch = errDetail.match(/use models\/([a-zA-Z0-9\.\-_]+)/i);
-    if (suggestedMatch && suggestedMatch[1]) {
-      const fallbackModel = suggestedMatch[1];
+    const fallbackModel = suggestedMatch?.[1] || (errDetail.toLowerCase().includes('1.5') ? 'gemini-2.5-flash' : null);
+    if (fallbackModel && fallbackModel !== activeModel) {
       const retryUrl = `https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${encodeURIComponent(rawKey)}`;
       const retryResp = await fetch(retryUrl, {
         method: 'POST',
@@ -482,10 +487,10 @@ export async function testLLMConnection(config: LLMConfig): Promise<{
           };
         }
 
-        // Auto-retry if Google suggests an updated model
+        // Auto-retry if Google suggests an updated model or if deprecated 1.5 was rejected
         const suggestedMatch = errDetail.match(/use models\/([a-zA-Z0-9\.\-_]+)/i);
-        if (suggestedMatch && suggestedMatch[1]) {
-          const fallbackModel = suggestedMatch[1];
+        const fallbackModel = suggestedMatch?.[1] || (errDetail.toLowerCase().includes('1.5') ? 'gemini-2.5-flash' : null);
+        if (fallbackModel && fallbackModel !== activeModel) {
           const retryUrl = `https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${encodeURIComponent(rawKey)}`;
           const retryResp = await fetch(retryUrl, {
             method: 'POST',
@@ -500,7 +505,7 @@ export async function testLLMConnection(config: LLMConfig): Promise<{
           if (retryResp.ok) {
             return {
               success: true,
-              message: `Successfully connected to Google Gemini (${retryLatencyMs}ms) using model '${fallbackModel}'. Available models on your account: ${allModels.slice(0, 4).join(', ')}${allModels.length > 4 ? '...' : ''}`,
+              message: `Successfully connected to Google Gemini (${retryLatencyMs}ms) using upgraded model '${fallbackModel}' (migrated from deprecated 1.5 series). Available models on your account: ${allModels.slice(0, 4).join(', ')}${allModels.length > 4 ? '...' : ''}`,
               latencyMs: retryLatencyMs,
               availableModels: allModels,
             };

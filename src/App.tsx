@@ -117,8 +117,11 @@ export const App: React.FC = () => {
     if (!saved) return DEFAULT_LLM_CONFIG;
     try {
       const parsed = JSON.parse(saved);
-      if (parsed.provider === 'gemini' && (parsed.model === 'gemini-2.5-flash' || parsed.model === 'gemini-1.5-flash')) {
-        parsed.model = 'gemini-3.6-flash';
+      if (parsed.provider === 'gemini') {
+        if (!parsed.model || parsed.model.includes('1.5') || parsed.model.includes('3.6')) {
+          parsed.model = 'gemini-2.5-flash';
+          localStorage.setItem('citation_filler_llm_config', JSON.stringify(parsed));
+        }
       }
       return parsed;
     } catch {
