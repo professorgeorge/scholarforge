@@ -174,8 +174,9 @@ export async function callRawLLM(
 
   // Client-Side WebGPU In-Browser Execution (Zero Install, 100% Private in GPU VRAM)
   if (config.provider === 'webgpu') {
-    const { callWebLLM, DEFAULT_WEBLM_MODEL } = await import('./webLlmService');
-    const modelId = config.model || DEFAULT_WEBLM_MODEL;
+    const { callWebLLM, DEFAULT_WEBLM_MODEL, SAFE_UNRESTRICTED_WEBLM_MODELS } = await import('./webLlmService');
+    const isValid = SAFE_UNRESTRICTED_WEBLM_MODELS.some((m) => m.id === config.model);
+    const modelId = isValid ? config.model! : DEFAULT_WEBLM_MODEL;
     return await callWebLLM(systemPrompt, userPrompt, modelId, config.temperature || 0.6);
   }
 
@@ -393,7 +394,7 @@ export async function testLLMConnection(config: LLMConfig): Promise<{
 
   // WebGPU In-Browser Engine Verification
   if (config.provider === 'webgpu') {
-    const { isWebGPUSupported, getWebLlmEngine, DEFAULT_WEBLM_MODEL } = await import('./webLlmService');
+    const { isWebGPUSupported, getWebLlmEngine, DEFAULT_WEBLM_MODEL, SAFE_UNRESTRICTED_WEBLM_MODELS } = await import('./webLlmService');
     if (!isWebGPUSupported()) {
       return {
         success: false,
@@ -403,7 +404,8 @@ export async function testLLMConnection(config: LLMConfig): Promise<{
     }
 
     try {
-      const modelId = config.model || DEFAULT_WEBLM_MODEL;
+      const isValid = SAFE_UNRESTRICTED_WEBLM_MODELS.some((m) => m.id === config.model);
+      const modelId = isValid ? config.model! : DEFAULT_WEBLM_MODEL;
       const engine = await getWebLlmEngine(modelId);
       const reply = await engine.chat.completions.create({
         messages: [{ role: 'user', content: 'Reply with "ScholarForge Connected".' }],

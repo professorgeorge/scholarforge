@@ -122,6 +122,12 @@ export const App: React.FC = () => {
           parsed.model = 'gemini-2.5-flash';
           localStorage.setItem('citation_filler_llm_config', JSON.stringify(parsed));
         }
+      } else if (parsed.provider === 'webgpu') {
+        const validWebModels = ['Qwen2.5-1.5B-Instruct-q4f16_1-MLC', 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', 'SmolLM2-1.7B-Instruct-q4f16_1-MLC'];
+        if (!validWebModels.includes(parsed.model)) {
+          parsed.model = 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
+          localStorage.setItem('citation_filler_llm_config', JSON.stringify(parsed));
+        }
       }
       return parsed;
     } catch {

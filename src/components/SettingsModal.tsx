@@ -72,12 +72,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setIsPreloadingWebLlm(true);
     try {
       const { getWebLlmEngine } = await import('../services/webLlmService');
-      const modelId = tempLLMConfig.model || DEFAULT_WEBLM_MODEL;
+      const isValidWebLlmModel = SAFE_UNRESTRICTED_WEBLM_MODELS.some(m => m.id === tempLLMConfig.model);
+      const modelId = isValidWebLlmModel ? tempLLMConfig.model! : DEFAULT_WEBLM_MODEL;
+      if (tempLLMConfig.model !== modelId) {
+        setTempLLMConfig(prev => ({ ...prev, model: modelId }));
+      }
       await getWebLlmEngine(modelId, (rep) => {
         setWebLlmProgress(rep);
       });
     } catch (e: any) {
       console.error('WebLLM preload error:', e);
+      setWebLlmProgress({
+        progress: 0,
+        text: `Error: ${e.message}`,
+        isComplete: false,
+        error: e.message,
+      });
     } finally {
       setIsPreloadingWebLlm(false);
     }
@@ -203,8 +213,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <select
                   value={tempLLMConfig.provider}
                   onChange={(e) => {
-                    setTempLLMConfig({ ...tempLLMConfig, provider: e.target.value as any });
+                    const nextProvider = e.target.value as any;
+                    let nextModel = tempLLMConfig.model;
+                    if (nextProvider === 'webgpu') {
+                      if (!SAFE_UNRESTRICTED_WEBLM_MODELS.some((m) => m.id === nextModel)) {
+                        nextModel = DEFAULT_WEBLM_MODEL;
+                      }
+                    } else if (nextProvider === 'gemini') {
+                      if (!nextModel || nextModel.includes('1.5') || nextModel.includes('3.6') || SAFE_UNRESTRICTED_WEBLM_MODELS.some((m) => m.id === nextModel)) {
+                        nextModel = 'gemini-2.5-flash';
+                      }
+                    } else if (nextProvider === 'ollama') {
+                      if (!nextModel || SAFE_UNRESTRICTED_WEBLM_MODELS.some((m) => m.id === nextModel)) {
+                        nextModel = 'llama3.2:latest';
+                      }
+                    }
+                    setTempLLMConfig({ ...tempLLMConfig, provider: nextProvider, model: nextModel });
                     setTestResult(null);
+                    setWebLlmProgress(null);
                   }}
                   className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-sm"
                 >
@@ -248,7 +274,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       Safe and Unrestricted Open Weights (Apache 2.0 License):
                     </label>
                     <select
-                      value={tempLLMConfig.model || DEFAULT_WEBLM_MODEL}
+                      value={SAFE_UNRESTRICTED_WEBLM_MODELS.some((m) => m.id === tempLLMConfig.model) ? tempLLMConfig.model! : DEFAULT_WEBLM_MODEL}
                       onChange={(e) => {
                         setTempLLMConfig({ ...tempLLMConfig, model: e.target.value });
                         setTestResult(null);
