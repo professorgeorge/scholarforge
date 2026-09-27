@@ -6,7 +6,6 @@ import { EvidencePane } from './components/EvidencePane';
 import { ManualSearchModal } from './components/ManualSearchModal';
 import { HelpModal } from './components/HelpModal';
 import { SettingsModal } from './components/SettingsModal';
-import { SupplementaryTools } from './components/SupplementaryTools';
 import { ResearchCartDrawer } from './components/ResearchCartDrawer';
 import { VerifierPane } from './components/VerifierPane';
 import { LiteratureFirstPane } from './components/LiteratureFirstPane';
@@ -568,9 +567,6 @@ export const App: React.FC = () => {
             )}
           </>
         )}
-
-        {/* Supplementary Scholarly Tools Section */}
-        <SupplementaryTools llmConfig={llmConfig} />
 
       </main>
 

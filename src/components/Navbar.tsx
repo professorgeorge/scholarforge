@@ -73,7 +73,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 hidden xl:block font-sans">
-              Federated Extraction • Studio • PRISMA 2020 • Hallucination Auditor
+              1. Literature &amp; PICO • 2. Studio • 3. Claims • 4. Reference Audit • 5. Scholars
             </p>
           </div>
         </div>
@@ -90,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <Search className="w-3.5 h-3.5" />
-              <span>Literature &amp; Extraction</span>
+              <span>1. Literature &amp; PICO</span>
             </button>
 
             <button
@@ -102,7 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Studio</span>
+              <span>2. Manuscript Studio</span>
             </button>
 
             <button
@@ -114,7 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Claims</span>
+              <span>3. Claims Workbench</span>
             </button>
 
             <button
@@ -126,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Verify &amp; Audit</span>
+              <span>4. Verify &amp; Audit</span>
             </button>
 
             <button
@@ -138,7 +138,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <Users className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>Scholars &amp; Reviewers</span>
+              <span>5. Scholars &amp; Network</span>
             </button>
           </nav>
         )}
@@ -267,7 +267,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Search className="w-3 h-3" />
-            <span>Literature</span>
+            <span>1. Literature</span>
           </button>
           <button
             onClick={() => onSelectPillar('studio')}
@@ -278,7 +278,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <BookOpen className="w-3 h-3" />
-            <span>Studio</span>
+            <span>2. Studio</span>
           </button>
           <button
             onClick={() => onSelectPillar('claims')}
@@ -289,7 +289,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <CheckCircle2 className="w-3 h-3" />
-            <span>Claims</span>
+            <span>3. Claims</span>
           </button>
           <button
             onClick={() => onSelectPillar('verify')}
@@ -300,7 +300,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <ShieldCheck className="w-3 h-3" />
-            <span>Verify &amp; Audit</span>
+            <span>4. Verify</span>
           </button>
           <button
             onClick={() => onSelectPillar('scholars')}
@@ -311,7 +311,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Users className="w-3 h-3" />
-            <span>Scholars</span>
+            <span>5. Scholars</span>
           </button>
         </div>
       )}

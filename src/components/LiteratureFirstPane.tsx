@@ -15,12 +15,14 @@ import {
   Check,
   Layers,
   ShieldAlert,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Compass
 } from 'lucide-react';
 import type { AcademicPaper, CitationOptions, Claim } from '../types/citation';
 import { huntAcademicPapers } from '../services/academicApi';
 import { executeFederatedSearch, type PrismaFlowStats } from '../services/federatedSearchEngine';
 import { extractClaimsFromText } from '../services/claimExtractor';
+import { PicoCompilerTab } from './PicoCompilerTab';
 import { 
   DEFAULT_LLM_CONFIG, 
   synthesizeGroundedManuscript, 
@@ -44,6 +46,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
 }) => {
   const [topic, setTopic] = useState('');
   const [focus, setFocus] = useState('');
+  const [activeSubTab, setActiveSubTab] = useState<'federated' | 'pico'>('federated');
   const [isSearching, setIsSearching] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [isPromptsOpen, setIsPromptsOpen] = useState(false);
@@ -212,8 +215,46 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
         </div>
       </div>
 
-      {/* Step 1: Input Topic & Scope */}
-      <div className="space-y-4">
+      {/* Sub-Navigation Switcher */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('federated')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold font-serif flex items-center gap-2 transition cursor-pointer ${
+            activeSubTab === 'federated'
+              ? 'bg-blue-900 text-white shadow-xs'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <Search className="w-3.5 h-3.5" />
+          <span>Federated Multi-Source Discovery</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('pico')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold font-serif flex items-center gap-2 transition cursor-pointer ${
+            activeSubTab === 'pico'
+              ? 'bg-blue-900 text-white shadow-xs'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <Compass className="w-3.5 h-3.5 text-amber-400" />
+          <span>PICO Systematic Search Strategy</span>
+        </button>
+      </div>
+
+      {activeSubTab === 'pico' ? (
+        <PicoCompilerTab
+          onApplyQueryToSearch={(q) => {
+            setTopic(q);
+            setActiveSubTab('federated');
+          }}
+        />
+      ) : (
+        <>
+          {/* Step 1: Input Topic & Scope */}
+          <div className="space-y-4">
         <div>
           <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2 uppercase tracking-wider">
             1. Research Topic & Core Thesis:
@@ -674,6 +715,8 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
             </button>
           </div>
         </div>
+      )}
+      </>
       )}
 
       {/* 7 Academic LLM Prompts Modal */}

@@ -27,12 +27,14 @@ import {
 import { CITATION_STYLES } from '../services/citationFormatter';
 import type { CitationStyle } from '../types/citation';
 import { addPaperToCart } from '../services/cartService';
+import { DoiResolverTab } from './DoiResolverTab';
 
 interface VerifierPaneProps {
   onAddPaperToCart?: (paper: any) => void;
 }
 
 export const VerifierPane: React.FC<VerifierPaneProps> = () => {
+  const [subTab, setSubTab] = useState<'batch' | 'single'>('batch');
   const [rawBibliography, setRawBibliography] = useState<string>('');
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verifyProgress, setVerifyProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
@@ -190,8 +192,40 @@ export const VerifierPane: React.FC<VerifierPaneProps> = () => {
         </div>
       </div>
 
-      {/* Main Workspace: Grid of Input & Results */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Sub-Navigation Switcher */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <button
+          type="button"
+          onClick={() => setSubTab('batch')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold font-serif flex items-center gap-2 transition cursor-pointer ${
+            subTab === 'batch'
+              ? 'bg-blue-900 text-white shadow-xs'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Batch Reference Authenticity Auditor</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setSubTab('single')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold font-serif flex items-center gap-2 transition cursor-pointer ${
+            subTab === 'single'
+              ? 'bg-blue-900 text-white shadow-xs'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5 text-blue-400" />
+          <span>Single DOI &amp; BibTeX Quick Resolver</span>
+        </button>
+      </div>
+
+      {subTab === 'single' ? (
+        <DoiResolverTab />
+      ) : (
+        /* Main Workspace: Grid of Input & Results */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left Column: Input Dropzone */}
         <div className="lg:col-span-5 space-y-4">
@@ -657,6 +691,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = () => {
         </div>
 
       </div>
+      )}
 
     </div>
   );
