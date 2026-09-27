@@ -9,14 +9,15 @@ import {
   ShieldCheck,
   Moon,
   Sun,
-  ShoppingCart
+  ShoppingCart,
+  Users
 } from 'lucide-react';
 import { CITATION_STYLES } from '../services/citationFormatter';
 import type { CitationOptions } from '../types/citation';
 import { getCartPapers } from '../services/cartService';
 import { Search } from 'lucide-react';
 
-export type AcademicPillar = 'literature' | 'studio' | 'claims' | 'verify';
+export type AcademicPillar = 'literature' | 'studio' | 'claims' | 'verify' | 'scholars';
 
 interface NavbarProps {
   options: CitationOptions;
@@ -126,6 +127,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
               <span>Verify &amp; Audit</span>
+            </button>
+
+            <button
+              onClick={() => onSelectPillar('scholars')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer ${
+                activePillar === 'scholars'
+                  ? 'bg-white dark:bg-slate-900 text-indigo-900 dark:text-indigo-400 shadow-xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>Scholars &amp; Reviewers</span>
             </button>
           </nav>
         )}
@@ -288,6 +301,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <ShieldCheck className="w-3 h-3" />
             <span>Verify &amp; Audit</span>
+          </button>
+          <button
+            onClick={() => onSelectPillar('scholars')}
+            className={`px-2.5 py-1 rounded-md flex items-center gap-1 shrink-0 transition ${
+              activePillar === 'scholars'
+                ? 'bg-indigo-900 text-white font-bold'
+                : 'text-slate-600 dark:text-slate-400'
+            }`}
+          >
+            <Users className="w-3 h-3" />
+            <span>Scholars</span>
           </button>
         </div>
       )}

@@ -11,6 +11,7 @@ import { ResearchCartDrawer } from './components/ResearchCartDrawer';
 import { VerifierPane } from './components/VerifierPane';
 import { LiteratureFirstPane } from './components/LiteratureFirstPane';
 import { ClaimsWorkbenchPane } from './components/ClaimsWorkbenchPane';
+import { ScholarSearchPane } from './components/ScholarSearchPane';
 import { 
   EXEMPLAR_MANUSCRIPT_TEXT, 
   getExemplarClaims 
@@ -29,7 +30,8 @@ import {
   RefreshCw,
   ExternalLink,
   ShieldAlert,
-  Lock
+  Lock,
+  Users
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { addMultiplePapersToCart } from './services/cartService';
@@ -437,6 +439,16 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {/* Pillar 5: Scholars & Reviewers (Universal Scholar Search) */}
+        {activePillar === 'scholars' && (
+          <div className="py-2 animate-in fade-in duration-200">
+            <ScholarSearchPane
+              initialTitle={inputText ? inputText.slice(0, 160) : ''}
+              initialAbstract={inputText && inputText.length > 160 ? inputText.slice(160, 1500) : ''}
+            />
+          </div>
+        )}
+
         {/* Pillar 2: Manuscript Studio */}
         {activePillar === 'studio' && (
           <>
@@ -497,6 +509,14 @@ export const App: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setActivePillar('scholars')}
+                      className="px-3.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-900 dark:text-indigo-300 text-xs font-semibold flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800 cursor-pointer transition"
+                      title="Find Peer Reviewers, Co-Authors, or Co-Investigators for this manuscript"
+                    >
+                      <Users className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>Find Scholars &amp; Reviewers</span>
+                    </button>
                     <button
                       onClick={handleResetWorkspace}
                       className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer transition"
