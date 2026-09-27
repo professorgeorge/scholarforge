@@ -9,16 +9,29 @@ import {
   AlertCircle, 
   ChevronDown,
   ChevronUp,
-  Plus
+  Plus,
+  ShoppingCart,
+  Crown,
+  Check,
+  Layers,
+  ShieldAlert,
+  FileSpreadsheet
 } from 'lucide-react';
 import type { AcademicPaper, CitationOptions, Claim } from '../types/citation';
 import { huntAcademicPapers } from '../services/academicApi';
+import { executeFederatedSearch, type PrismaFlowStats } from '../services/federatedSearchEngine';
 import { extractClaimsFromText } from '../services/claimExtractor';
 import { 
   DEFAULT_LLM_CONFIG, 
   synthesizeGroundedManuscript, 
   type LLMConfig 
 } from '../services/llmService';
+import { calculateDatasetMetrics, getCitationTier } from '../services/datasetScientometrics';
+import { extractAcademicTags } from '../services/academicTagger';
+import { generateCOinS } from '../services/coinsGenerator';
+import { addPaperToCart, addMultiplePapersToCart, isPaperInCart } from '../services/cartService';
+import { AcademicPromptsModal } from './AcademicPromptsModal';
+import { PrismaFlowModal } from './PrismaFlowModal';
 
 interface LiteratureFirstPaneProps {
   onManuscriptSynthesized: (manuscript: string, claims: Claim[]) => void;
@@ -33,11 +46,24 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   const [focus, setFocus] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [isPromptsOpen, setIsPromptsOpen] = useState(false);
+  const [isPrismaOpen, setIsPrismaOpen] = useState(false);
+  const [prismaStats, setPrismaStats] = useState<PrismaFlowStats | null>(null);
+  const [cartFeedback, setCartFeedback] = useState<string | null>(null);
   const [discoveredPapers, setDiscoveredPapers] = useState<AcademicPaper[]>([]);
   const [selectedPaperIds, setSelectedPaperIds] = useState<Set<string>>(new Set());
   const [expandedAbstractId, setExpandedAbstractId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [customKeyword, setCustomKeyword] = useState('');
+  const [searchScope, setSearchScope] = useState<'default' | 'title_only' | 'title_abstract'>('default');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [enabledSources, setEnabledSources] = useState({
+    openalex: true,
+    europepmc: true,
+    crossref: true,
+    semanticscholar: true,
+    arxiv: false,
+  });
 
   // Load LLM Config from storage
   const [llmConfig] = useState<LLMConfig>(() => {
@@ -57,23 +83,25 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
 
     try {
-      const queries = [
-        topic,
-        `${topic} ${focus}`.trim(),
-        `${topic} clinical trial empirical review`.trim(),
-      ];
+      const fullQuery = focus ? `${topic} ${focus}` : topic;
+      const result = await executeFederatedSearch(fullQuery, {
+        limitPerSource: 12,
+        excludePreprints: options.excludePreprints,
+        searchScope,
+        enabledSources,
+      });
 
-      const papers = await huntAcademicPapers(queries, 12, options.excludePreprints);
+      setPrismaStats(result.prismaStats);
 
-      if (papers.length === 0) {
-        setErrorMsg('No peer-reviewed papers found with DOIs for this exact topic. Try broader search terms.');
+      if (result.papers.length === 0) {
+        setErrorMsg('No peer-reviewed papers found with DOIs for this exact topic across selected registries. Try broader search terms.');
       } else {
-        setDiscoveredPapers(papers);
+        setDiscoveredPapers(result.papers);
         // By default select top 6 papers
-        setSelectedPaperIds(new Set(papers.slice(0, 6).map((p) => p.id)));
+        setSelectedPaperIds(new Set(result.papers.slice(0, 6).map((p) => p.id)));
       }
     } catch (err: any) {
-      setErrorMsg(`Literature discovery failed: ${err.message}`);
+      setErrorMsg(`Federated literature discovery failed: ${err.message}`);
     } finally {
       setIsSearching(false);
     }
@@ -243,6 +271,119 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
           />
         </div>
 
+        {/* Advanced Federated Sources & PRISMA Scope Toggle */}
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="text-xs font-semibold text-blue-900 dark:text-blue-400 flex items-center gap-1.5 cursor-pointer hover:underline"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>{showAdvancedFilters ? 'Hide Federated Registries & Scope' : '⚡ Configure Federated Registries & PRISMA Scope'}</span>
+            <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showAdvancedFilters && (
+            <div className="mt-2.5 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3 animate-in fade-in duration-150">
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div>
+                  <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1.5 uppercase tracking-wider text-[11px]">
+                    Academic Registries:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={enabledSources.openalex}
+                        onChange={(e) => setEnabledSources({ ...enabledSources, openalex: e.target.checked })}
+                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                      />
+                      <span>OpenAlex</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={enabledSources.europepmc}
+                        onChange={(e) => setEnabledSources({ ...enabledSources, europepmc: e.target.checked })}
+                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                      />
+                      <span>Europe PMC / PubMed</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={enabledSources.crossref}
+                        onChange={(e) => setEnabledSources({ ...enabledSources, crossref: e.target.checked })}
+                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                      />
+                      <span>Crossref</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={enabledSources.semanticscholar}
+                        onChange={(e) => setEnabledSources({ ...enabledSources, semanticscholar: e.target.checked })}
+                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                      />
+                      <span>Semantic Scholar</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={enabledSources.arxiv}
+                        onChange={(e) => setEnabledSources({ ...enabledSources, arxiv: e.target.checked })}
+                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                      />
+                      <span>arXiv Preprints</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1.5 uppercase tracking-wider text-[11px]">
+                    Search Scope:
+                  </span>
+                  <div className="flex items-center gap-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-0.5 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setSearchScope('default')}
+                      className={`px-2 py-1 text-xs rounded-md font-medium cursor-pointer transition ${
+                        searchScope === 'default'
+                          ? 'bg-blue-900 dark:bg-blue-800 text-white'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      All Fields
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchScope('title_only')}
+                      className={`px-2 py-1 text-xs rounded-md font-medium cursor-pointer transition ${
+                        searchScope === 'title_only'
+                          ? 'bg-blue-900 dark:bg-blue-800 text-white'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      Title Only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchScope('title_abstract')}
+                      className={`px-2 py-1 text-xs rounded-md font-medium cursor-pointer transition ${
+                        searchScope === 'title_abstract'
+                          ? 'bg-blue-900 dark:bg-blue-800 text-white'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      }`}
+                    >
+                      Title + Abstract
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Error message */}
         {errorMsg && (
           <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-300 flex items-center gap-2.5">
@@ -283,14 +424,71 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Papers</span>
               </button>
+
+              {prismaStats && (
+                <button
+                  type="button"
+                  onClick={() => setIsPrismaOpen(true)}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                  title="View PRISMA 2020 flow metrics & copy publication statement"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>PRISMA 2020 Flow</span>
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Dataset Scientometrics Banner */}
+          {(() => {
+            const metrics = calculateDatasetMetrics(discoveredPapers);
+            return (
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 grid grid-cols-4 gap-2 text-center">
+                <div>
+                  <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                    {metrics.hIndex}
+                  </div>
+                  <div className="text-[10px] uppercase font-semibold text-slate-500">
+                    Dataset $h$-Index
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {metrics.totalCitations.toLocaleString()}
+                  </div>
+                  <div className="text-[10px] uppercase font-semibold text-slate-500">
+                    Total Citations
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    {metrics.avgCitations}
+                  </div>
+                  <div className="text-[10px] uppercase font-semibold text-slate-500">
+                    Avg Citations
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    {metrics.openAccessPct}%
+                  </div>
+                  <div className="text-[10px] uppercase font-semibold text-slate-500">
+                    Open Access
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Paper Cards List */}
           <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
             {discoveredPapers.map((paper) => {
               const isSelected = selectedPaperIds.has(paper.id);
               const isExpanded = expandedAbstractId === paper.id;
+              const tier = getCitationTier(paper.citationCount || 0);
+              const tags = extractAcademicTags(paper);
+              const inCart = isPaperInCart(paper);
+
               return (
                 <div
                   key={paper.id}
@@ -300,6 +498,9 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                       : 'bg-slate-50/50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 opacity-60'
                   }`}
                 >
+                  {/* Hidden COinS tag for Zotero / Mendeley detection */}
+                  <span className="Z3988 hidden" title={generateCOinS(paper)} />
+
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
                       <input
@@ -309,6 +510,36 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                         className="mt-1 rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
                       />
                       <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.badgeClass}`}
+                          >
+                            {tier.label}
+                          </span>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {paper.source === 'europepmc' ? 'Europe PMC / PubMed' : paper.source.toUpperCase()}
+                          </span>
+                          {paper.isRetracted && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 border border-red-300 dark:border-red-800 flex items-center gap-1 animate-pulse">
+                              <ShieldAlert className="w-3 h-3 text-red-600" />
+                              RETRACTED
+                            </span>
+                          )}
+                          {paper.openAccess && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              🔓 OA
+                            </span>
+                          )}
+                          {tags.map((tag) => (
+                            <span
+                              key={tag.label}
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tag.colorClass}`}
+                            >
+                              {tag.label}
+                            </span>
+                          ))}
+                        </div>
+
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif leading-snug">
                           {paper.title}
                         </h4>
@@ -340,6 +571,28 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => addPaperToCart(paper)}
+                        className={`text-xs font-semibold px-2 py-1 rounded-md border flex items-center gap-1 transition cursor-pointer ${
+                          inCart
+                            ? 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+                        }`}
+                        title={inCart ? 'Saved in Research Cart' : 'Save to Research Cart'}
+                      >
+                        {inCart ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-500" />
+                            <span>In Cart</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingCart className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                            <span>+ Cart</span>
+                          </>
+                        )}
+                      </button>
+
                       {paper.abstract && (
                         <button
                           onClick={() => setExpandedAbstractId(isExpanded ? null : paper.id)}
@@ -369,10 +622,37 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
             })}
           </div>
 
-          {/* Action Step 3: Trigger Synthesis */}
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4">
-            <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-              Ready to synthesize from {selectedPaperIds.size} verified peer-reviewed articles.
+          {/* Action Step 3: Trigger Synthesis & Prompt Tools */}
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => {
+                  const selectedPapers = discoveredPapers.filter((p) => selectedPaperIds.has(p.id));
+                  const added = addMultiplePapersToCart(selectedPapers);
+                  setCartFeedback(`Added ${added} papers to Cart!`);
+                  setTimeout(() => setCartFeedback(null), 2500);
+                }}
+                disabled={selectedPaperIds.size === 0}
+                className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <ShoppingCart className="w-3.5 h-3.5" />
+                <span>Add Selected to Cart ({selectedPaperIds.size})</span>
+              </button>
+
+              <button
+                onClick={() => setIsPromptsOpen(true)}
+                disabled={selectedPaperIds.size === 0}
+                className="px-3 py-2 text-xs font-semibold rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>7 LLM Prompts Suite</span>
+              </button>
+
+              {cartFeedback && (
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> {cartFeedback}
+                </span>
+              )}
             </div>
 
             <button
@@ -394,6 +674,25 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* 7 Academic LLM Prompts Modal */}
+      <AcademicPromptsModal
+        isOpen={isPromptsOpen}
+        onClose={() => setIsPromptsOpen(false)}
+        papers={discoveredPapers.filter((p) => selectedPaperIds.has(p.id))}
+        topic={topic}
+        style={options.style}
+      />
+
+      {/* PRISMA 2020 Flow Protocol Modal */}
+      {prismaStats && (
+        <PrismaFlowModal
+          isOpen={isPrismaOpen}
+          onClose={() => setIsPrismaOpen(false)}
+          stats={prismaStats}
+          query={topic}
+        />
       )}
 
     </div>

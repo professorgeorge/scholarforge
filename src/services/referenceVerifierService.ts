@@ -9,6 +9,9 @@
 
 import { formatReferenceEntryHtml, generateBibtexEntry } from './citationFormatter';
 import type { AcademicPaper, Author } from '../types/citation';
+import { searchEuropePmc } from './europePmcService';
+import { searchArxiv } from './arxivService';
+import { checkPaperRetraction } from './retractionSentinel';
 
 export interface ParsedCitation {
   raw: string;
@@ -23,7 +26,7 @@ export interface ParsedCitation {
 }
 
 export interface Discrepancy {
-  field: 'year' | 'author' | 'title' | 'venue' | 'record' | 'duplicate';
+  field: 'year' | 'author' | 'title' | 'venue' | 'record' | 'duplicate' | 'retraction';
   message: string;
 }
 
@@ -38,6 +41,8 @@ export interface VerifiedReferenceResult {
   scholarUrl: string;
   isDuplicate?: boolean;
   duplicateOf?: number;
+  isRetracted?: boolean;
+  retractionDetails?: string;
   correctedCitations: Record<string, string>;
 }
 
@@ -440,15 +445,28 @@ export async function verifySingleReference(rawCitation: string): Promise<Verifi
     candidate = await lookupByDoi(parsed.doi);
   }
 
-  // 2. OpenAlex & Crossref academic search if no DOI or DOI was incorrect
+  // 1b. Direct arXiv lookup if arXiv ID detected
+  if (!candidate && parsed.arxivId) {
+    try {
+      const arxivResults = await searchArxiv(parsed.arxivId, 1);
+      if (arxivResults.length > 0) {
+        candidate = arxivResults[0];
+      }
+    } catch {
+      // Continue to multi-registry search
+    }
+  }
+
+  // 2. Multi-registry academic search across Crossref, OpenAlex, and Europe PMC
   if (!candidate) {
     try {
-      const [crossrefResults, openalexResults] = await Promise.all([
+      const [crossrefResults, openalexResults, epmcResults] = await Promise.all([
         searchCrossrefPolite(parsed),
         searchOpenAlexPolite(parsed),
+        searchEuropePmc(parsed.title || parsed.cleanQuery, { limit: 2 }).catch(() => []),
       ]);
 
-      const pool = [...crossrefResults, ...openalexResults];
+      const pool = [...crossrefResults, ...openalexResults, ...epmcResults];
       if (pool.length > 0) {
         let bestItem = pool[0];
         let maxScore = -1;
@@ -546,6 +564,21 @@ export async function verifySingleReference(rawCitation: string): Promise<Verifi
     }
   }
 
+  // Retraction Sentinel check
+  let isRetracted = false;
+  let retractionDetails: string | undefined;
+
+  const retractionCheck = checkPaperRetraction(candidate);
+  if (retractionCheck.isRetracted) {
+    isRetracted = true;
+    retractionDetails = retractionCheck.reason;
+    confidence = Math.min(confidence, 30);
+    discrepancies.unshift({
+      field: 'retraction',
+      message: `CRITICAL RETRACTION: ${retractionCheck.reason || 'Paper is formally indexed as retracted.'}`,
+    });
+  }
+
   confidence = Math.max(15, Math.min(100, confidence));
   const status = discrepancies.length === 0 ? 'verified' : 'discrepancy';
 
@@ -570,6 +603,8 @@ export async function verifySingleReference(rawCitation: string): Promise<Verifi
     confidence,
     discrepancies,
     scholarUrl,
+    isRetracted,
+    retractionDetails,
     correctedCitations,
   };
 }
@@ -653,6 +688,166 @@ export async function verifyReferenceBatch(
 }
 
 /**
+ * Generates an official Microsoft Word (.doc) document for verification results.
+ * Supports:
+ * - mode = 'clean': Clean, publication-ready bibliography in standard style with hanging indents.
+ * - mode = 'audit': Comprehensive audit report with verification badges, discrepancy diffs, and retraction notices.
+ */
+export function generateVerificationWordReport(
+  report: BatchVerificationReport,
+  style: string = 'apa',
+  mode: 'clean' | 'audit' = 'audit'
+): string {
+  const s = style.toLowerCase();
+  let title = 'References';
+  if (s === 'mla') title = 'Works Cited';
+  else if (s === 'chicago') title = 'Bibliography';
+  else if (s === 'ieee') title = 'References';
+
+  let listToExport = report.results;
+  if (mode === 'clean') {
+    // In clean mode, exclude unindexed / hallucinated and retracted references
+    listToExport = report.results.filter(
+      (r) => (r.status === 'verified' || r.status === 'discrepancy') && !r.isRetracted
+    );
+  }
+
+  let auditSummaryTable = '';
+  if (mode === 'audit') {
+    auditSummaryTable = `
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 24pt; font-family: 'Times New Roman', Times, serif; font-size: 10.5pt; border: 1.5pt solid #cbd5e1; background-color: #f8fafc;">
+      <tr>
+        <td style="padding: 10pt 14pt; border-bottom: 1pt solid #cbd5e1; font-weight: bold; font-size: 11pt; background-color: #f1f5f9; color: #0f172a;">
+          Scholar Reference Verifier — Audit Summary &amp; Authenticity Metrics
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 10pt 14pt; color: #334155; line-height: 1.5;">
+          <strong>Total References Analyzed:</strong> ${report.total}<br/>
+          <strong>Authenticity Score:</strong> ${report.authenticityScore}%<br/>
+          <strong>Verified Genuine:</strong> <span style="color: #15803d; font-weight: bold;">${report.verifiedCount}</span> | 
+          <strong>Discrepancies Fixed:</strong> <span style="color: #b45309; font-weight: bold;">${report.discrepancyCount}</span> | 
+          <strong>Unindexed / Potential AI Hallucinations:</strong> <span style="color: #b91c1c; font-weight: bold;">${report.notFoundCount}</span>
+        </td>
+      </tr>
+    </table>`;
+  }
+
+  const itemsHtml = listToExport
+    .map((item, idx) => {
+      const formattedCite = item.correctedCitations[s] || item.correctedCitations.apa || item.raw;
+      const isIeee = s === 'ieee';
+      const citePrefix = isIeee ? `[${idx + 1}] ` : '';
+
+      if (mode === 'clean') {
+        return `<p style="margin-top: 0; margin-bottom: 12pt; text-align: left; line-height: 2.0; font-family: 'Times New Roman', Times, serif; font-size: 12pt; ${
+          isIeee ? 'margin-left: 0.3in; text-indent: -0.3in;' : 'margin-left: 0.5in; text-indent: -0.5in;'
+        }">${citePrefix}${formattedCite}</p>`;
+      }
+
+      // Audit Mode: include badge, discrepancies, and diffs
+      let badgeHtml = '';
+      if (item.isRetracted) {
+        badgeHtml = `<span style="background-color: #fee2e2; color: #991b1b; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #fca5a5;">RETRACTED PUBLICATION</span>`;
+      } else if (item.status === 'verified') {
+        badgeHtml = `<span style="background-color: #dcfce7; color: #166534; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #86efac;">100% VERIFIED</span>`;
+      } else if (item.status === 'discrepancy') {
+        badgeHtml = `<span style="background-color: #fef3c7; color: #92400e; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #fcd34d;">DISCREPANCIES FIXED</span>`;
+      } else {
+        badgeHtml = `<span style="background-color: #fee2e2; color: #991b1b; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #fca5a5;">UNINDEXED / POTENTIAL AI HALLUCINATION</span>`;
+      }
+
+      let discrepancyDetails = '';
+      if (item.discrepancies.length > 0) {
+        const issues = item.discrepancies
+          .map((d) => `<li style="margin-bottom: 2pt;">${d.message}</li>`)
+          .join('');
+        discrepancyDetails = `
+        <div style="margin-top: 4pt; margin-bottom: 6pt; font-size: 9.5pt; color: #78350f; background-color: #fffbeb; padding: 6pt 10pt; border-left: 3pt solid #f59e0b;">
+          <strong>Discrepancies Detected:</strong>
+          <ul style="margin: 2pt 0 0 14pt; padding: 0;">${issues}</ul>
+        </div>`;
+      }
+
+      const rawPastedBlock = `
+        <div style="font-size: 9pt; color: #64748b; background-color: #f8fafc; padding: 4pt 8pt; border: 1pt solid #e2e8f0; margin-bottom: 4pt;">
+          <strong>Original Input:</strong> <em>${item.raw}</em>
+        </div>`;
+
+      return `
+      <div style="margin-bottom: 16pt; font-family: 'Times New Roman', Times, serif;">
+        <div style="display: flex; align-items: center; gap: 8pt; margin-bottom: 4pt;">
+          <strong>Reference #${idx + 1}</strong> &nbsp; ${badgeHtml}
+        </div>
+        ${rawPastedBlock}
+        <p style="margin-top: 0; margin-bottom: 4pt; text-align: left; line-height: 1.5; font-size: 11pt; color: #0f172a; ${
+          isIeee ? 'margin-left: 0.25in; text-indent: -0.25in;' : 'margin-left: 0.4in; text-indent: -0.4in;'
+        }">
+          <strong>${isIeee ? citePrefix : ''}Corrected Citation:</strong> ${formattedCite}
+        </p>
+        ${discrepancyDetails}
+      </div>`;
+    })
+    .join('\n');
+
+  return `<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset="utf-8">
+  <title>${title} - ScholarForge Verifier</title>
+  <style>
+    @page {
+      size: 8.5in 11.0in;
+      margin: 1.0in 1.0in 1.0in 1.0in;
+      mso-header-margin: 0.5in;
+      mso-footer-margin: 0.5in;
+    }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt;
+      color: #000000;
+      line-height: 1.5;
+    }
+    h1 {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 14pt;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 18pt;
+    }
+  </style>
+</head>
+<body>
+  <h1>${mode === 'audit' ? 'Bibliography Verification & Authenticity Audit Report' : title}</h1>
+  ${auditSummaryTable}
+  ${itemsHtml}
+</body>
+</html>`;
+}
+
+/**
+ * Downloads the verification report as an official Microsoft Word (.doc) file.
+ */
+export function downloadVerificationWordDocument(
+  report: BatchVerificationReport,
+  style: string = 'apa',
+  mode: 'clean' | 'audit' = 'audit'
+): void {
+  const docHtml = generateVerificationWordReport(report, style, mode);
+  const blob = new Blob(['\ufeff', docHtml], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const timestamp = new Date().toISOString().slice(0, 10);
+  a.download = `ScholarForge_Verification_${mode === 'audit' ? 'Audit_Report' : 'Clean_Bibliography'}_${timestamp}.doc`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
  * Sample test references containing genuine, altered, and AI-hallucinated citations.
  */
 export const SAMPLE_VERIFICATION_REFERENCES = `[1] Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). Attention is all you need. Advances in Neural Information Processing Systems, 30, 5998-6008.
@@ -664,3 +859,4 @@ export const SAMPLE_VERIFICATION_REFERENCES = `[1] Vaswani, A., Shazeer, N., Par
 [4] Goodfellow, I., Pouget-Abadie, J., Mirza, M., Xu, B., Warde-Farley, D., Ozair, S., Courville, A., & Bengio, Y. (2014). Generative adversarial nets. Advances in Neural Information Processing Systems, 27, 2672-2680.
 
 [5] Albright, T. R., & Vanderbilt, M. E. (2023). Empirical Verification of Non-Local Entropy Cascades in Distributed Deep Learning Supercomputers. International Review of Applied Synthetic Intelligence, 15(2), 104-118.`;
+

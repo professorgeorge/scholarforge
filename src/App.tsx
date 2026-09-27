@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Navbar } from './components/Navbar';
+import React, { useState, useEffect } from 'react';
+import { Navbar, type AcademicPillar } from './components/Navbar';
 import { ScholarLaunchpad } from './components/ScholarLaunchpad';
 import { ResultPane } from './components/ResultPane';
 import { EvidencePane } from './components/EvidencePane';
@@ -7,6 +7,8 @@ import { ManualSearchModal } from './components/ManualSearchModal';
 import { HelpModal } from './components/HelpModal';
 import { SettingsModal } from './components/SettingsModal';
 import { SupplementaryTools } from './components/SupplementaryTools';
+import { ResearchCartDrawer } from './components/ResearchCartDrawer';
+import { VerifierPane } from './components/VerifierPane';
 import type { 
   AcademicPaper, 
   CitationOptions, 
@@ -24,6 +26,7 @@ import {
   Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { addMultiplePapersToCart } from './services/cartService';
 
 export const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>('');
@@ -35,7 +38,58 @@ export const App: React.FC = () => {
   const [manualSearchClaim, setManualSearchClaim] = useState<Claim | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [activePillar, setActivePillar] = useState<AcademicPillar>('literature');
+
+  // Cross-Platform Bridge: Detect incoming cart payloads from ScholarCite Express
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('import-cart')) {
+      try {
+        const queryPart = hash.split('?')[1] || window.location.search.slice(1);
+        const params = new URLSearchParams(queryPart);
+        const data = params.get('data');
+        if (data) {
+          const decoded = JSON.parse(decodeURIComponent(escape(atob(data))));
+          if (Array.isArray(decoded) && decoded.length > 0) {
+            const normalized: AcademicPaper[] = decoded.map((item: any, idx: number) => ({
+              id: item.id || item.doi || `imported-${Date.now()}-${idx}`,
+              title: item.title || 'Untitled Research',
+              authors: Array.isArray(item.authors)
+                ? item.authors.map((a: any) => (typeof a === 'string' ? { name: a } : a))
+                : [],
+              year: item.year || new Date().getFullYear(),
+              venue: item.venue || item.fullVenue || 'Academic Source',
+              doi: item.doi || '',
+              url: item.url || (item.doi ? `https://doi.org/${item.doi}` : ''),
+              citationCount: item.citeCount || item.citationCount || 0,
+              abstract: item.abstract || item.snippet || '',
+              openAccess: Boolean(item.openAccess || item.openAccessPdf || item.isOa),
+              openAccessPdf: item.openAccessPdf,
+              source: 'manual',
+              volume: item.volume,
+              issue: item.issue,
+              pages: item.pages,
+              type: item.type || 'journal',
+            }));
+
+            addMultiplePapersToCart(normalized);
+            setIsCartOpen(true);
+            confetti({
+              particleCount: 50,
+              spread: 70,
+              origin: { y: 0.8 },
+              colors: ['#0284c7', '#38bdf8', '#c084fc'],
+            });
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to import cart from URL bridge', err);
+      }
+    }
+  }, []);
 
   // Peer-Review Rebuttal Package State
   const [rebuttalPackage, setRebuttalPackage] = useState<PeerReviewOverhaulResult | null>(null);
@@ -289,6 +343,9 @@ export const App: React.FC = () => {
         setIsDarkMode={setIsDarkMode}
         onOpenHelp={() => setIsHelpOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenCart={() => setIsCartOpen(true)}
+        activePillar={activePillar}
+        onSelectPillar={setActivePillar}
       />
 
       {/* Main Container */}
@@ -317,13 +374,29 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* View 1: If NO manuscript is active -> Clean, Focused Launchpad */}
-        {!hasActiveManuscript && (
-          <div className="py-4 animate-in fade-in duration-200">
+        {/* Pillar 4: Verify & Audit Mode */}
+        {activePillar === 'verify' && (
+          <div className="py-2 animate-in fade-in duration-200">
+            <VerifierPane />
+          </div>
+        )}
+
+        {/* Pillar 1: Literature-First Discovery & Extraction */}
+        {activePillar === 'literature' && (
+          <div className="py-2 animate-in fade-in duration-200">
             <ScholarLaunchpad
-              onManuscriptReady={handleManuscriptReady}
-              onStartGroundingDraft={handleStartGroundingDraft}
-              onRebuttalPackageReady={handleRebuttalPackageReady}
+              onManuscriptReady={(m, c) => {
+                handleManuscriptReady(m, c);
+                setActivePillar('studio');
+              }}
+              onStartGroundingDraft={(d) => {
+                handleStartGroundingDraft(d);
+                setActivePillar('studio');
+              }}
+              onRebuttalPackageReady={(r, o, c) => {
+                handleRebuttalPackageReady(r, o, c);
+                setActivePillar('studio');
+              }}
               options={options}
               llmConfig={llmConfig}
               onOpenSettings={() => setIsSettingsOpen(true)}
@@ -332,90 +405,115 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* View 2: If Manuscript IS active -> Full Split Studio Canvas */}
-        {hasActiveManuscript && (
-          <div className="space-y-5 animate-in fade-in duration-200">
-            
-            {/* Active Manuscript Status & Control Strip */}
-            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-900 dark:bg-blue-800 flex items-center justify-center text-white shrink-0">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
-                      Grounded Manuscript Workspace
-                    </h3>
-                    {rebuttalPackage && (
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                        Peer-Review Rebuttal Package
-                      </span>
-                    )}
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                      Active
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500 font-sans">
-                    <span><strong>{groundedClaimsCount} / {claims.length}</strong> claims cited</span>
-                    <span>•</span>
-                    <span><strong>{uniquePapers.length}</strong> peer-reviewed journal papers</span>
-                    <span>•</span>
-                    <span>100% verified DOIs</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleResetWorkspace}
-                  className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer transition"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Start New Paper</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Split Screen Layout: Left Canvas (Result & Revisions) + Right Pane (Evidence & Claims) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              
-              {/* Left 7 Columns: Manuscript Canvas & Export Suite */}
-              <div className="lg:col-span-7 space-y-4">
-                <ResultPane
-                  originalText={inputText}
-                  claims={claims}
-                  options={options}
-                  rebuttalPackage={rebuttalPackage}
-                  originalPreRevisionText={originalPreRevisionText}
-                  onFocusClaim={(claimId) => {
-                    setSelectedClaimId(claimId);
-                    const el = document.getElementById(`claim-card-${claimId}`);
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        {/* Pillar 2 & 3: Manuscript Studio & Claims Workbench */}
+        {(activePillar === 'studio' || activePillar === 'claims') && (
+          <>
+            {!hasActiveManuscript ? (
+              <div className="py-4 animate-in fade-in duration-200">
+                <ScholarLaunchpad
+                  onManuscriptReady={(m, c) => {
+                    handleManuscriptReady(m, c);
+                    setActivePillar('studio');
                   }}
-                  onApplyRevision={handleApplyRevision}
+                  onStartGroundingDraft={(d) => {
+                    handleStartGroundingDraft(d);
+                    setActivePillar('studio');
+                  }}
+                  onRebuttalPackageReady={(r, o, c) => {
+                    handleRebuttalPackageReady(r, o, c);
+                    setActivePillar('studio');
+                  }}
+                  options={options}
                   llmConfig={llmConfig}
+                  onOpenSettings={() => setIsSettingsOpen(true)}
+                  isProcessing={isProcessing}
                 />
               </div>
+            ) : (
+              <div className="space-y-5 animate-in fade-in duration-200">
+                
+                {/* Active Manuscript Status & Control Strip */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-900 dark:bg-blue-800 flex items-center justify-center text-white shrink-0">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
+                          Grounded Manuscript Workspace
+                        </h3>
+                        {rebuttalPackage && (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                            Peer-Review Rebuttal Package
+                          </span>
+                        )}
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          Active
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500 font-sans">
+                        <span><strong>{groundedClaimsCount} / {claims.length}</strong> claims cited</span>
+                        <span>•</span>
+                        <span><strong>{uniquePapers.length}</strong> peer-reviewed journal papers</span>
+                        <span>•</span>
+                        <span>100% verified DOIs</span>
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Right 5 Columns: Evidence & Claims Inspector */}
-              <div className="lg:col-span-5 space-y-4">
-                <EvidencePane
-                  claims={claims}
-                  uniquePapers={uniquePapers}
-                  citationStyle={options.style}
-                  selectedClaimId={selectedClaimId}
-                  onSelectPaper={handleSelectPaper}
-                  onToggleExclude={handleToggleExclude}
-                  onOpenManualSearch={(c) => setManualSearchClaim(c)}
-                  onRetrySearch={(c) => handleRetrySearch(c.id)}
-                />
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleResetWorkspace}
+                      className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer transition"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Start New Paper</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Split Screen Layout: Left Canvas (Result & Revisions) + Right Pane (Evidence & Claims) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  
+                  {/* Left 7 Columns: Manuscript Canvas & Export Suite */}
+                  <div className={activePillar === 'claims' ? 'hidden' : 'lg:col-span-7 space-y-4'}>
+                    <ResultPane
+                      originalText={inputText}
+                      claims={claims}
+                      options={options}
+                      rebuttalPackage={rebuttalPackage}
+                      originalPreRevisionText={originalPreRevisionText}
+                      onFocusClaim={(claimId) => {
+                        setSelectedClaimId(claimId);
+                        const el = document.getElementById(`claim-card-${claimId}`);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      onApplyRevision={handleApplyRevision}
+                      llmConfig={llmConfig}
+                    />
+                  </div>
+
+                  {/* Right 5 Columns (or full 12 if claims mode): Evidence & Claims Inspector */}
+                  <div className={activePillar === 'claims' ? 'col-span-12 space-y-4' : 'lg:col-span-5 space-y-4'}>
+                    <EvidencePane
+                      claims={claims}
+                      uniquePapers={uniquePapers}
+                      citationStyle={options.style}
+                      selectedClaimId={selectedClaimId}
+                      onSelectPaper={handleSelectPaper}
+                      onToggleExclude={handleToggleExclude}
+                      onOpenManualSearch={(c) => setManualSearchClaim(c)}
+                      onRetrySearch={(c) => handleRetrySearch(c.id)}
+                    />
+                  </div>
+
+                </div>
+
               </div>
-
-            </div>
-
-          </div>
+            )}
+          </>
         )}
 
         {/* Supplementary Scholarly Tools Section */}
@@ -447,6 +545,39 @@ export const App: React.FC = () => {
       <HelpModal
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
+      />
+
+      {/* Research Literature Cart Drawer */}
+      <ResearchCartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        activeStyle={options.style}
+        onSeedManuscript={(cartPapers) => {
+          if (cartPapers.length === 0) return;
+          const syntheticClaims: Claim[] = cartPapers.map((paper, idx) => ({
+            id: `cart-claim-${idx + 1}-${paper.id}`,
+            text: `Empirical research demonstrates key dynamics regarding ${paper.title}.`,
+            rawSentence: `Empirical research demonstrates key dynamics regarding ${paper.title}.`,
+            paragraphIndex: idx,
+            sentenceIndex: 0,
+            startIndex: 0,
+            endIndex: 100,
+            confidence: 'high',
+            keywords: [paper.title.slice(0, 30)],
+            searchQueries: [paper.title],
+            candidatePapers: [paper],
+            selectedPaper: paper,
+            status: 'found',
+            isExcluded: false,
+          }));
+          const draft = cartPapers
+            .map((p) => `Recent scholarly literature investigates ${p.title}.`)
+            .join(' ');
+          setInputText(draft);
+          setClaims(syntheticClaims);
+          setIsCartOpen(false);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       {/* Academic Footer */}

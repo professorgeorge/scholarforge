@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BookOpen, 
   Settings, 
@@ -8,10 +8,15 @@ import {
   Library,
   ShieldCheck,
   Moon,
-  Sun
+  Sun,
+  ShoppingCart
 } from 'lucide-react';
 import { CITATION_STYLES } from '../services/citationFormatter';
 import type { CitationOptions } from '../types/citation';
+import { getCartPapers } from '../services/cartService';
+import { Search } from 'lucide-react';
+
+export type AcademicPillar = 'literature' | 'studio' | 'claims' | 'verify';
 
 interface NavbarProps {
   options: CitationOptions;
@@ -20,6 +25,9 @@ interface NavbarProps {
   setIsDarkMode: (dark: boolean) => void;
   onOpenHelp: () => void;
   onOpenSettings: () => void;
+  onOpenCart?: () => void;
+  activePillar?: AcademicPillar;
+  onSelectPillar?: (pillar: AcademicPillar) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -29,8 +37,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   setIsDarkMode,
   onOpenHelp,
   onOpenSettings,
+  onOpenCart,
+  activePillar = 'literature',
+  onSelectPillar,
 }) => {
   const [showStyleMenu, setShowStyleMenu] = useState(false);
+  const [cartCount, setCartCount] = useState<number>(() => getCartPapers().length);
+
+  useEffect(() => {
+    const handleUpdate = () => setCartCount(getCartPapers().length);
+    window.addEventListener('scholarforge_cart_updated', handleUpdate);
+    return () => window.removeEventListener('scholarforge_cart_updated', handleUpdate);
+  }, []);
 
   const currentStyle = CITATION_STYLES.find((s) => s.id === options.style) || CITATION_STYLES[0];
 
@@ -48,16 +66,69 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="font-serif text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Scholar<span className="text-blue-800 dark:text-blue-400">Forge</span>
               </span>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
-                Scholarly Registry
+                Suite
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block font-sans">
-              Unified Scholarly Intelligence • Manuscript Grounding, PICO Matrix & Scientometrics
+            <p className="text-xs text-slate-500 dark:text-slate-400 hidden xl:block font-sans">
+              Federated Extraction • Studio • PRISMA 2020 • Hallucination Auditor
             </p>
           </div>
         </div>
+
+        {/* Pillar Navigation Tabs */}
+        {onSelectPillar && (
+          <nav className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-semibold">
+            <button
+              onClick={() => onSelectPillar('literature')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer ${
+                activePillar === 'literature'
+                  ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Literature &amp; Extraction</span>
+            </button>
+
+            <button
+              onClick={() => onSelectPillar('studio')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer ${
+                activePillar === 'studio'
+                  ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Studio</span>
+            </button>
+
+            <button
+              onClick={() => onSelectPillar('claims')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer ${
+                activePillar === 'claims'
+                  ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Claims</span>
+            </button>
+
+            <button
+              onClick={() => onSelectPillar('verify')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition cursor-pointer ${
+                activePillar === 'verify'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-400 shadow-xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Verify &amp; Audit</span>
+            </button>
+          </nav>
+        )}
 
         {/* Controls & Selectors */}
         <div className="flex items-center gap-2.5 sm:gap-3">
@@ -127,6 +198,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
           </div>
+
+          {/* Research Literature Cart Button */}
+          <button
+            onClick={onOpenCart}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition cursor-pointer relative"
+            title="Open Research Literature Cart"
+          >
+            <ShoppingCart className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+            <span className="text-xs font-bold hidden sm:inline">Cart</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-blue-600 text-white leading-none">
+              {cartCount}
+            </span>
+          </button>
 
           {/* Consolidated Master Settings Button */}
           <button

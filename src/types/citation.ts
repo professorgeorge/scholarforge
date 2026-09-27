@@ -15,11 +15,39 @@ export interface AcademicPaper {
   citationCount: number;
   abstract: string;
   openAccess: boolean;
-  source: 'openalex' | 'crossref' | 'semanticscholar' | 'manual';
+  openAccessPdf?: string;
+  source: 'openalex' | 'crossref' | 'europepmc' | 'semanticscholar' | 'arxiv' | 'manual';
   relevanceScore?: number;
   volume?: string;
   issue?: string;
   pages?: string;
+  type?: 'journal' | 'book' | 'conference' | 'preprint';
+  publisher?: string;
+  isRetracted?: boolean;
+  retractionDetails?: string;
+  pmid?: string;
+  pmcid?: string;
+}
+
+export interface DatasetMetrics {
+  totalPapers: number;
+  totalCitations: number;
+  avgCitations: number;
+  hIndex: number;
+  highlyCitedCount: number; // 100+ citations
+  influentialCount: number; // 25+ citations
+  emergingCount: number; // <25 citations
+  openAccessCount: number;
+  openAccessPct: number;
+}
+
+export interface AcademicPromptTemplate {
+  id: string;
+  title: string;
+  iconName: string;
+  badge: string;
+  description: string;
+  template: (papers: AcademicPaper[], query?: string) => string;
 }
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low';

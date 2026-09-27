@@ -8,9 +8,15 @@ import {
   EyeOff, 
   Eye, 
   RefreshCw, 
-  AlertCircle
+  AlertCircle,
+  ShoppingCart,
+  Check
 } from 'lucide-react';
 import { formatInTextCitation } from '../services/citationFormatter';
+import { getCitationTier } from '../services/datasetScientometrics';
+import { extractAcademicTags } from '../services/academicTagger';
+import { generateCOinS } from '../services/coinsGenerator';
+import { addPaperToCart, isPaperInCart } from '../services/cartService';
 
 interface ClaimCardProps {
   claim: Claim;
@@ -152,22 +158,65 @@ export const ClaimCard: React.FC<ClaimCardProps> = ({
             </div>
           </div>
 
+          {/* Hidden COinS OpenURL metadata for Zotero / Mendeley detection */}
+          <span className="Z3988 hidden" title={generateCOinS(selectedPaper)} />
+
           {/* Paper Badges & Links */}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
-            <div className="flex items-center gap-2">
-              {selectedPaper.citationCount > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 font-medium">
-                  {selectedPaper.citationCount.toLocaleString()} citations
-                </span>
-              )}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Citation Impact Tier */}
+              {(() => {
+                const tier = getCitationTier(selectedPaper.citationCount || 0);
+                return (
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.badgeClass}`}
+                  >
+                    {tier.label}
+                  </span>
+                );
+              })()}
+
               {selectedPaper.openAccess && (
-                <span className="text-xs px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-medium">
-                  Open Access
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  🔓 OA
                 </span>
               )}
+
+              {/* Methodology & Topic Tags */}
+              {extractAcademicTags(selectedPaper).map((tag) => (
+                <span
+                  key={tag.label}
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${tag.colorClass}`}
+                >
+                  {tag.label}
+                </span>
+              ))}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {/* Add to Cart button */}
+              <button
+                onClick={() => addPaperToCart(selectedPaper)}
+                className={`text-xs font-semibold px-2 py-1 rounded-md border flex items-center gap-1 transition cursor-pointer ${
+                  isPaperInCart(selectedPaper)
+                    ? 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+                title={isPaperInCart(selectedPaper) ? 'Saved in Research Cart' : 'Save to Research Cart'}
+              >
+                {isPaperInCart(selectedPaper) ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-500" />
+                    <span>In Cart</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                    <span>+ Cart</span>
+                  </>
+                )}
+              </button>
+
               {/* Abstract Toggle */}
               {selectedPaper.abstract && (
                 <button
