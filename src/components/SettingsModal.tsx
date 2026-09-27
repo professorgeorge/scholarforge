@@ -245,7 +245,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                   <div>
                     <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1">
-                      Safe &amp; Unrestricted Open Weights (Apache 2.0 License):
+                      Safe and Unrestricted Open Weights (Apache 2.0 License):
                     </label>
                     <select
                       value={tempLLMConfig.model || DEFAULT_WEBLM_MODEL}
@@ -271,7 +271,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-900/80 border border-purple-200/80 dark:border-purple-800/80 text-xs space-y-1.5 font-sans">
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="font-semibold text-slate-700 dark:text-slate-300">
-                            License: <span className="text-emerald-700 dark:text-emerald-400 font-bold">{sel.license} (Commercial &amp; academic unrestricted)</span>
+                            License: <span className="text-emerald-700 dark:text-emerald-400 font-bold">{sel.license} (Commercial and academic unrestricted)</span>
                           </span>
                           <span className="text-slate-500 font-mono font-semibold">Download: ~{sel.sizeMB} MB</span>
                         </div>
@@ -328,7 +328,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       {isPreloadingWebLlm ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          <span>Downloading &amp; Compiling...</span>
+                          <span>Downloading and Compiling...</span>
                         </>
                       ) : (
                         <>
@@ -336,7 +336,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           <span>
                             {webLlmProgress?.isComplete
                               ? 'Model Ready in VRAM'
-                              : 'Pre-load &amp; Cache Model'}
+                              : 'Pre-load and Cache Model'}
                           </span>
                         </>
                       )}
