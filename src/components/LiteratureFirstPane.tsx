@@ -38,11 +38,13 @@ import { PrismaFlowModal } from './PrismaFlowModal';
 interface LiteratureFirstPaneProps {
   onManuscriptSynthesized: (manuscript: string, claims: Claim[]) => void;
   options: CitationOptions;
+  llmConfig?: LLMConfig;
 }
 
 export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   onManuscriptSynthesized,
   options,
+  llmConfig = DEFAULT_LLM_CONFIG,
 }) => {
   const [topic, setTopic] = useState('');
   const [focus, setFocus] = useState('');
@@ -66,12 +68,6 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     crossref: true,
     semanticscholar: true,
     arxiv: false,
-  });
-
-  // Load LLM Config from storage
-  const [llmConfig] = useState<LLMConfig>(() => {
-    const saved = localStorage.getItem('citation_filler_llm_config');
-    return saved ? JSON.parse(saved) : DEFAULT_LLM_CONFIG;
   });
 
   const handleSearchLiterature = async () => {
@@ -250,6 +246,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
             setTopic(q);
             setActiveSubTab('federated');
           }}
+          llmConfig={llmConfig}
         />
       ) : (
         <>

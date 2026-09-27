@@ -401,7 +401,7 @@ export const App: React.FC = () => {
         {/* Pillar 4: Verify & Audit Mode */}
         {activePillar === 'verify' && (
           <div className="py-2 animate-in fade-in duration-200">
-            <VerifierPane />
+            <VerifierPane llmConfig={llmConfig} />
           </div>
         )}
 
@@ -414,6 +414,7 @@ export const App: React.FC = () => {
                 setActivePillar('studio');
               }}
               options={options}
+              llmConfig={llmConfig}
             />
           </div>
         )}
@@ -422,6 +423,7 @@ export const App: React.FC = () => {
         {activePillar === 'claims' && (
           <div className="py-2 animate-in fade-in duration-200">
             <ClaimsWorkbenchPane
+              llmConfig={llmConfig}
               onSendToStudio={(draft, newClaims) => {
                 setInputText(draft);
                 setClaims(newClaims);
@@ -442,6 +444,7 @@ export const App: React.FC = () => {
         {activePillar === 'scholars' && (
           <div className="py-2 animate-in fade-in duration-200">
             <ScholarSearchPane
+              llmConfig={llmConfig}
               initialTitle={inputText ? inputText.slice(0, 160) : ''}
               initialAbstract={inputText && inputText.length > 160 ? inputText.slice(160, 1500) : ''}
             />

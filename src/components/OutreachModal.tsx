@@ -1,22 +1,34 @@
 import React, { useState, useMemo } from 'react';
-import { X, Copy, Check, Mail, Sparkles, Award, FileEdit, Briefcase, ShieldCheck } from 'lucide-react';
+import { 
+  X, Copy, Check, Mail, Sparkles, Award, FileEdit, Briefcase, 
+  ShieldCheck, Loader2, Wand2, AlertCircle 
+} from 'lucide-react';
 import type { ReviewerCandidate, SearchObjective } from '../types/expertSearch';
 import { generateOutreachEmail, type OutreachTone } from '../services/outreachGenerator';
+import type { LLMConfig } from '../services/llmService';
+import { DEFAULT_LLM_CONFIG } from '../services/llmService';
+import { generatePersonalizedOutreachPitch, isLlmConfigured } from '../services/aiScholarExtensions';
 
 interface OutreachModalProps {
   candidate: ReviewerCandidate | null;
   manuscriptTitle: string;
+  projectAbstract?: string;
   objective?: SearchObjective;
   onClose: () => void;
+  llmConfig?: LLMConfig;
 }
 
 export const OutreachModal: React.FC<OutreachModalProps> = ({
   candidate,
   manuscriptTitle,
+  projectAbstract = '',
   objective = 'reviewer',
-  onClose
+  onClose,
+  llmConfig = DEFAULT_LLM_CONFIG
 }) => {
   const [tone, setTone] = useState<OutreachTone>('collegial');
+  const [isGeneratingAiPitch, setIsGeneratingAiPitch] = useState<boolean>(false);
+  const [aiPitchNotice, setAiPitchNotice] = useState<string | null>(null);
 
   const defaultContext = useMemo(() => {
     switch (objective) {
@@ -53,6 +65,40 @@ export const OutreachModal: React.FC<OutreachModalProps> = ({
     setCustomContextName(newContext);
     setEditedSubject(null);
     setEditedBody(null);
+  };
+
+  const handleGenerateAiPitch = async () => {
+    if (!candidate) return;
+
+    if (!isLlmConfigured(llmConfig)) {
+      setAiPitchNotice('Optional LLM is not configured. Configure an OpenAI, Gemini, Claude, or local Ollama engine in Master Settings to enable AI pitch personalization.');
+      return;
+    }
+
+    setIsGeneratingAiPitch(true);
+    setAiPitchNotice(null);
+
+    try {
+      const res = await generatePersonalizedOutreachPitch(
+        candidate,
+        manuscriptTitle,
+        projectAbstract,
+        objective,
+        tone,
+        llmConfig
+      );
+
+      if (res) {
+        setEditedSubject(res.subject);
+        setEditedBody(res.body);
+      } else {
+        setAiPitchNotice('AI personalization could not be generated with the current model settings.');
+      }
+    } catch (err: any) {
+      setAiPitchNotice(err.message || 'AI pitch generation failed.');
+    } finally {
+      setIsGeneratingAiPitch(false);
+    }
   };
 
   if (!candidate) return null;
@@ -183,6 +229,36 @@ export const OutreachModal: React.FC<OutreachModalProps> = ({
               />
             </div>
           </div>
+
+          {/* AI Pitch Personalization Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-900/60 shadow-2xs">
+            <div>
+              <span className="font-bold text-purple-950 dark:text-purple-200 font-serif flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <span>AI Publication-Aware Pitch Tailoring</span>
+              </span>
+              <p className="text-[11px] text-purple-800/80 dark:text-purple-300 font-sans mt-0.5">
+                Analyzes {candidate.name}'s publications and your project aims to write a bespoke invitation.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGenerateAiPitch}
+              disabled={isGeneratingAiPitch}
+              className="btn-academic-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-2xs"
+            >
+              {isGeneratingAiPitch ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <Wand2 className="w-3.5 h-3.5 text-amber-300" />}
+              <span>AI Personalize Email</span>
+            </button>
+          </div>
+
+          {aiPitchNotice && (
+            <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-1.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>{aiPitchNotice}</span>
+            </div>
+          )}
 
           {/* Email Subject */}
           <div>

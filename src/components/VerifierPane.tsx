@@ -28,12 +28,19 @@ import { CITATION_STYLES } from '../services/citationFormatter';
 import type { CitationStyle } from '../types/citation';
 import { addPaperToCart } from '../services/cartService';
 import { DoiResolverTab } from './DoiResolverTab';
+import type { LLMConfig } from '../services/llmService';
+import { DEFAULT_LLM_CONFIG } from '../services/llmService';
+import { analyzeCitationForensics, isLlmConfigured, type CitationForensicReport } from '../services/aiScholarExtensions';
+import { Wand2 } from 'lucide-react';
 
 interface VerifierPaneProps {
   onAddPaperToCart?: (paper: any) => void;
+  llmConfig?: LLMConfig;
 }
 
-export const VerifierPane: React.FC<VerifierPaneProps> = () => {
+export const VerifierPane: React.FC<VerifierPaneProps> = ({
+  llmConfig = DEFAULT_LLM_CONFIG
+}) => {
   const [subTab, setSubTab] = useState<'batch' | 'single'>('batch');
   const [rawBibliography, setRawBibliography] = useState<string>('');
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
@@ -43,7 +50,37 @@ export const VerifierPane: React.FC<VerifierPaneProps> = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'verified' | 'discrepancy' | 'not_found' | 'retracted'>('all');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
+  const [forensicMap, setForensicMap] = useState<Record<string, CitationForensicReport>>({});
+  const [analyzingForensicId, setAnalyzingForensicId] = useState<string | null>(null);
+  const [forensicNotice, setForensicNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRunForensicAudit = async (item: any) => {
+    if (!isLlmConfigured(llmConfig)) {
+      setForensicNotice('Optional LLM is not configured. Configure an OpenAI, Gemini, Claude, or local Ollama engine in Master Settings to enable AI citation forensic diagnostics.');
+      return;
+    }
+
+    setAnalyzingForensicId(item.id);
+    setForensicNotice(null);
+
+    try {
+      const res = await analyzeCitationForensics(
+        item.raw,
+        item.verifiedPaper || null,
+        item.discrepancies.map((d: any) => d.message),
+        llmConfig
+      );
+
+      if (res) {
+        setForensicMap(prev => ({ ...prev, [item.id]: res }));
+      }
+    } catch (err: any) {
+      setForensicNotice(err.message || 'Forensic analysis failed.');
+    } finally {
+      setAnalyzingForensicId(null);
+    }
+  };
 
   const handleStartVerification = async () => {
     if (!rawBibliography.trim()) return;
@@ -545,6 +582,20 @@ export const VerifierPane: React.FC<VerifierPaneProps> = () => {
                 </div>
               </div>
 
+              {/* Forensic Notice Banner */}
+              {forensicNotice && (
+                <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs text-purple-900 dark:text-purple-200 flex items-center justify-between gap-2">
+                  <span>{forensicNotice}</span>
+                  <button
+                    type="button"
+                    onClick={() => setForensicNotice(null)}
+                    className="font-bold px-2 py-0.5 hover:underline cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
               {/* Cards List */}
               <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
                 {filteredResults.map((item, idx) => {
@@ -635,6 +686,62 @@ export const VerifierPane: React.FC<VerifierPaneProps> = () => {
                               <span>{d.message}</span>
                             </div>
                           ))}
+                        </div>
+                      )}
+
+                      {/* AI Citation Forensic Diagnostic (Discrepancy / Not Found) */}
+                      {(item.status === 'discrepancy' || item.status === 'not_found') && (
+                        <div className="mb-2">
+                          {forensicMap[item.id] ? (
+                            <div className="p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                                  <span className="font-bold text-purple-900 dark:text-purple-200">
+                                    AI Forensic Diagnostic:
+                                  </span>
+                                </div>
+                                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                                  forensicMap[item.id].isLikelyHallucination
+                                    ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                                    : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                                }`}>
+                                  {forensicMap[item.id].verdictTitle}
+                                </span>
+                              </div>
+                              <p className="text-slate-700 dark:text-slate-300 font-sans leading-relaxed">
+                                {forensicMap[item.id].diagnosticExplanation}
+                              </p>
+                              {forensicMap[item.id].recommendedAction && (
+                                <div className="pt-1 text-[11px] font-medium text-purple-900 dark:text-purple-300 border-t border-purple-200/60 dark:border-purple-800/60">
+                                  <span className="font-bold">Recommended Action: </span>
+                                  {forensicMap[item.id].recommendedAction}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleRunForensicAudit(item)}
+                                disabled={analyzingForensicId === item.id}
+                                className="px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 text-purple-800 dark:text-purple-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                                title="Run AI citation forensic diagnostics to determine if this discrepancy is a metadata typo or an AI hallucination"
+                              >
+                                {analyzingForensicId === item.id ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin text-purple-600" />
+                                    <span>Running AI Forensic Diagnostic...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Wand2 className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                                    <span>AI Forensic Diagnostic</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
 

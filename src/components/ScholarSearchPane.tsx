@@ -28,14 +28,19 @@ const REGION_COUNTRIES: Record<string, string[]> = {
   mea: ['ZA', 'EG', 'SA', 'AE', 'IL', 'TR', 'NG', 'KE', 'MA', 'QA']
 };
 
+import type { LLMConfig } from '../services/llmService';
+import { DEFAULT_LLM_CONFIG } from '../services/llmService';
+
 interface ScholarSearchPaneProps {
   initialTitle?: string;
   initialAbstract?: string;
+  llmConfig?: LLMConfig;
 }
 
 export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
   initialTitle = '',
   initialAbstract = '',
+  llmConfig = DEFAULT_LLM_CONFIG,
 }) => {
   const [paneMode, setPaneMode] = useState<'talent_search' | 'scholar_impact'>('talent_search');
   const [objective, setObjective] = useState<SearchObjective>('grant_coi');
@@ -334,7 +339,7 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
         </div>
 
         {paneMode === 'scholar_impact' ? (
-          <ScholarImpactTab />
+          <ScholarImpactTab llmConfig={llmConfig} />
         ) : (
           <>
             {/* 4 Dedicated Search Objectives Switcher */}
@@ -750,8 +755,10 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
       <OutreachModal
         candidate={outreachCandidate}
         manuscriptTitle={query.title || 'Scholarly Research Project'}
+        projectAbstract={query.abstract || ''}
         objective={objective}
         onClose={() => setOutreachCandidate(null)}
+        llmConfig={llmConfig}
       />
 
       {/* Roster Drawer */}

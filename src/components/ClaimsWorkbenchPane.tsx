@@ -13,13 +13,23 @@ import type { Claim } from '../types/citation';
 import { extractClaimsFromText } from '../services/claimExtractor';
 import { executeFederatedSearch } from '../services/federatedSearchEngine';
 import { addPaperToCart } from '../services/cartService';
+import type { LLMConfig } from '../services/llmService';
+import { DEFAULT_LLM_CONFIG } from '../services/llmService';
+import { 
+  synthesizeClaimConsensus, 
+  isLlmConfigured, 
+  type ClaimConsensusAnalysis 
+} from '../services/aiScholarExtensions';
+import { Sparkles, Wand2, AlertCircle, Copy, Check } from 'lucide-react';
 
 interface ClaimsWorkbenchPaneProps {
   onSendToStudio?: (draft: string, claims: Claim[]) => void;
+  llmConfig?: LLMConfig;
 }
 
 export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
   onSendToStudio,
+  llmConfig = DEFAULT_LLM_CONFIG,
 }) => {
   const [claimInput, setClaimInput] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -27,6 +37,10 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
   const [selectedClaimIndex, setSelectedClaimIndex] = useState<number>(0);
   const [evidenceMode, setEvidenceMode] = useState<'single_claim' | 'paragraph_extract'>('single_claim');
   const [errorMsg, setErrorMsg] = useState('');
+  const [consensusAnalysisMap, setConsensusAnalysisMap] = useState<Record<string, ClaimConsensusAnalysis>>({});
+  const [isAnalyzingConsensus, setIsAnalyzingConsensus] = useState(false);
+  const [consensusNotice, setConsensusNotice] = useState<string | null>(null);
+  const [copiedConsensusId, setCopiedConsensusId] = useState<string | null>(null);
 
   const sampleClaims = [
     'SGLT2 inhibitors significantly reduce all-cause mortality and heart failure hospitalizations in patients with preserved ejection fraction.',
@@ -100,6 +114,31 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
       setErrorMsg(`Claim verification failed: ${err.message}`);
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const handleRunConsensusAnalysis = async () => {
+    if (!activeClaim || !activeClaim.candidatePapers || activeClaim.candidatePapers.length === 0) return;
+
+    if (!isLlmConfigured(llmConfig)) {
+      setConsensusNotice('Optional LLM is not configured. Configure an OpenAI, Gemini, Claude, or local Ollama engine in Master Settings (gear icon) for automated GRADE certainty evaluation and deep consensus synthesis.');
+      return;
+    }
+
+    setIsAnalyzingConsensus(true);
+    setConsensusNotice(null);
+
+    try {
+      const res = await synthesizeClaimConsensus(activeClaim.text, activeClaim.candidatePapers, llmConfig);
+      if (res) {
+        setConsensusAnalysisMap(prev => ({ ...prev, [activeClaim.id]: res }));
+      } else {
+        setConsensusNotice('Consensus analysis could not be completed with the current LLM configuration.');
+      }
+    } catch (err: any) {
+      setConsensusNotice(err.message || 'Consensus evaluation failed.');
+    } finally {
+      setIsAnalyzingConsensus(false);
     }
   };
 
@@ -324,6 +363,105 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
                         None Reported
                       </div>
                     </div>
+                  </div>
+
+                  {/* AI Epistemic Consensus & GRADE Certainty Evaluation */}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50/70 via-indigo-50/50 to-blue-50/60 dark:from-purple-950/40 dark:via-indigo-950/30 dark:to-blue-950/40 border border-purple-200/80 dark:border-purple-900/60 space-y-3 shadow-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <span className="text-xs font-bold text-purple-950 dark:text-purple-200 uppercase tracking-wider font-serif">
+                          AI Evidence Consensus &amp; GRADE Certainty Synthesis
+                        </span>
+                      </div>
+
+                      {consensusAnalysisMap[activeClaim.id] ? (
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            consensusAnalysisMap[activeClaim.id].gradeRating === 'High'
+                              ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300'
+                              : consensusAnalysisMap[activeClaim.id].gradeRating === 'Moderate'
+                              ? 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950 dark:text-blue-300'
+                              : 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300'
+                          }`}>
+                            GRADE: {consensusAnalysisMap[activeClaim.id].gradeRating} Certainty
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                            {consensusAnalysisMap[activeClaim.id].verdictLabel}
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleRunConsensusAnalysis}
+                          disabled={isAnalyzingConsensus || !activeClaim.candidatePapers || activeClaim.candidatePapers.length === 0}
+                          className="btn-academic-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-2xs"
+                        >
+                          {isAnalyzingConsensus ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <Wand2 className="w-3.5 h-3.5 text-amber-300" />}
+                          <span>Evaluate GRADE Consensus with AI</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {consensusNotice && (
+                      <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <span>{consensusNotice}</span>
+                      </div>
+                    )}
+
+                    {consensusAnalysisMap[activeClaim.id] && (
+                      <div className="space-y-3 pt-1 text-xs">
+                        <div className="p-3.5 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-purple-200/70 dark:border-purple-900/70 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] uppercase font-bold text-slate-500 font-sans">
+                              Methodological Rationale:
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(consensusAnalysisMap[activeClaim.id].synthesisParagraph);
+                                  setCopiedConsensusId(activeClaim.id);
+                                  setTimeout(() => setCopiedConsensusId(null), 2500);
+                                }}
+                                className="text-xs text-blue-800 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                              >
+                                {copiedConsensusId === activeClaim.id ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                                <span>{copiedConsensusId === activeClaim.id ? 'Copied' : 'Copy Synthesis'}</span>
+                              </button>
+                              {onSendToStudio && (
+                                <button
+                                  type="button"
+                                  onClick={() => onSendToStudio(consensusAnalysisMap[activeClaim.id].synthesisParagraph, [activeClaim])}
+                                  className="text-xs text-purple-800 dark:text-purple-300 hover:underline font-semibold cursor-pointer"
+                                >
+                                  Send to Studio →
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans">
+                            {consensusAnalysisMap[activeClaim.id].gradeRationale}
+                          </p>
+                          <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 font-serif text-slate-900 dark:text-slate-100 text-xs leading-relaxed border border-slate-200 dark:border-slate-800">
+                            {consensusAnalysisMap[activeClaim.id].synthesisParagraph}
+                          </div>
+                        </div>
+
+                        {consensusAnalysisMap[activeClaim.id].keyCaveats.length > 0 && (
+                          <div className="space-y-1 text-[11px] text-slate-600 dark:text-slate-400">
+                            <span className="font-bold text-slate-700 dark:text-slate-300 block">Identified Boundary Conditions &amp; Limitations:</span>
+                            {consensusAnalysisMap[activeClaim.id].keyCaveats.map((cav, cIdx) => (
+                              <div key={cIdx} className="flex items-start gap-1.5">
+                                <span className="text-purple-600 font-bold">•</span>
+                                <span>{cav}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Supporting Peer-Reviewed Studies */}
