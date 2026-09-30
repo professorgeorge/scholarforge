@@ -15,7 +15,11 @@ import {
   MessageSquare,
   FileText,
   TrendingUp,
-  Brain
+  Brain,
+  LineChart,
+  ShieldCheck,
+  Award,
+  ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
@@ -26,12 +30,14 @@ import {
   generateExecutablePythonScript,
   generateSpssSyntax,
   generateCodebookMarkdown,
+  DISCIPLINARY_ARCHETYPES,
   type QuantitativeModelConfig,
   type QuantitativeModelType,
   type GeneratedDataset,
   type GeneratedQualitativePackage,
   type QualitativeTranscriptConfig,
-  type QualitativeDataType
+  type QualitativeDataType,
+  type DisciplinaryArchetype
 } from '../services/syntheticDataService';
 import type { LLMConfig } from '../services/llmService';
 import { callRawLLM } from '../services/llmService';
@@ -42,7 +48,7 @@ interface SyntheticDataForgePaneProps {
 }
 
 type MainTab = 'quantitative' | 'qualitative' | 'ai_prompt';
-type QuantitativeSubTab = 'data_table' | 'diagnostics' | 'exporters';
+type QuantitativeSubTab = 'data_table' | 'simple_slopes' | 'diagnostics' | 'assumptions_audit' | 'apa_results' | 'exporters';
 
 export const SyntheticDataForgePane: React.FC<SyntheticDataForgePaneProps> = ({
   llmConfig,
@@ -184,6 +190,54 @@ export const SyntheticDataForgePane: React.FC<SyntheticDataForgePaneProps> = ({
       spread: 60,
       origin: { y: 0.8 },
       colors: ['#0284c7', '#38bdf8', '#10b981']
+    });
+  };
+
+  // Load Disciplinary Canonical Archetype
+  const handleLoadArchetype = (arch: DisciplinaryArchetype) => {
+    setModelType(arch.modelType);
+    setSampleSize(arch.sampleSize);
+    if (arch.config.moderationParams) {
+      setModPredictor(arch.config.moderationParams.predictorName);
+      setModModerator(arch.config.moderationParams.moderatorName);
+      setModOutcome(arch.config.moderationParams.outcomeName);
+      setModBetaX(arch.config.moderationParams.betaPredictor);
+      setModBetaW(arch.config.moderationParams.betaModerator);
+      setModBetaInt(arch.config.moderationParams.betaInteraction);
+      setModNoiseSd(arch.config.moderationParams.noiseSd);
+    }
+    if (arch.config.mediationParams) {
+      setMedPredictor(arch.config.mediationParams.predictorName);
+      setMedMediator(arch.config.mediationParams.mediatorName);
+      setMedOutcome(arch.config.mediationParams.outcomeName);
+      setMedPathA(arch.config.mediationParams.pathA);
+      setMedPathB(arch.config.mediationParams.pathB);
+      setMedPathCDash(arch.config.mediationParams.pathCDash);
+    }
+
+    const fullConfig: QuantitativeModelConfig = {
+      modelType: arch.modelType,
+      sampleSize: arch.sampleSize,
+      missingMechanism,
+      missingRatePercent: missingRate,
+      outlierContaminationPercent: outlierRate,
+      meanCenterPredictors,
+      ...arch.config
+    } as QuantitativeModelConfig;
+
+    const ds = generateQuantitativeDataset(fullConfig);
+    setDataset(ds);
+    setTablePage(1);
+    if (arch.modelType === 'moderation') {
+      setQuantSubTab('simple_slopes');
+    } else {
+      setQuantSubTab('data_table');
+    }
+    confetti({
+      particleCount: 55,
+      spread: 70,
+      origin: { y: 0.8 },
+      colors: ['#0284c7', '#8b5cf6', '#10b981']
     });
   };
 
@@ -407,6 +461,54 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
       {mainTab === 'quantitative' && (
         <div className="space-y-6">
           
+          {/* Disciplinary Canonical Archetypes Bar */}
+          <div className="p-4.5 rounded-2xl bg-linear-to-r from-slate-50 via-blue-50/50 to-indigo-50/40 dark:from-slate-900/90 dark:via-blue-950/30 dark:to-indigo-950/20 border border-blue-100 dark:border-blue-900/40 shadow-xs space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                  <Award className="w-3.5 h-3.5" />
+                </span>
+                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Disciplinary Canonical Archetypes (1-Click Model Presets)
+                </h4>
+              </div>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                Pre-calibrated empirical structures with Aiken &amp; West centering and Hayes pathways
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {DISCIPLINARY_ARCHETYPES.map((arch) => (
+                <button
+                  key={arch.id}
+                  onClick={() => handleLoadArchetype(arch)}
+                  className="p-3 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 shadow-xs hover:shadow-md transition text-left cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80">
+                        {arch.discipline}
+                      </span>
+                      <span className="text-[10px] font-mono font-semibold text-slate-400">
+                        N = {arch.sampleSize}
+                      </span>
+                    </div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                      {arch.title}
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                      {arch.description}
+                    </p>
+                  </div>
+                  <div className="pt-2 flex items-center justify-between text-[10px] text-blue-600 dark:text-blue-400 font-semibold group-hover:translate-x-0.5 transition">
+                    <span>{arch.badge}</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Parameter Configuration Deck */}
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -746,10 +848,10 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
               )}
 
               {/* Sub-Tabs for Results Deck */}
-              <div className="flex items-center gap-1 bg-emerald-100/60 dark:bg-emerald-900/50 p-1 rounded-lg text-xs font-semibold">
+              <div className="flex flex-wrap items-center gap-1 bg-emerald-100/60 dark:bg-emerald-900/50 p-1 rounded-lg text-xs font-semibold">
                 <button
                   onClick={() => setQuantSubTab('data_table')}
-                  className={`px-3 py-1 rounded-md transition cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
                     quantSubTab === 'data_table'
                       ? 'bg-white dark:bg-slate-900 text-emerald-900 dark:text-emerald-200 shadow-xs'
                       : 'text-emerald-800 dark:text-emerald-400 hover:text-emerald-950'
@@ -758,9 +860,24 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
                   <Table className="w-3.5 h-3.5 inline mr-1" />
                   <span>Data Table ({dataset.data.length})</span>
                 </button>
+
+                {dataset.simpleSlopes && (
+                  <button
+                    onClick={() => setQuantSubTab('simple_slopes')}
+                    className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                      quantSubTab === 'simple_slopes'
+                        ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-200 shadow-xs'
+                        : 'text-blue-800 dark:text-blue-400 hover:text-blue-950'
+                    }`}
+                  >
+                    <LineChart className="w-3.5 h-3.5 inline mr-1 text-blue-600 dark:text-blue-400" />
+                    <span>Simple Slopes Plot</span>
+                  </button>
+                )}
+
                 <button
                   onClick={() => setQuantSubTab('diagnostics')}
-                  className={`px-3 py-1 rounded-md transition cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
                     quantSubTab === 'diagnostics'
                       ? 'bg-white dark:bg-slate-900 text-emerald-900 dark:text-emerald-200 shadow-xs'
                       : 'text-emerald-800 dark:text-emerald-400 hover:text-emerald-950'
@@ -769,16 +886,45 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
                   <TrendingUp className="w-3.5 h-3.5 inline mr-1" />
                   <span>Descriptives &amp; Corrs</span>
                 </button>
+
+                {dataset.assumptionAudit && (
+                  <button
+                    onClick={() => setQuantSubTab('assumptions_audit')}
+                    className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                      quantSubTab === 'assumptions_audit'
+                        ? 'bg-white dark:bg-slate-900 text-emerald-900 dark:text-emerald-200 shadow-xs'
+                        : 'text-emerald-800 dark:text-emerald-400 hover:text-emerald-950'
+                    }`}
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 inline mr-1 text-emerald-600 dark:text-emerald-400" />
+                    <span>Assumptions &amp; Power</span>
+                  </button>
+                )}
+
+                {dataset.apaResultsProse && (
+                  <button
+                    onClick={() => setQuantSubTab('apa_results')}
+                    className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                      quantSubTab === 'apa_results'
+                        ? 'bg-white dark:bg-slate-900 text-indigo-900 dark:text-indigo-200 shadow-xs'
+                        : 'text-indigo-800 dark:text-indigo-400 hover:text-indigo-950'
+                    }`}
+                  >
+                    <FileText className="w-3.5 h-3.5 inline mr-1 text-indigo-600 dark:text-indigo-400" />
+                    <span>APA 7th Prose</span>
+                  </button>
+                )}
+
                 <button
                   onClick={() => setQuantSubTab('exporters')}
-                  className={`px-3 py-1 rounded-md transition cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
                     quantSubTab === 'exporters'
                       ? 'bg-white dark:bg-slate-900 text-emerald-900 dark:text-emerald-200 shadow-xs'
                       : 'text-emerald-800 dark:text-emerald-400 hover:text-emerald-950'
                   }`}
                 >
                   <Code2 className="w-3.5 h-3.5 inline mr-1" />
-                  <span>R / Python / SPSS Exporters</span>
+                  <span>R / Python / SPSS</span>
                 </button>
               </div>
             </div>
@@ -878,6 +1024,208 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
                   >
                     Next
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sub-Tab: Aiken & West Simple Slopes Spotlight Plot */}
+          {dataset && quantSubTab === 'simple_slopes' && dataset.simpleSlopes && (
+            <div className="space-y-6">
+              <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-xs">
+                        <LineChart className="w-3.5 h-3.5" />
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
+                        Aiken &amp; West (1991) Simple Slopes Spotlight Plot
+                      </h4>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Interactive visualization of the conditional regression of Criterion Outcome on Predictor across 3 Moderator levels (-1 SD, Mean, +1 SD).
+                    </p>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex items-center gap-3 text-xs font-semibold">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                      <span className="text-slate-700 dark:text-slate-300">Low W (-1 SD)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-blue-600 inline-block"></span>
+                      <span className="text-slate-700 dark:text-slate-300">Mean W (0 SD)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-purple-600 inline-block"></span>
+                      <span className="text-slate-700 dark:text-slate-300">High W (+1 SD)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Native SVG Canvas (Zero NPM Chart Bloat) */}
+                {(() => {
+                  const sl = dataset.simpleSlopes;
+                  const pts = sl.plotPoints;
+                  const allY = [...pts.lowW, ...pts.meanW, ...pts.highW];
+                  const rawMinY = Math.min(...allY);
+                  const rawMaxY = Math.max(...allY);
+                  const yMargin = Math.max(0.4, (rawMaxY - rawMinY) * 0.15);
+                  const minY = rawMinY - yMargin;
+                  const maxY = rawMaxY + yMargin;
+                  const minX = pts.xMin;
+                  const maxX = pts.xMax;
+
+                  const svgW = 650;
+                  const svgH = 320;
+                  const padL = 65;
+                  const padR = 40;
+                  const padT = 30;
+                  const padB = 45;
+                  const plotW = svgW - padL - padR;
+                  const plotH = svgH - padT - padB;
+
+                  const getX = (val: number) => padL + ((val - minX) / Math.max(0.01, maxX - minX)) * plotW;
+                  const getY = (val: number) => (svgH - padB) - ((val - minY) / Math.max(0.01, maxY - minY)) * plotH;
+
+                  const yTicks = [
+                    minY,
+                    minY + (maxY - minY) * 0.25,
+                    minY + (maxY - minY) * 0.5,
+                    minY + (maxY - minY) * 0.75,
+                    maxY
+                  ];
+
+                  return (
+                    <div className="w-full bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <svg viewBox={`0 0 ${svgW} ${svgH}`} className="w-full h-auto select-none font-sans">
+                        {/* Background Grid Lines */}
+                        {yTicks.map((yVal, i) => {
+                          const py = getY(yVal);
+                          return (
+                            <g key={i}>
+                              <line x1={padL} y1={py} x2={svgW - padR} y2={py} stroke="currentColor" strokeDasharray="3 3" className="text-slate-200 dark:text-slate-800" strokeWidth="1" />
+                              <text x={padL - 10} y={py + 3} textAnchor="end" className="text-[10px] fill-slate-400 font-mono">
+                                {yVal.toFixed(1)}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* X Axis Ticks */}
+                        {[minX, (minX + maxX) / 2, maxX].map((xVal, i) => {
+                          const px = getX(xVal);
+                          return (
+                            <g key={i}>
+                              <line x1={px} y1={svgH - padB} x2={px} y2={padT} stroke="currentColor" strokeDasharray="3 3" className="text-slate-200 dark:text-slate-800" strokeWidth="1" />
+                              <text x={px} y={svgH - padB + 16} textAnchor="middle" className="text-[10px] fill-slate-400 font-mono">
+                                {xVal.toFixed(1)}
+                              </text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Axes lines */}
+                        <line x1={padL} y1={svgH - padB} x2={svgW - padR} y2={svgH - padB} stroke="currentColor" className="text-slate-400 dark:text-slate-600" strokeWidth="1.5" />
+                        <line x1={padL} y1={padT} x2={padL} y2={svgH - padB} stroke="currentColor" className="text-slate-400 dark:text-slate-600" strokeWidth="1.5" />
+
+                        {/* Axis Labels */}
+                        <text x={padL + plotW / 2} y={svgH - 10} textAnchor="middle" className="text-xs font-bold fill-slate-700 dark:fill-slate-300">
+                          Predictor Variable (X)
+                        </text>
+                        <text x={18} y={padT + plotH / 2} textAnchor="middle" transform={`rotate(-90 18 ${padT + plotH / 2})`} className="text-xs font-bold fill-slate-700 dark:fill-slate-300">
+                          Criterion Outcome (Y)
+                        </text>
+
+                        {/* Line 1: Low W (-1 SD) */}
+                        <line
+                          x1={getX(minX)}
+                          y1={getY(pts.lowW[0])}
+                          x2={getX(maxX)}
+                          y2={getY(pts.lowW[1])}
+                          stroke="#10b981"
+                          strokeWidth="2.5"
+                          strokeDasharray="4 2"
+                        />
+                        <circle cx={getX(minX)} cy={getY(pts.lowW[0])} r="4" fill="#10b981" />
+                        <circle cx={getX(maxX)} cy={getY(pts.lowW[1])} r="4" fill="#10b981" />
+
+                        {/* Line 2: Mean W (0 SD) */}
+                        <line
+                          x1={getX(minX)}
+                          y1={getY(pts.meanW[0])}
+                          x2={getX(maxX)}
+                          y2={getY(pts.meanW[1])}
+                          stroke="#2563eb"
+                          strokeWidth="2.5"
+                        />
+                        <circle cx={getX(minX)} cy={getY(pts.meanW[0])} r="4" fill="#2563eb" />
+                        <circle cx={getX(maxX)} cy={getY(pts.meanW[1])} r="4" fill="#2563eb" />
+
+                        {/* Line 3: High W (+1 SD) */}
+                        <line
+                          x1={getX(minX)}
+                          y1={getY(pts.highW[0])}
+                          x2={getX(maxX)}
+                          y2={getY(pts.highW[1])}
+                          stroke="#8b5cf6"
+                          strokeWidth="2.5"
+                        />
+                        <circle cx={getX(minX)} cy={getY(pts.highW[0])} r="4" fill="#8b5cf6" />
+                        <circle cx={getX(maxX)} cy={getY(pts.highW[1])} r="4" fill="#8b5cf6" />
+                      </svg>
+                    </div>
+                  );
+                })()}
+
+                {/* Slope Decomposition Table */}
+                <div className="space-y-2 pt-2">
+                  <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                    Conditional Simple Slopes at Specific Moderator Levels
+                  </h5>
+                  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        <tr>
+                          <th className="px-3 py-2">Moderator Level</th>
+                          <th className="px-3 py-2 text-right">Value (W)</th>
+                          <th className="px-3 py-2 text-right">Simple Slope (b)</th>
+                          <th className="px-3 py-2 text-right">Std. Error (SE)</th>
+                          <th className="px-3 py-2 text-right">t-statistic</th>
+                          <th className="px-3 py-2 text-right">p-value</th>
+                          <th className="px-3 py-2 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {dataset.simpleSlopes.slopes.map((s, idx) => {
+                          const color = idx === 0 ? 'text-emerald-600 dark:text-emerald-400' : idx === 1 ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400';
+                          return (
+                            <tr key={s.condition} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                              <td className={`px-3 py-2 font-bold ${color}`}>{s.condition}</td>
+                              <td className="px-3 py-2 text-right">{s.moderatorValue.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-right font-bold">{s.slope.toFixed(3)}</td>
+                              <td className="px-3 py-2 text-right">{s.se.toFixed(3)}</td>
+                              <td className="px-3 py-2 text-right">{s.tValue.toFixed(2)}</td>
+                              <td className="px-3 py-2 text-right font-bold">
+                                {s.pValue <= 0.001 ? '< .001' : s.pValue.toFixed(3)}
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                  s.pValue < 0.05
+                                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                }`}>
+                                  {s.pValue < 0.05 ? 'Significant' : 'Non-Sig'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1005,6 +1353,217 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
                 </div>
               )}
 
+            </div>
+          )}
+
+          {/* Sub-Tab: Methodological Assumptions Integrity Auditor & Power Simulator */}
+          {dataset && quantSubTab === 'assumptions_audit' && dataset.assumptionAudit && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 1. Multicollinearity & VIF */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold text-xs">
+                        VIF
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        Multicollinearity &amp; Tolerances
+                      </h4>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                      dataset.assumptionAudit.multicollinearity.status === 'pass'
+                        ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                        : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                    }`}>
+                      {dataset.assumptionAudit.multicollinearity.status.toUpperCase()} (Max VIF: {dataset.assumptionAudit.multicollinearity.maxVif})
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {dataset.assumptionAudit.multicollinearity.explanation}
+                  </p>
+                  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        <tr>
+                          <th className="px-3 py-1.5">Predictor Column</th>
+                          <th className="px-3 py-1.5 text-right">VIF Value</th>
+                          <th className="px-3 py-1.5 text-right">Tolerance (1 - R²)</th>
+                          <th className="px-3 py-1.5 text-center">Diagnostic</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {Object.entries(dataset.assumptionAudit.multicollinearity.vifValues).map(([pName, vif]) => {
+                          const tol = dataset.assumptionAudit?.multicollinearity.tolerances[pName] ?? 1.0;
+                          return (
+                            <tr key={pName} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                              <td className="px-3 py-1.5 font-bold text-slate-800 dark:text-slate-200">{pName}</td>
+                              <td className={`px-3 py-1.5 text-right font-bold ${vif > 5 ? 'text-red-600' : vif > 2.5 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                {vif}
+                              </td>
+                              <td className="px-3 py-1.5 text-right">{tol}</td>
+                              <td className="px-3 py-1.5 text-center">
+                                <span className="text-[10px] text-slate-500">
+                                  {vif < 2.5 ? '✓ Low inflation' : vif < 5.0 ? '⚠ Moderate' : '✕ High Collinearity'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 2. Residual Gaussian Normality */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold text-xs">
+                        N(0,σ)
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        Residual Gaussian Normality
+                      </h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                      {dataset.assumptionAudit.residualNormality.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {dataset.assumptionAudit.residualNormality.explanation}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center">
+                      <div className="text-[11px] text-slate-500">Residual Skewness</div>
+                      <div className="text-lg font-mono font-bold text-slate-900 dark:text-white">
+                        {dataset.assumptionAudit.residualNormality.residualSkewness}
+                      </div>
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Target: |skew| &lt; 1.0</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center">
+                      <div className="text-[11px] text-slate-500">Residual Kurtosis</div>
+                      <div className="text-lg font-mono font-bold text-slate-900 dark:text-white">
+                        {dataset.assumptionAudit.residualNormality.residualKurtosis}
+                      </div>
+                      <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Target: |kurt| &lt; 2.0</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Homoscedasticity & Equal Error Variance */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-xs">
+                        σ²
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        Homoscedasticity &amp; Equal Variance
+                      </h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                      {dataset.assumptionAudit.homoscedasticity.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {dataset.assumptionAudit.homoscedasticity.explanation}
+                  </p>
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <div>
+                      <div className="text-[11px] text-slate-500">Variance Ratio (Upper Half / Lower Half)</div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400">Tested across ascending fitted criterion values</div>
+                    </div>
+                    <div className="text-lg font-mono font-bold text-purple-600 dark:text-purple-400">
+                      {dataset.assumptionAudit.homoscedasticity.varianceRatio}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Power & Sample Size Recommender */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 flex items-center justify-center font-bold text-xs">
+                        1-β
+                      </span>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        Monte Carlo Power Simulator (1 - β)
+                      </h4>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300">
+                      Power: {(dataset.assumptionAudit.statisticalPower.currentPower * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 pt-1">
+                    <span>Rec. N (80% power): <strong className="font-mono text-emerald-600">{dataset.assumptionAudit.statisticalPower.recommendedN80}</strong></span>
+                    <span>Rec. N (90% power): <strong className="font-mono text-blue-600">{dataset.assumptionAudit.statisticalPower.recommendedN90}</strong></span>
+                  </div>
+                  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        <tr>
+                          <th className="px-2.5 py-1">Sample Size (N)</th>
+                          {dataset.assumptionAudit.statisticalPower.powerCurve.map((pt) => (
+                            <th key={pt.n} className="px-2.5 py-1 text-center">N={pt.n}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="px-2.5 py-1 font-bold text-slate-700 dark:text-slate-300">Power (1 - β)</td>
+                          {dataset.assumptionAudit.statisticalPower.powerCurve.map((pt) => (
+                            <td key={pt.n} className="px-2.5 py-1 text-center font-bold text-blue-600 dark:text-blue-400">
+                              {(pt.power * 100).toFixed(0)}%
+                            </td>
+                          ))}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sub-Tab: Publication-Ready APA 7th Results Section Prose */}
+          {dataset && quantSubTab === 'apa_results' && dataset.apaResultsProse && (
+            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold text-xs">
+                    <FileText className="w-3.5 h-3.5" />
+                  </span>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
+                    APA 7th Edition Results Section Prose
+                  </h4>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleCopy(dataset.apaResultsProse || '', 'apa_prose')}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition"
+                  >
+                    {copiedKey === 'apa_prose' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedKey === 'apa_prose' ? 'Copied' : 'Copy APA Prose'}</span>
+                  </button>
+                  {onNavigateToStudio && (
+                    <button
+                      onClick={() => onNavigateToStudio(`Results Section Draft:\n\n${dataset.apaResultsProse}`)}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-xs transition"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Insert into Manuscript Studio &rarr;</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <div className="text-[11px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Manuscript Results Section (Verbatim Draft)</div>
+                <p className="text-sm font-serif leading-loose text-slate-800 dark:text-slate-200 indent-8 selection:bg-indigo-100 selection:text-indigo-900">
+                  {dataset.apaResultsProse}
+                </p>
+              </div>
             </div>
           )}
 
@@ -1193,19 +1752,46 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
               </div>
 
               <div className="md:col-span-4 space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Participants Count
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                  <span>Participants Count (N = {participantCount})</span>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold font-mono">Max 30 Personas</span>
                 </label>
-                <select
-                  value={participantCount}
-                  onChange={(e) => setParticipantCount(parseInt(e.target.value, 10))}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs"
-                >
-                  <option value={3}>3 In-Depth Informants</option>
-                  <option value={4}>4 Purposive Informants</option>
-                  <option value={6}>6 Multi-Site Informants</option>
-                  <option value={8}>8 Stratified Informants</option>
-                </select>
+                <div className="space-y-1.5">
+                  <select
+                    value={participantCount}
+                    onChange={(e) => setParticipantCount(parseInt(e.target.value, 10))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs font-medium"
+                  >
+                    <option value={3}>3 In-Depth Informants (Micro-Cohort)</option>
+                    <option value={4}>4 Purposive Informants (Pilot Study)</option>
+                    <option value={6}>6 Multi-Site Informants (Regional Sample)</option>
+                    <option value={8}>8 Stratified Informants (Comparative Quotas)</option>
+                    <option value={10}>10 Longitudinal Informants (Extended Panel)</option>
+                    <option value={12}>12 Cross-Functional Informants (Institutional)</option>
+                    <option value={15}>15 Diverse Stakeholders (High-Variability)</option>
+                    <option value={20}>20 Thematic Saturation Cohort (Benchmark)</option>
+                    <option value={25}>25 Multi-Tier Institutional Informants</option>
+                    <option value={30}>30 Maximum Corpus (Complete 30-Persona Pool)</option>
+                  </select>
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <input
+                      type="range"
+                      min={3}
+                      max={30}
+                      value={participantCount}
+                      onChange={(e) => setParticipantCount(parseInt(e.target.value, 10))}
+                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    />
+                    <input
+                      type="number"
+                      min={3}
+                      max={30}
+                      value={participantCount}
+                      onChange={(e) => setParticipantCount(Math.min(30, Math.max(3, parseInt(e.target.value, 10) || 3)))}
+                      className="w-14 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-xs text-center font-mono font-bold text-indigo-600 dark:text-indigo-400"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1271,7 +1857,7 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
                   <Users className="w-4 h-4 text-indigo-600" />
                   <span>Purposive Participant Informant Roster</span>
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-1">
                   {qualitativePackage.participants.map((p) => (
                     <div key={p.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-1">
                       <div className="flex items-center justify-between">
