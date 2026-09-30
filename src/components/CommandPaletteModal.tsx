@@ -306,6 +306,15 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
         keywords: ['title', 'running head', 'polisher', 'metaphor', 'generator', 'headline'],
         action: () => onOpenToolbelt?.('titlePolisher')
       },
+      {
+        id: 'tool-irb-triage',
+        title: 'Micro-Blade: The IRB & Research Ethics Sentinel',
+        description: 'Prospective review track triage (Exempt, Expedited, Full Board), committee checklist, and post-approval amendments',
+        category: 'Tools & Features',
+        icon: <ShieldCheck className="w-4 h-4 text-emerald-500" />,
+        keywords: ['irb', 'ethics', 'triage', 'human subjects', 'exempt', 'expedited', 'full board', 'helsinki', 'cope', 'icmje', 'amendment', 'deviation', 'adverse event', 'george'],
+        action: () => onOpenToolbelt?.('irbTriage')
+      },
 
       // --- SCIENTOMETRIC CALCULATORS ---
       {

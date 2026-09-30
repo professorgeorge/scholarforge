@@ -25,6 +25,7 @@ import {
   X,
   Info
 } from 'lucide-react';
+import { IrbTriagePane } from './IrbTriagePane';
 import {
   matchJournalsForManuscript,
   auditManuscriptPreFlight,
@@ -127,7 +128,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   const [isInputExpanded, setIsInputExpanded] = useState<boolean>(!initialTitle && !initialAbstract);
 
   // Active Sub-Tab & View
-  const [activeSubTab, setActiveSubTab] = useState<'matchmaker' | 'sentinel'>('matchmaker');
+  const [activeSubTab, setActiveSubTab] = useState<'matchmaker' | 'sentinel' | 'irb'>('matchmaker');
   const [activeSentinelTab, setActiveSentinelTab] = useState<'editorial' | 'structural'>('editorial');
 
   // Filter States for Matchmaker
@@ -515,6 +516,21 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
                 {auditReport.overallScore}/100
               </span>
             )}
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('irb')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition cursor-pointer ${
+              activeSubTab === 'irb'
+                ? 'bg-indigo-900 dark:bg-indigo-800 text-white shadow-sm'
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>IRB &amp; Ethics Sentinel</span>
+            <span className="ml-1 text-[10px] px-2 py-0.5 rounded-full bg-indigo-950/60 text-indigo-200 border border-indigo-700 font-mono">
+              Prof. George
+            </span>
           </button>
         </div>
       </div>
@@ -1433,6 +1449,16 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
           )}
 
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SUB-TAB 3: THE IRB & RESEARCH ETHICS SENTINEL */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'irb' && (
+        <IrbTriagePane
+          onAppendToDraft={onAppendToDraft}
+          onNavigateToStudio={_onNavigateToStudio}
+        />
       )}
 
       {/* ========================================================================= */}

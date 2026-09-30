@@ -10,6 +10,7 @@ import {
   BookOpen,
   AlignLeft
 } from 'lucide-react';
+import { IrbTriagePane } from './IrbTriagePane';
 
 export interface AcademicToolbeltProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ export interface AcademicToolbeltProps {
   onSendToStudio?: (text: string) => void;
 }
 
-export type ToolbeltToolId = 'anonymizer' | 'wordBudget' | 'bibtexCleaner' | 'titlePolisher';
+export type ToolbeltToolId = 'anonymizer' | 'wordBudget' | 'bibtexCleaner' | 'titlePolisher' | 'irbTriage';
 
 export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
   isOpen,
@@ -277,6 +278,18 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
           >
             <Sparkles className="w-4 h-4" />
             <span>Title &amp; Running Head</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTool('irbTriage')}
+            className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition cursor-pointer ${
+              activeTool === 'irbTriage'
+                ? 'bg-purple-900 text-white font-bold shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>IRB &amp; Ethics Triage</span>
           </button>
         </div>
 
@@ -579,6 +592,18 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TOOL 5: THE IRB & ETHICS SENTINEL */}
+          {activeTool === 'irbTriage' && (
+            <div className="space-y-4">
+              <IrbTriagePane
+                onAppendToDraft={onSendToStudio}
+                onNavigateToStudio={() => {
+                  onClose();
+                }}
+              />
             </div>
           )}
 
