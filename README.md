@@ -70,6 +70,39 @@ Developed by **Professor Babu George**.
 
 ---
 
+## 🗡️ Swiss Army Knife Productivity (Zero-Bloat Architecture)
+
+ScholarForge is engineered as a zero-latency, bloat-free cognitive command center for researchers. Rather than burying scholars under complex multi-page submenus, the platform introduces four high-speed workflow enhancers:
+
+### 1. ⚡ Universal Command Palette ("Scholar Spotlight") — `Ctrl + K` / `Cmd + K`
+- Press `Ctrl + K` (or `Cmd + K` on macOS) anywhere across the suite for instantaneous keyboard-driven navigation.
+- **Direct Scientometric Calculations**: Type scientometric queries (e.g., `h=18 span=10`) for immediate real-time Hirsch $m$-quotient velocity calculation.
+- **DOI Resolver**: Paste any raw DOI (e.g., `10.1038/s41586-020-2649-2`) to validate format and instantly launch Crossref / OpenAlex verification.
+- **Dynamic Citation Style Switching**: Instantly switch global citation formatting across APA 7th, MLA 9, Chicago, IEEE, Harvard, Vancouver, and Nature.
+- **Fuzzy Tab & Action Navigation**: Search across all 8 functional pillars without taking your hands off the keyboard.
+
+### 2. 🎛️ Workflow Lenses (Cognitive Decluttering)
+- Focus exclusively on what matters for your immediate task with task-oriented navigation filtering in the top navbar:
+  - **Full Suite**: Complete access to all 8 pillars.
+  - **Review Lens**: Focused on Literature Search, Empirical Claims, and Reviewer Matching.
+  - **Drafting Lens**: Focused on Grounded Manuscript Studio and Bibliography Verifier.
+  - **Methods Lens**: Focused on Methodology Compass and Synthetic Data Forge.
+  - **Submission Lens**: Focused on Journal Matchmaker / Pre-Flight and Bibliography Integrity Auditor.
+
+### 3. 🛠️ Academic "Micro-Blades" Toolbelt
+Accessible anytime from the top navigation bar or `Ctrl+K`:
+- **Double-Blind Anonymizer**: Regex-powered redaction of self-citations (`(Author, 2022)`), university and institutional affiliations, IRB protocol approvals, and grant acknowledgments for blind peer review submission.
+- **Word & Character Budget Sentinel**: Live real-time character and word limit enforcement for Title ($\le 15$ words), Running Head ($\le 50$ characters), Structured Abstract ($\le 250$ words), and Highlights ($\le 85$ characters/bullet).
+- **BibTeX Key Standardizer**: Normalizes messy citation keys into clean, predictable standards (`author_year_title`, `AuthorYear`, or `AuthorYearJournal`).
+- **Title & Running Head Polisher**: Generates 4 peer-review-grade title formulations (*Metaphorical Hook : Subtitle*, *Inquiry Question*, *Methodological Specification*, and *Translational Practice*) alongside strict 50-character running heads.
+
+### 4. 📋 Universal Research Binder (Persistent Cross-Tab Scratchpad)
+- Seamless persistent scratchpad accessible via the drawer toggle in the top bar.
+- Save and organize research snippets, candidate papers, empirical claims, statistical models, and target journals from any tab.
+- **1-Click Executive Research Brief**: Automatically synthesizes clipped items into a structured Markdown research brief ready for download or direct injection into the Grounded Manuscript Studio.
+
+---
+
 ## 🚀 Quick Start (Local Development)
 
 ```bash
