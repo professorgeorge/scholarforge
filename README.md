@@ -97,5 +97,24 @@ npm run preview
 
 ---
 
-## 📄 License
-MIT License. Created by Professor Babu George.
+## 📄 License & Intellectual Property
+
+ScholarForge is released under the **[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0)](./LICENSE)**.
+
+Copyright &copy; 2025–2026 **Professor Babu George**. All rights reserved.
+
+- **Non-Commercial Academic & Research Use**: Freely accessible for scholarly inquiry, teaching, experimentation, and research verification.
+- **Mandatory Attribution**: Any use, adaptation, derivative research, or deployment must prominently attribute and cite Professor Babu George.
+- **Commercial Prohibition**: Commercial redistribution, proprietary wrapping, SaaS monetization, or closed cloning is strictly prohibited without prior express written permission.
+
+### 📚 Suggested Citation
+
+```bibtex
+@software{george2026scholarforge,
+  author = {George, Babu},
+  title = {{ScholarForge: Unified Scholarly Intelligence, Empirical Synthesis, and Reference Verification Suite}},
+  year = {2026},
+  publisher = {GitHub},
+  url = {https://github.com/professorgeorge/scholarforge}
+}
+```

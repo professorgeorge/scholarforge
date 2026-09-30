@@ -32,7 +32,7 @@ import {
   RefreshCw,
   ExternalLink,
   ShieldAlert,
-  Lock,
+  ShieldCheck,
   Users,
   Compass,
   Database
@@ -833,20 +833,20 @@ export const App: React.FC = () => {
               <span className="font-semibold text-slate-800 dark:text-slate-200">All Rights Reserved.</span>
             </div>
             <div className="text-slate-500 dark:text-slate-400 font-mono text-[11px] flex items-center gap-1.5">
-              <Lock className="w-3 h-3 text-slate-400" />
-              <span>Proprietary Academic Architecture</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+              <span>Academic License (CC BY-NC-SA 4.0)</span>
             </div>
           </div>
 
-          {/* Bottom Row: Terms of Service (Anti-Scraping / Anti-Decompilation) & Legal Disclaimer */}
+          {/* Bottom Row: Academic Terms of Service & Legal Disclaimer */}
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed space-y-2.5">
             <div>
               <div className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[9px] flex items-center gap-1 mb-0.5">
-                <Lock className="w-3 h-3 text-blue-600" />
-                <span>Terms of Service &amp; Intellectual Property Protection</span>
+                <ShieldCheck className="w-3 h-3 text-blue-600" />
+                <span>Academic Research License &amp; Intellectual Property Notice</span>
               </div>
               <p className="text-justify">
-                This software, its underlying architectures, scientometric formulations ($g$-index, $e$-index, $m$-quotient), dossier synthesizers, and algorithmic workflows are the proprietary intellectual property of Professor Babu George. Automated web scraping, crawling, decompilation, reverse-engineering, modification, sublicensing, extraction, or unauthorized commercial cloning of this platform or its constituent parts is strictly prohibited without prior express written consent.
+                ScholarForge, its software architecture, workflow synthesizers, and analytical implementations are the intellectual property of Professor Babu George, released under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0). This suite is shared openly for non-commercial academic research, teaching, and scholarly inquiry. Any use, derived research, adaptation, or deployment must prominently credit and cite Professor Babu George. Commercial redistribution, monetization, SaaS wrapping, or closed cloning is strictly prohibited without prior express written consent.
               </p>
             </div>
 

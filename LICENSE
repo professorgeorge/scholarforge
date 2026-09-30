@@ -1,0 +1,77 @@
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
+Software & Academic Research License
+
+Copyright (c) 2025–2026 Professor Babu George. All Rights Reserved.
+
+================================================================================
+TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION, AND MODIFICATION
+================================================================================
+
+Under the terms of this License, you are free to:
+
+1. SHARE: Copy, run, distribute, and communicate this software in any medium 
+   or format for non-commercial academic, educational, or research purposes.
+2. ADAPT: Remix, transform, and build upon the material for non-commercial 
+   scientific research, experimental prototyping, and academic inquiry.
+
+Subject to the following mandatory conditions:
+
+1. MANDATORY ATTRIBUTION (BY):
+   You must give appropriate credit to Professor Babu George, provide a link 
+   to the original repository (https://github.com/professorgeorge/scholarforge), 
+   and indicate if changes were made. You may do so in any reasonable manner, 
+   but not in any way that suggests the licensor endorses you or your use.
+
+   Suggested Academic Citation:
+   -----------------------------------------------------------------------------
+   APA Format:
+   George, B. (2026). ScholarForge: Unified Scholarly Intelligence, Empirical 
+   Synthesis, and Reference Verification Suite. GitHub. 
+   https://github.com/professorgeorge/scholarforge
+
+   BibTeX Format:
+   @software{george2026scholarforge,
+     author = {George, Babu},
+     title = {{ScholarForge: Unified Scholarly Intelligence, Empirical Synthesis, and Reference Verification Suite}},
+     year = {2026},
+     publisher = {GitHub},
+     url = {https://github.com/professorgeorge/scholarforge}
+   }
+   -----------------------------------------------------------------------------
+
+2. NON-COMMERCIAL USE ONLY (NC):
+   You may NOT use this material, its software architecture, synthesis workflows,
+   or algorithmic pipelines for commercial purposes. Prohibited commercial uses 
+   include, but are not limited to:
+   - Selling or licensing access to this software or any derivative version.
+   - Embedding, wrapping, or offering this software as a commercial paid service (SaaS).
+   - Monetizing through commercial paywalls, fees, or proprietary software bundles.
+   - Unauthorized commercial cloning or rebranding without express prior written consent.
+
+   Commercial licensing inquiries and organizational partnership requests should 
+   be directed to Professor Babu George.
+
+3. SHARE-ALIKE (SA):
+   If you remix, transform, or build upon the material for academic or non-commercial 
+   purposes, you must distribute your contributions under the same license terms 
+   (CC BY-NC-SA 4.0).
+
+4. NO ADDITIONAL RESTRICTIONS:
+   You may not apply legal terms or technological measures that legally restrict 
+   others from doing anything this license permits.
+
+================================================================================
+DISCLAIMER OF WARRANTY & LIMITATION OF LIABILITY
+================================================================================
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS" AND 
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND 
+NON-INFRINGEMENT ARE DISCLAIMED. IN NO EVENT SHALL PROFESSOR BABU GEORGE OR 
+CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; TOKEN USAGE EXPENSES; 
+API COSTS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+POSSIBILITY OF SUCH DAMAGE.
