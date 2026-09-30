@@ -79,7 +79,7 @@
   textarea::placeholder,
   ::placeholder {
     color: #94a3b8 !important;
-    opacity: 0.85 !important;
+    opacity: 0.55 !important;
     font-style: italic !important;
     font-weight: 400 !important;
   }
@@ -88,7 +88,7 @@
   .dark textarea::placeholder,
   .dark ::placeholder {
     color: #64748b !important;
-    opacity: 0.8 !important;
+    opacity: 0.55 !important;
     font-style: italic !important;
     font-weight: 400 !important;
   }
@@ -96,6 +96,15 @@
   input,
   textarea {
     font-style: normal;
+  }
+
+  /* Disappear instantly when user focuses or clicks inside any input/textarea so it never obstructs typing */
+  input:focus::placeholder,
+  textarea:focus::placeholder,
+  :focus::placeholder {
+    color: transparent !important;
+    opacity: 0 !important;
+    transition: opacity 0.1s ease;
   }
 }
 
