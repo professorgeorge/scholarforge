@@ -13,7 +13,8 @@ import {
   ExternalLink,
   Sparkles,
   Clock,
-  RotateCcw
+  RotateCcw,
+  Quote
 } from 'lucide-react';
 import {
   type IrbJurisdiction,
@@ -169,33 +170,37 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
     <div className="space-y-6 animate-in fade-in duration-150">
       
       {/* Banner / Header */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-blue-800/50">
-        <div className="space-y-1.5 max-w-3xl">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-700/60 border border-blue-400/40 flex items-center justify-center">
+      <div className="relative overflow-hidden p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-5 border border-blue-800/40">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+        <div className="space-y-2 max-w-3xl relative z-10">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 border border-blue-400/40 flex items-center justify-center shadow-md">
               <ShieldCheck className="w-5 h-5 text-amber-300" />
             </div>
-            <h2 className="text-xl font-bold font-serif tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold font-serif tracking-tight">
               The IRB &amp; Research Ethics Sentinel
             </h2>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-200 border border-blue-400/30">
-              Native Ethics Engine
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+              Deterministic Ethics Engine
             </span>
           </div>
-          <p className="text-xs text-blue-100/90 leading-relaxed">
-            Deterministic research ethics triage for investigators, ethics committees (IRB/REC/HREC/IEC), and peer-review journal audits. 
+          <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed font-sans">
+            Prospective ethics review track triage for investigators, committee checklists (IRB/REC/HREC/IEC), and peer-review audits. 
             Calibrated against the 2018 US Common Rule (45 CFR 46), ICMR (India), TCPS 2 (Canada), NHMRC (Australia), NHC/MOST (China), CEP/CONEP (Brazil), and the Declaration of Helsinki.
           </p>
-          <div className="flex items-center gap-2 pt-1 text-[11px] text-blue-200/80">
-            <span>Integrated Companion Tool</span>
+          <div className="flex items-center gap-3 pt-1 text-[11px] text-blue-200/80">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Offline &amp; Privacy-Preserving</span>
+            </span>
             <span>&bull;</span>
             <a
               href="https://professorgeorge.github.io/IRB-Triage/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-amber-300 hover:underline flex items-center gap-1 font-semibold"
+              className="text-amber-300 hover:text-amber-200 hover:underline flex items-center gap-1 font-semibold transition"
             >
-              <span>Standalone Web Portal</span>
+              <span>Open Standalone Web Portal</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -203,7 +208,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
 
         <button
           onClick={() => setState(DEFAULT_STATE)}
-          className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-white/10 self-start md:self-auto shrink-0"
+          className="relative z-10 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold flex items-center gap-2 transition cursor-pointer border border-white/15 shadow-sm self-start md:self-auto shrink-0 backdrop-blur-xs"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Reset Triage Answers</span>
@@ -214,16 +219,18 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <button
           onClick={() => setState(prev => ({ ...prev, mode: 'researcher' }))}
-          className={`p-4 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+          className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group ${
             state.mode === 'researcher'
-              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 shadow-sm'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 shadow-sm ring-1 ring-blue-500/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700'
           }`}
         >
           <div className="space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">Mode 01</span>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">I&rsquo;m a Researcher</h4>
-            <p className="text-xs text-slate-500">Determine likely review track and prepare documents.</p>
+            <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+              I&rsquo;m a Researcher
+            </h4>
+            <p className="text-xs text-slate-500 leading-relaxed">Determine likely review track and prepare required documents.</p>
           </div>
           <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400">
             <span>Prospective Triage &rarr;</span>
@@ -232,16 +239,18 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
 
         <button
           onClick={() => setState(prev => ({ ...prev, mode: 'reviewer' }))}
-          className={`p-4 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+          className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group ${
             state.mode === 'reviewer'
-              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 shadow-sm'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 shadow-sm ring-1 ring-blue-500/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700'
           }`}
         >
           <div className="space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">Mode 02</span>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">I&rsquo;m on an IRB / REC</h4>
-            <p className="text-xs text-slate-500">Structured committee checklist and red-flag prompts.</p>
+            <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+              I&rsquo;m on an IRB / REC
+            </h4>
+            <p className="text-xs text-slate-500 leading-relaxed">Structured committee checklist and red-flag prompts.</p>
           </div>
           <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400">
             <span>Committee Criteria &rarr;</span>
@@ -250,16 +259,18 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
 
         <button
           onClick={() => setState(prev => ({ ...prev, mode: 'manuscript' }))}
-          className={`p-4 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+          className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group ${
             state.mode === 'manuscript'
-              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 shadow-sm'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 shadow-sm ring-1 ring-blue-500/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700'
           }`}
         >
           <div className="space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">Mode 03</span>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">Manuscript Peer Reviewer</h4>
-            <p className="text-xs text-slate-500">Audit ethics disclosures against ICMJE and COPE.</p>
+            <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+              Manuscript Reviewer
+            </h4>
+            <p className="text-xs text-slate-500 leading-relaxed">Audit ethics disclosures against ICMJE and COPE.</p>
           </div>
           <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400">
             <span>Desk-Audit Verification &rarr;</span>
@@ -268,16 +279,18 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
 
         <button
           onClick={() => setState(prev => ({ ...prev, mode: 'postapproval' }))}
-          className={`p-4 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
+          className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group ${
             state.mode === 'postapproval'
-              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 shadow-sm'
-              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 shadow-sm ring-1 ring-blue-500/20'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-slate-700'
           }`}
         >
           <div className="space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">Mode 04</span>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">Study Approved / Active</h4>
-            <p className="text-xs text-slate-500">Assess amendments, adverse events, or breaches.</p>
+            <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+              Study Approved / Active
+            </h4>
+            <p className="text-xs text-slate-500 leading-relaxed">Assess amendments, adverse events, or breaches.</p>
           </div>
           <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400">
             <span>Post-Approval Action &rarr;</span>
@@ -378,13 +391,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                         key={item.id}
                         type="button"
                         onClick={() => setState(prev => ({ ...prev, purpose: item.id as any }))}
-                        className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                        className={`p-3 rounded-2xl border text-left transition-all duration-150 cursor-pointer active:scale-[0.99] ${
                           state.purpose === item.id
-                            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                            : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                            : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                         }`}
                       >
-                        <div className="font-semibold">{item.label}</div>
+                        <div className="font-semibold flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {state.purpose === item.id && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                        </div>
                         <div className="text-[10px] text-slate-500 font-normal mt-0.5">{item.desc}</div>
                       </button>
                     ))}
@@ -407,13 +423,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                         key={item.id}
                         type="button"
                         onClick={() => setState(prev => ({ ...prev, dataSource: item.id as any }))}
-                        className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                        className={`p-3 rounded-2xl border text-left transition-all duration-150 cursor-pointer active:scale-[0.99] ${
                           state.dataSource === item.id
-                            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                            : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                            : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                         }`}
                       >
-                        <div className="font-semibold">{item.label}</div>
+                        <div className="font-semibold flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {state.dataSource === item.id && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                        </div>
                         <div className="text-[10px] text-slate-500 font-normal mt-0.5">{item.desc}</div>
                       </button>
                     ))}
@@ -446,16 +465,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                           key={item.id}
                           type="button"
                           onClick={() => handleToggleActivity(item.id as IrbActivity)}
-                          className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                          className={`p-2.5 rounded-2xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between active:scale-[0.99] ${
                             selected
-                              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                              : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                              ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                              : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-1">
                             <span className="text-xs">{item.label}</span>
                             {item.tag && (
-                              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase ${
+                              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase shrink-0 ${
                                 item.tag === 'High Risk' || item.tag === 'Flag'
                                   ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                                   : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
@@ -495,16 +514,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                           key={item.id}
                           type="button"
                           onClick={() => handleTogglePopulation(item.id as IrbPopulation)}
-                          className={`p-2.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+                          className={`p-2.5 rounded-2xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between active:scale-[0.99] ${
                             selected
-                              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                              : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                              ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                              : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-1">
                             <span className="text-xs">{item.label}</span>
                             {item.tag && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 shrink-0">
                                 {item.tag}
                               </span>
                             )}
@@ -533,13 +552,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                         key={item.id}
                         type="button"
                         onClick={() => setState(prev => ({ ...prev, identifiability: item.id as any }))}
-                        className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                        className={`p-2.5 rounded-2xl border text-left transition-all duration-150 cursor-pointer active:scale-[0.99] ${
                           state.identifiability === item.id
-                            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                            : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                            : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                         }`}
                       >
-                        <div className="font-semibold text-xs">{item.label}</div>
+                        <div className="font-semibold text-xs flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {state.identifiability === item.id && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                        </div>
                         <div className="text-[10px] text-slate-500 font-normal mt-0.5">{item.desc}</div>
                       </button>
                     ))}
@@ -568,10 +590,10 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                           key={item.id}
                           type="button"
                           onClick={() => handleToggleSensitivity(item.id as IrbSensitivity)}
-                          className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                          className={`p-2.5 rounded-2xl border text-left transition-all duration-150 cursor-pointer active:scale-[0.99] ${
                             selected
-                              ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                              : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                              ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                              : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                           }`}
                         >
                           <span className="text-xs">{item.label}</span>
@@ -597,13 +619,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                         key={item.id}
                         type="button"
                         onClick={() => setState(prev => ({ ...prev, risk: item.id as any }))}
-                        className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                        className={`p-2.5 rounded-2xl border text-left transition-all duration-150 cursor-pointer active:scale-[0.99] ${
                           state.risk === item.id
-                            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                            : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                            : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                         }`}
                       >
-                        <div className="font-semibold text-xs">{item.label}</div>
+                        <div className="font-semibold text-xs flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {state.risk === item.id && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                        </div>
                         <div className="text-[10px] text-slate-500 font-normal mt-0.5">{item.desc}</div>
                       </button>
                     ))}
@@ -632,13 +657,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                         key={item.id}
                         type="button"
                         onClick={() => setState(prev => ({ ...prev, changeType: item.id as IrbChangeType }))}
-                        className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                        className={`p-3 rounded-2xl border text-left transition-all duration-150 cursor-pointer active:scale-[0.99] ${
                           state.changeType === item.id
-                            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                            : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                            : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                         }`}
                       >
-                        <div className="font-semibold">{item.label}</div>
+                        <div className="font-semibold flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {state.changeType === item.id && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                        </div>
                         <div className="text-[10px] text-slate-500 font-normal mt-0.5">{item.desc}</div>
                       </button>
                     ))}
@@ -659,13 +687,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                         key={item.id}
                         type="button"
                         onClick={() => setState(prev => ({ ...prev, changeStatus: item.id as IrbChangeStatus }))}
-                        className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                        className={`p-3 rounded-2xl border text-left transition-all duration-150 cursor-pointer active:scale-[0.99] ${
                           state.changeStatus === item.id
-                            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                            : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                            : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                         }`}
                       >
-                        <div className="font-semibold">{item.label}</div>
+                        <div className="font-semibold flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {state.changeStatus === item.id && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                        </div>
                         <div className="text-[10px] text-slate-500 font-normal mt-0.5">{item.desc}</div>
                       </button>
                     ))}
@@ -687,13 +718,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                         key={item.id}
                         type="button"
                         onClick={() => setState(prev => ({ ...prev, changeRisk: item.id as IrbChangeRisk }))}
-                        className={`p-2.5 rounded-xl border text-left transition cursor-pointer ${
+                        className={`p-2.5 rounded-2xl border text-left transition-all duration-150 cursor-pointer active:scale-[0.99] ${
                           state.changeRisk === item.id
-                            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold'
-                            : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 text-blue-900 dark:text-blue-100 font-bold ring-2 ring-blue-500/20 shadow-xs'
+                            : 'bg-slate-50/60 dark:bg-slate-950/60 border-slate-200/90 dark:border-slate-800/90 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:shadow-xs'
                         }`}
                       >
-                        <div className="font-semibold text-xs">{item.label}</div>
+                        <div className="font-semibold text-xs flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {state.changeRisk === item.id && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                        </div>
                         <div className="text-[10px] text-slate-500 font-normal mt-0.5">{item.desc}</div>
                       </button>
                     ))}
@@ -757,14 +791,14 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
         <div className="lg:col-span-5 space-y-6">
 
           {/* Live Verdict Card */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm sticky top-4">
+          <div className="p-5 sm:p-6 rounded-3xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-800/90 space-y-4 shadow-lg sticky top-4 ring-1 ring-slate-900/5 dark:ring-white/5">
             
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                <Compass className="w-3.5 h-3.5 text-blue-700" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
                 <span>Deterministic Verdict</span>
               </span>
-              <span className={`text-xs font-bold px-3 py-1 rounded-full border uppercase tracking-wider ${badgeColor}`}>
+              <span className={`text-xs font-bold px-3 py-1 rounded-full border uppercase tracking-wider shadow-xs ${badgeColor}`}>
                 {assessment.verdict.replace('_', ' ')}
               </span>
             </div>
@@ -779,14 +813,19 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
             </div>
 
             {/* Submission Audit Meter */}
-            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 space-y-2">
+            <div className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-950/80 border border-slate-200/80 dark:border-slate-800/80 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold">
-                <span className="text-slate-700 dark:text-slate-300">Triage Readiness Score</span>
-                <span className="text-blue-600 dark:text-blue-400">{audit.passed} of {audit.total} Checked</span>
+                <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>Triage Readiness Score</span>
+                </span>
+                <span className="text-blue-700 dark:text-blue-400 font-mono text-[11px] font-bold">
+                  {audit.passed} of {audit.total} Checked
+                </span>
               </div>
               <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                 <div
-                  className="h-full bg-blue-600 transition-all duration-300"
+                  className="h-full rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 transition-all duration-500"
                   style={{ width: `${(audit.passed / audit.total) * 100}%` }}
                 />
               </div>
@@ -830,7 +869,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
             {/* Required Submission Documents */}
             <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <FileText className="w-3.5 h-3.5 text-blue-700" />
+                <FileText className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
                 <span>Documents You Will Likely Need:</span>
               </span>
               <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
@@ -846,7 +885,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
             {/* Jurisdiction Specific Statutory Notes */}
             <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                 <span>Jurisdiction Statutory Guidelines:</span>
               </span>
               <ul className="space-y-1 text-[11px] text-slate-600 dark:text-slate-400">
@@ -860,15 +899,15 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
             </div>
 
             {/* Formal Ethics Declaration Generator */}
-            <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 space-y-3">
+            <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/90 dark:border-blue-900/90 space-y-3 shadow-xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-200">
-                  <ShieldCheck className="w-4 h-4 text-blue-700" />
+                  <ShieldCheck className="w-4 h-4 text-blue-700 dark:text-blue-400" />
                   <span>Formal Ethics Statement Generator</span>
                 </div>
                 <button
                   onClick={() => handleCopy(formalStatement, 'statement')}
-                  className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
                 >
                   {copiedKey === 'statement' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedKey === 'statement' ? 'Copied' : 'Copy'}</span>
@@ -877,33 +916,34 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Institution Body:</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Institution Body:</label>
                   <input
                     type="text"
                     value={institutionName}
                     onChange={e => setInstitutionName(e.target.value)}
-                    className="w-full px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs"
+                    className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Protocol / Approval Ref:</label>
+                  <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Protocol / Approval Ref:</label>
                   <input
                     type="text"
                     value={protocolId}
                     onChange={e => setProtocolId(e.target.value)}
-                    className="w-full px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-mono"
+                    className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   />
                 </div>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-serif italic">
+              <div className="relative p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-serif italic shadow-inner">
+                <Quote className="w-4 h-4 text-blue-400/30 absolute top-2 right-2 pointer-events-none" />
                 &ldquo;{formalStatement}&rdquo;
               </div>
 
               <div className="flex items-center gap-2 pt-1">
                 <button
                   onClick={handleSendToStudio}
-                  className="flex-1 px-3 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+                  className="flex-1 px-3 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 active:scale-[0.98] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>{appendedToStudio ? 'Appended to Active Studio Draft!' : 'Send Declaration to Studio'}</span>
@@ -911,7 +951,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                 {onNavigateToStudio && (
                   <button
                     onClick={onNavigateToStudio}
-                    className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition cursor-pointer"
+                    className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-300 font-bold text-xs transition cursor-pointer"
                   >
                     View Studio
                   </button>

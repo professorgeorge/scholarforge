@@ -478,35 +478,39 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
       </div>
 
       {/* Primary Sub-Tab Switcher */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setActiveSubTab('matchmaker')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition cursor-pointer ${
+            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all duration-150 cursor-pointer active:scale-[0.98] ${
               activeSubTab === 'matchmaker'
-                ? 'bg-blue-900 dark:bg-blue-800 text-white shadow-sm'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                ? 'bg-blue-900 dark:bg-blue-800 text-white shadow-md ring-2 ring-blue-500/20'
+                : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
             }`}
           >
-            <Compass className="w-4 h-4" />
+            <Compass className="w-4 h-4 text-blue-400" />
             <span>Journal Matchmaker &amp; Impact Discovery</span>
-            <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-blue-950/60 text-blue-200 border border-blue-700">
+            <span className={`ml-1 text-[11px] px-2 py-0.5 rounded-full font-mono ${
+              activeSubTab === 'matchmaker'
+                ? 'bg-blue-950 text-blue-200 border border-blue-700'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+            }`}>
               {journals.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveSubTab('sentinel')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition cursor-pointer ${
+            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all duration-150 cursor-pointer active:scale-[0.98] ${
               activeSubTab === 'sentinel'
-                ? 'bg-emerald-800 dark:bg-emerald-700 text-white shadow-sm'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                ? 'bg-emerald-900 dark:bg-emerald-800 text-white shadow-md ring-2 ring-emerald-500/20'
+                : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
             }`}
           >
-            <ShieldCheck className="w-4 h-4" />
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>Desk-Rejection Pre-Flight Sentinel</span>
             {auditReport && (
-              <span className={`ml-1 text-xs px-2 py-0.5 rounded-full font-bold ${
+              <span className={`ml-1 text-[11px] px-2 py-0.5 rounded-full font-bold ${
                 auditReport.overallScore >= 80 
                   ? 'bg-emerald-950 text-emerald-200' 
                   : auditReport.overallScore >= 60 
@@ -520,10 +524,10 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
 
           <button
             onClick={() => setActiveSubTab('irb')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition cursor-pointer ${
+            className={`px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all duration-150 cursor-pointer active:scale-[0.98] ${
               activeSubTab === 'irb'
-                ? 'bg-indigo-900 dark:bg-indigo-800 text-white shadow-sm'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                ? 'bg-indigo-900 dark:bg-indigo-800 text-white shadow-md ring-2 ring-indigo-500/20'
+                : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
             }`}
           >
             <ShieldCheck className="w-4 h-4 text-emerald-400" />

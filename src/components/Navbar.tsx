@@ -391,14 +391,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             
             {/* The 8 Pillar Navigation Tabs */}
-            <nav className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none flex-nowrap sm:flex-wrap text-xs font-semibold py-0.5">
+            <nav className="flex flex-wrap items-center gap-1 sm:gap-1.5 text-xs font-semibold py-0.5">
               
               {visiblePillars.includes('literature') && (
                 <button
                   onClick={() => onSelectPillar('literature')}
-                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                     activePillar === 'literature'
-                      ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700 font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700 font-bold ring-2 ring-blue-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
                   }`}
                 >
@@ -410,9 +410,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               {visiblePillars.includes('studio') && (
                 <button
                   onClick={() => onSelectPillar('studio')}
-                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                     activePillar === 'studio'
-                      ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700 font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700 font-bold ring-2 ring-blue-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
                   }`}
                 >
@@ -424,9 +424,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               {visiblePillars.includes('claims') && (
                 <button
                   onClick={() => onSelectPillar('claims')}
-                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                     activePillar === 'claims'
-                      ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700 font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs border border-slate-200 dark:border-slate-700 font-bold ring-2 ring-blue-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
                   }`}
                 >
@@ -438,9 +438,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               {visiblePillars.includes('verify') && (
                 <button
                   onClick={() => onSelectPillar('verify')}
-                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                     activePillar === 'verify'
-                      ? 'bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-400 shadow-xs border border-emerald-300 dark:border-emerald-800 font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-400 shadow-xs border border-emerald-300 dark:border-emerald-800 font-bold ring-2 ring-emerald-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
                   }`}
                 >
@@ -452,9 +452,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               {visiblePillars.includes('scholars') && (
                 <button
                   onClick={() => onSelectPillar('scholars')}
-                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                     activePillar === 'scholars'
-                      ? 'bg-white dark:bg-slate-900 text-indigo-900 dark:text-indigo-400 shadow-xs border border-indigo-200 dark:border-indigo-800 font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-indigo-900 dark:text-indigo-400 shadow-xs border border-indigo-200 dark:border-indigo-800 font-bold ring-2 ring-indigo-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
                   }`}
                 >
@@ -466,9 +466,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               {visiblePillars.includes('journal') && (
                 <button
                   onClick={() => onSelectPillar('journal')}
-                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                     activePillar === 'journal'
-                      ? 'bg-white dark:bg-slate-900 text-teal-800 dark:text-teal-400 shadow-xs border border-teal-200 dark:border-teal-800 font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-teal-800 dark:text-teal-400 shadow-xs border border-teal-200 dark:border-teal-800 font-bold ring-2 ring-teal-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
                   }`}
                 >
@@ -480,9 +480,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               {visiblePillars.includes('methodology') && (
                 <button
                   onClick={() => onSelectPillar('methodology')}
-                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                     activePillar === 'methodology'
-                      ? 'bg-white dark:bg-slate-900 text-red-900 dark:text-red-400 shadow-xs border border-red-200 dark:border-red-800 font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-red-900 dark:text-red-400 shadow-xs border border-red-200 dark:border-red-800 font-bold ring-2 ring-red-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
                   }`}
                 >
@@ -494,9 +494,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               {visiblePillars.includes('synthetic') && (
                 <button
                   onClick={() => onSelectPillar('synthetic')}
-                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
                     activePillar === 'synthetic'
-                      ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs border border-blue-200 dark:border-blue-800 font-bold'
+                      ? 'bg-white dark:bg-slate-900 text-blue-900 dark:text-blue-400 shadow-xs border border-blue-200 dark:border-blue-800 font-bold ring-2 ring-blue-500/20'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
                   }`}
                 >
