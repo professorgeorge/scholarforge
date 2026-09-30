@@ -101,7 +101,7 @@ npm run preview
 
 ScholarForge is released under the **[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0)](./LICENSE)**.
 
-Copyright &copy; 2025–2026 **Professor Babu George**. All rights reserved.
+Copyright &copy; 2025–2026 **Professor Babu George**. Some rights reserved (CC BY-NC-SA 4.0).
 
 - **Non-Commercial Academic & Research Use**: Freely accessible for scholarly inquiry, teaching, experimentation, and research verification.
 - **Mandatory Attribution**: Any use, adaptation, derivative research, or deployment must prominently attribute and cite Professor Babu George.

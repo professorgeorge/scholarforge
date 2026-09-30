@@ -800,7 +800,7 @@ export const App: React.FC = () => {
                 <span className="font-medium text-slate-700 dark:text-slate-300">Unified Scholarly Intelligence Suite</span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-sans">
-                Manuscript Grounding • Synthetic Data Forge • DOI Verifier • PICO Matrix • Scientometrics ($g$-index, $e$-index, $m$-quotient)
+                Manuscript Grounding • Synthetic Data Forge • DOI Verifier • PICO Matrix • Scientometrics (<em>h</em>-index, <em>g</em>-index, <em>e</em>-index, <em>m</em>-quotient)
               </p>
             </div>
 
@@ -816,7 +816,7 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Middle Row: Proprietary Copyright & Authorship Declaration */}
+          {/* Middle Row: Copyright & Authorship Declaration */}
           <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="text-slate-700 dark:text-slate-300 font-sans font-medium flex flex-wrap items-center gap-1.5">
               <span>Copyright &copy; 2026</span>
@@ -830,7 +830,7 @@ export const App: React.FC = () => {
                 <ExternalLink className="w-3 h-3 inline" />
               </a>
               <span className="text-slate-400">•</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">All Rights Reserved.</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">Some Rights Reserved (CC BY-NC-SA 4.0)</span>
             </div>
             <div className="text-slate-500 dark:text-slate-400 font-mono text-[11px] flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
