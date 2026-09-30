@@ -1,6 +1,6 @@
 /**
  * IRB Triage & Research Ethics Decision Engine
- * Based on "The IRB Triage" by Prof. Babu George (https://professorgeorge.github.io/IRB-Triage/)
+ * Integrated natively into ScholarForge from the companion IRB-Triage suite.
  * 
  * Provides deterministic evaluation for:
  * 1. Researcher Review Track Triage (Exempt, Expedited, Full Board, Not Human Subjects Research)

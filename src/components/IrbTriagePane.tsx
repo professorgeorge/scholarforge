@@ -179,15 +179,15 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
               The IRB &amp; Research Ethics Sentinel
             </h2>
             <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-200 border border-blue-400/30">
-              Swiss Army Companion
+              Native Ethics Engine
             </span>
           </div>
           <p className="text-xs text-blue-100/90 leading-relaxed">
-            Deterministic triage for investigators, ethics committees (IRB/REC/HREC), and peer-review journal audits. 
-            Calibrated against the 2018 US Common Rule (45 CFR 46), ICMR (India), TCPS 2 (Canada), NHMRC (Australia), NHC/MOST (China), CEP/CONEP (Brazil), and Declaration of Helsinki.
+            Deterministic research ethics triage for investigators, ethics committees (IRB/REC/HREC/IEC), and peer-review journal audits. 
+            Calibrated against the 2018 US Common Rule (45 CFR 46), ICMR (India), TCPS 2 (Canada), NHMRC (Australia), NHC/MOST (China), CEP/CONEP (Brazil), and the Declaration of Helsinki.
           </p>
           <div className="flex items-center gap-2 pt-1 text-[11px] text-blue-200/80">
-            <span>Original concept and curation by <strong>Prof. Babu George</strong></span>
+            <span>Integrated Companion Tool</span>
             <span>&bull;</span>
             <a
               href="https://professorgeorge.github.io/IRB-Triage/"
@@ -195,7 +195,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
               rel="noopener noreferrer"
               className="text-amber-300 hover:underline flex items-center gap-1 font-semibold"
             >
-              <span>View Standalone IRB-Triage Web App</span>
+              <span>Standalone Web Portal</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>

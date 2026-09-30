@@ -528,9 +528,6 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
           >
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>IRB &amp; Ethics Sentinel</span>
-            <span className="ml-1 text-[10px] px-2 py-0.5 rounded-full bg-indigo-950/60 text-indigo-200 border border-indigo-700 font-mono">
-              Prof. George
-            </span>
           </button>
         </div>
       </div>
