@@ -7,7 +7,8 @@ import {
   ExternalLink, 
   BookOpen, 
   BookmarkPlus, 
-  Scale 
+  Scale,
+  SlidersHorizontal 
 } from 'lucide-react';
 import type { Claim } from '../types/citation';
 import { extractClaimsFromText } from '../services/claimExtractor';
@@ -22,14 +23,24 @@ import {
 } from '../services/aiScholarExtensions';
 import { Sparkles, Wand2, AlertCircle, Copy, Check } from 'lucide-react';
 
+import type { CitationOptions } from '../types/citation';
+
 interface ClaimsWorkbenchPaneProps {
   onSendToStudio?: (draft: string, claims: Claim[]) => void;
   llmConfig?: LLMConfig;
+  sensitivity?: 'all' | 'moderate' | 'high';
+  setSensitivity?: (s: 'all' | 'moderate' | 'high') => void;
+  options?: CitationOptions;
+  setOptions?: React.Dispatch<React.SetStateAction<CitationOptions>>;
 }
 
 export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
   onSendToStudio,
   llmConfig = DEFAULT_LLM_CONFIG,
+  sensitivity = 'moderate',
+  setSensitivity,
+  options,
+  setOptions,
 }) => {
   const [claimInput, setClaimInput] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -62,6 +73,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
         const result = await executeFederatedSearch(claimInput, {
           limitPerSource: 6,
           searchScope: 'default',
+          excludePreprints: options?.excludePreprints,
         });
 
         const newClaim: Claim = {
@@ -85,10 +97,10 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
         setTestedClaims([newClaim, ...testedClaims]);
         setSelectedClaimIndex(0);
       } else {
-        // Paragraph extract mode
-        const extracted = extractClaimsFromText(claimInput, 'all');
+        // Paragraph extract mode: uses active sensitivity setting!
+        const extracted = extractClaimsFromText(claimInput, sensitivity);
         if (extracted.length === 0) {
-          setErrorMsg('No empirical claims detected in the pasted text. Try pasting a complete abstract or research paragraph.');
+          setErrorMsg('No empirical claims detected in the pasted text under current sensitivity. Try selecting "Thorough" sensitivity or pasting a complete abstract.');
           setIsVerifying(false);
           return;
         }
@@ -97,7 +109,10 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
         for (let idx = 0; idx < Math.min(extracted.length, 5); idx++) {
           const c = extracted[idx];
           const query = c.searchQueries[0] || c.text;
-          const result = await executeFederatedSearch(query, { limitPerSource: 4 });
+          const result = await executeFederatedSearch(query, { 
+            limitPerSource: 4,
+            excludePreprints: options?.excludePreprints 
+          });
           batchClaims.push({
             ...c,
             candidatePapers: result.papers,
@@ -190,6 +205,81 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
           >
             Extract Claims from Paragraph
           </button>
+        </div>
+      </div>
+
+      {/* Contextual Settings Bar: Claim Sensitivity & Quality Filters */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
+            <span>Detection Sensitivity:</span>
+          </div>
+
+          <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-300 dark:border-slate-800 font-medium">
+            <button
+              type="button"
+              onClick={() => setSensitivity && setSensitivity('high')}
+              className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                sensitivity === 'high'
+                  ? 'bg-blue-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Strict: Focuses on numeric findings, statistical metrics, and direct causal claims"
+            >
+              Strict
+            </button>
+            <button
+              type="button"
+              onClick={() => setSensitivity && setSensitivity('moderate')}
+              className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                sensitivity === 'moderate'
+                  ? 'bg-blue-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Balanced: Detects empirical, scientific, and technical assertions"
+            >
+              Balanced
+            </button>
+            <button
+              type="button"
+              onClick={() => setSensitivity && setSensitivity('all')}
+              className={`px-2.5 py-1 rounded-md transition cursor-pointer ${
+                sensitivity === 'all'
+                  ? 'bg-blue-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Thorough: Cites almost every factual declarative sentence"
+            >
+              Thorough
+            </button>
+          </div>
+
+          <span className="text-[11px] text-slate-500 hidden sm:inline font-sans">
+            {sensitivity === 'high' && 'Strict: Numbers, statistical metrics & causal links'}
+            {sensitivity === 'moderate' && 'Balanced: Standard empirical & scientific assertions'}
+            {sensitivity === 'all' && 'Thorough: Cites every factual sentence'}
+          </span>
+        </div>
+
+        {/* Quality Filters & Sync Indicator */}
+        <div className="flex items-center gap-4">
+          {options && setOptions && (
+            <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+              <input
+                type="checkbox"
+                checked={options.excludePreprints}
+                onChange={(e) => setOptions((prev) => ({ ...prev, excludePreprints: e.target.checked }))}
+                className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+              />
+              <span>Exclude Preprints</span>
+            </label>
+          )}
+
+          <span className="text-[11px] text-blue-800 dark:text-blue-300 font-medium flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Synced with Settings</span>
+          </span>
         </div>
       </div>
 

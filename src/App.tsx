@@ -45,7 +45,11 @@ export const App: React.FC = () => {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
-  const [sensitivity, setSensitivity] = useState<'all' | 'moderate' | 'high'>('moderate');
+  const [sensitivity, setSensitivity] = useState<'all' | 'moderate' | 'high'>(() => {
+    const saved = localStorage.getItem('scholarforge_claim_sensitivity');
+    if (saved === 'all' || saved === 'moderate' || saved === 'high') return saved;
+    return 'moderate';
+  });
   const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
   const [manualSearchClaim, setManualSearchClaim] = useState<Claim | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
@@ -107,15 +111,41 @@ export const App: React.FC = () => {
   const [rebuttalPackage, setRebuttalPackage] = useState<PeerReviewOverhaulResult | null>(null);
   const [originalPreRevisionText, setOriginalPreRevisionText] = useState<string>('');
 
-  const [options, setOptions] = useState<CitationOptions>({
-    style: 'apa',
-    includeDoi: true,
-    includeAbstracts: true,
-    maxAuthorsInText: 3,
-    linkCitations: true,
-    excludePreprints: true,
-    requireDoi: true,
+  const [options, setOptions] = useState<CitationOptions>(() => {
+    const saved = localStorage.getItem('scholarforge_citation_options');
+    if (saved) {
+      try {
+        return {
+          style: 'apa',
+          includeDoi: true,
+          includeAbstracts: true,
+          maxAuthorsInText: 3,
+          linkCitations: true,
+          excludePreprints: true,
+          requireDoi: true,
+          ...JSON.parse(saved)
+        };
+      } catch {}
+    }
+    return {
+      style: 'apa',
+      includeDoi: true,
+      includeAbstracts: true,
+      maxAuthorsInText: 3,
+      linkCitations: true,
+      excludePreprints: true,
+      requireDoi: true,
+    };
   });
+
+  // Keep options and sensitivity synchronized in localStorage
+  useEffect(() => {
+    localStorage.setItem('scholarforge_citation_options', JSON.stringify(options));
+  }, [options]);
+
+  useEffect(() => {
+    localStorage.setItem('scholarforge_claim_sensitivity', sensitivity);
+  }, [sensitivity]);
 
   const [llmConfig, setLlmConfig] = useState<LLMConfig>(() => {
     const saved = localStorage.getItem('citation_filler_llm_config');
@@ -224,6 +254,44 @@ export const App: React.FC = () => {
       origin: { y: 0.8 },
       colors: ['#1e3a8a', '#2563eb', '#065f46'],
     });
+  };
+
+  // Re-extract claims from the current manuscript using an updated sensitivity setting
+  const handleReExtractClaims = (newSensitivity: 'all' | 'moderate' | 'high') => {
+    if (!inputText.trim()) return;
+    setSensitivity(newSensitivity);
+
+    const extractedClaims = extractClaimsFromText(inputText, newSensitivity);
+    if (extractedClaims.length === 0) {
+      setClaims([]);
+      return;
+    }
+
+    const existingPaperMap = new Map<string, AcademicPaper>();
+    claims.forEach((c) => {
+      if (c.selectedPaper) {
+        existingPaperMap.set(c.text.trim().toLowerCase(), c.selectedPaper);
+      }
+    });
+
+    const candidatePool = uniquePapers.length > 0 ? uniquePapers : [];
+
+    const updatedClaims: Claim[] = extractedClaims.map((claim, idx) => {
+      const match = existingPaperMap.get(claim.text.trim().toLowerCase());
+      const selected = match || (candidatePool.length > 0 ? candidatePool[idx % candidatePool.length] : null);
+      return {
+        ...claim,
+        candidatePapers: candidatePool,
+        selectedPaper: selected,
+        status: selected ? 'found' : 'not_found',
+        confidence: selected ? 'high' : 'medium',
+        isExcluded: false,
+        citationNumber: idx + 1,
+      };
+    });
+
+    setClaims(updatedClaims);
+    setSelectedClaimId(null);
   };
 
   // Called when AI synthesizes a new grounded manuscript
@@ -428,6 +496,7 @@ export const App: React.FC = () => {
                 setActivePillar('studio');
               }}
               options={options}
+              setOptions={setOptions}
               llmConfig={llmConfig}
             />
           </div>
@@ -438,6 +507,10 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200">
             <ClaimsWorkbenchPane
               llmConfig={llmConfig}
+              sensitivity={sensitivity}
+              setSensitivity={setSensitivity}
+              options={options}
+              setOptions={setOptions}
               onSendToStudio={(draft, newClaims) => {
                 setInputText(draft);
                 setClaims(newClaims);
@@ -522,6 +595,9 @@ export const App: React.FC = () => {
                   }}
                   onLoadSample={handleLoadExemplarManuscript}
                   options={options}
+                  setOptions={setOptions}
+                  sensitivity={sensitivity}
+                  setSensitivity={setSensitivity}
                   llmConfig={llmConfig}
                   onOpenSettings={() => setIsSettingsOpen(true)}
                   isProcessing={isProcessing}
@@ -613,6 +689,7 @@ export const App: React.FC = () => {
                       originalText={inputText}
                       claims={claims}
                       options={options}
+                      setOptions={setOptions}
                       rebuttalPackage={rebuttalPackage}
                       originalPreRevisionText={originalPreRevisionText}
                       onFocusClaim={(claimId) => {
@@ -636,6 +713,9 @@ export const App: React.FC = () => {
                       onToggleExclude={handleToggleExclude}
                       onOpenManualSearch={(c) => setManualSearchClaim(c)}
                       onRetrySearch={(c) => handleRetrySearch(c.id)}
+                      sensitivity={sensitivity}
+                      setSensitivity={setSensitivity}
+                      onReExtractClaims={handleReExtractClaims}
                     />
                   </div>
 

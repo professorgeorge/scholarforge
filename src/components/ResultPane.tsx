@@ -49,6 +49,7 @@ interface ResultPaneProps {
   originalText: string;
   claims: Claim[];
   options: CitationOptions;
+  setOptions?: React.Dispatch<React.SetStateAction<CitationOptions>>;
   rebuttalPackage?: PeerReviewOverhaulResult | null;
   originalPreRevisionText?: string;
   onFocusClaim: (claimId: string) => void;
@@ -62,6 +63,7 @@ export const ResultPane: React.FC<ResultPaneProps> = ({
   originalText,
   claims,
   options,
+  setOptions,
   rebuttalPackage,
   originalPreRevisionText,
   onFocusClaim,
@@ -353,9 +355,39 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
             {showRevisionPanel ? <ChevronUp className="w-3 h-3 ml-0.5" /> : <ChevronDown className="w-3 h-3 ml-0.5" />}
           </button>
 
-          <span className="text-xs px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-semibold font-sans">
-            {currentStyleInfo.name}
-          </span>
+          {setOptions ? (
+            <div className="flex items-center gap-1.5">
+              <select
+                value={options.style}
+                onChange={(e) => setOptions((prev) => ({ ...prev, style: e.target.value as any }))}
+                className="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-700"
+                title="Change Citation Format live"
+              >
+                {CITATION_STYLES.map((st) => (
+                  <option key={st.id} value={st.id}>
+                    {st.shortName || st.name}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={() => setOptions((prev) => ({ ...prev, includeDoi: !prev.includeDoi }))}
+                className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium cursor-pointer transition ${
+                  options.includeDoi
+                    ? 'bg-blue-900 text-white border-blue-900 shadow-2xs font-semibold'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:bg-slate-50'
+                }`}
+                title={options.includeDoi ? 'Clickable DOI URLs included in references' : 'Clickable DOI URLs omitted'}
+              >
+                {options.includeDoi ? 'DOIs: ON' : 'DOIs: OFF'}
+              </button>
+            </div>
+          ) : (
+            <span className="text-xs px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-semibold font-sans">
+              {currentStyleInfo.name}
+            </span>
+          )}
         </div>
       </div>
 
@@ -687,10 +719,24 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
             {/* Bibliography Section */}
             {bibliographyHtml.length > 0 && (
               <div className="mt-10 pt-6 border-t border-slate-200 dark:border-slate-800">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2 font-serif">
-                  <BookOpen className="w-5 h-5 text-blue-800 dark:text-blue-400" />
-                  <span>{options.style === 'mla' ? 'Works Cited' : 'References'}</span>
-                </h3>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 font-serif">
+                    <BookOpen className="w-5 h-5 text-blue-800 dark:text-blue-400" />
+                    <span>{options.style === 'mla' ? 'Works Cited' : 'References'}</span>
+                  </h3>
+
+                  {setOptions && (
+                    <label className="flex items-center gap-2 text-xs font-sans text-slate-600 dark:text-slate-400 cursor-pointer font-medium">
+                      <input
+                        type="checkbox"
+                        checked={options.includeDoi}
+                        onChange={(e) => setOptions((prev) => ({ ...prev, includeDoi: e.target.checked }))}
+                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                      />
+                      <span>Include Clickable DOI URLs (https://doi.org/...)</span>
+                    </label>
+                  )}
+                </div>
 
                 <div className="space-y-3 font-serif text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
                   {bibliographyHtml.map((entryHtml, idx) => (

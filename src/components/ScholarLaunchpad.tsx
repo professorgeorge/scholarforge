@@ -17,7 +17,9 @@ import {
   Settings2,
   Trash2,
   MessageSquarePlus,
-  Wand2
+  Wand2,
+  ShieldCheck,
+  SlidersHorizontal
 } from 'lucide-react';
 import type { CitationOptions, Claim } from '../types/citation';
 import { extractTextFromManuscriptFile } from '../services/fileImportService';
@@ -38,6 +40,9 @@ interface ScholarLaunchpadProps {
   onRebuttalPackageReady?: (result: PeerReviewOverhaulResult, originalDraft: string, claims: Claim[]) => void;
   onLoadSample?: () => void;
   options: CitationOptions;
+  setOptions?: React.Dispatch<React.SetStateAction<CitationOptions>>;
+  sensitivity?: 'all' | 'moderate' | 'high';
+  setSensitivity?: (s: 'all' | 'moderate' | 'high') => void;
   llmConfig: LLMConfig;
   onOpenSettings: () => void;
   isProcessing: boolean;
@@ -49,6 +54,9 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
   onRebuttalPackageReady,
   onLoadSample,
   options,
+  setOptions,
+  sensitivity = 'moderate',
+  setSensitivity,
   llmConfig,
   onOpenSettings,
   isProcessing,
@@ -445,6 +453,36 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
             </select>
           </div>
 
+          {/* Quality & Integrity Parameters for Synthesis */}
+          {setOptions && (
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
+                <span>Synthesis Quality Filters:</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={options.excludePreprints}
+                    onChange={(e) => setOptions((prev) => ({ ...prev, excludePreprints: e.target.checked }))}
+                    className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                  />
+                  <span>Exclude Preprints</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={options.requireDoi}
+                    onChange={(e) => setOptions((prev) => ({ ...prev, requireDoi: e.target.checked }))}
+                    className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                  />
+                  <span>Require Permanent DOI</span>
+                </label>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
 
@@ -594,6 +632,87 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
               <option value={25}>Standard Search (Recommended, 4-5 Candidates per Claim)</option>
               <option value={35}>Comprehensive Survey (Deep Cross-Disciplinary, 6-8 Candidates per Claim)</option>
             </select>
+          </div>
+
+          {/* Claim Sensitivity & Quality Settings for Grounding Drafts */}
+          <div className="space-y-2.5 pt-1">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
+                <span>Claim Extraction Sensitivity:</span>
+              </label>
+              <span className="text-[11px] text-blue-800 dark:text-blue-400 font-medium">
+                ⚡ Synced with Settings &amp; Claims
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setSensitivity && setSensitivity('high')}
+                className={`p-2.5 rounded-xl text-left border transition cursor-pointer ${
+                  sensitivity === 'high'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-700 dark:border-blue-500 ring-1 ring-blue-700/30'
+                    : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800'
+                }`}
+              >
+                <div className="text-xs font-bold text-slate-900 dark:text-slate-100">Strict</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Numbers, stats &amp; metrics</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSensitivity && setSensitivity('moderate')}
+                className={`p-2.5 rounded-xl text-left border transition cursor-pointer ${
+                  sensitivity === 'moderate'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-700 dark:border-blue-500 ring-1 ring-blue-700/30'
+                    : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800'
+                }`}
+              >
+                <div className="text-xs font-bold text-slate-900 dark:text-slate-100">Balanced</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Empirical &amp; scientific assertions</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSensitivity && setSensitivity('all')}
+                className={`p-2.5 rounded-xl text-left border transition cursor-pointer ${
+                  sensitivity === 'all'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-700 dark:border-blue-500 ring-1 ring-blue-700/30'
+                    : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800'
+                }`}
+              >
+                <div className="text-xs font-bold text-slate-900 dark:text-slate-100">Thorough</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">Hunts all factual sentences</div>
+              </button>
+            </div>
+
+            {setOptions && (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs mt-2">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
+                  <span>Quality Filters:</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                  <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={options.excludePreprints}
+                      onChange={(e) => setOptions((prev) => ({ ...prev, excludePreprints: e.target.checked }))}
+                      className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                    />
+                    <span>Exclude Preprints</span>
+                  </label>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={options.requireDoi}
+                      onChange={(e) => setOptions((prev) => ({ ...prev, requireDoi: e.target.checked }))}
+                      className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                    />
+                    <span>Require Permanent DOI</span>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>

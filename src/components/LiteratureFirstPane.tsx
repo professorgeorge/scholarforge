@@ -15,6 +15,7 @@ import {
   Check,
   Layers,
   ShieldAlert,
+  ShieldCheck,
   FileSpreadsheet,
   Compass
 } from 'lucide-react';
@@ -38,12 +39,14 @@ import { PrismaFlowModal } from './PrismaFlowModal';
 interface LiteratureFirstPaneProps {
   onManuscriptSynthesized: (manuscript: string, claims: Claim[]) => void;
   options: CitationOptions;
+  setOptions?: React.Dispatch<React.SetStateAction<CitationOptions>>;
   llmConfig?: LLMConfig;
 }
 
 export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   onManuscriptSynthesized,
   options,
+  setOptions,
   llmConfig = DEFAULT_LLM_CONFIG,
 }) => {
   const [topic, setTopic] = useState('');
@@ -308,6 +311,43 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
             className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700 transition"
           />
         </div>
+
+        {/* Contextual Quality & Preprints Bar */}
+        {setOptions && (
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
+              <span>Literature Quality &amp; Peer-Review Filters:</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={options.excludePreprints}
+                  onChange={(e) => setOptions((prev) => ({ ...prev, excludePreprints: e.target.checked }))}
+                  className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                />
+                <span>Exclude Preprints &amp; Working Papers (arXiv, bioRxiv, SSRN)</span>
+              </label>
+
+              <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={options.requireDoi}
+                  onChange={(e) => setOptions((prev) => ({ ...prev, requireDoi: e.target.checked }))}
+                  className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                />
+                <span>Require Verified Permanent DOI</span>
+              </label>
+
+              <span className="text-[11px] text-blue-800 dark:text-blue-400 font-medium flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Synced with Settings</span>
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Advanced Federated Sources & PRISMA Scope Toggle */}
         <div className="pt-1">

@@ -246,6 +246,41 @@ export const Navbar: React.FC<NavbarProps> = ({
                     );
                   })}
                 </div>
+
+                {/* Live Synced Format & Quality Rules Footer */}
+                <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1.5 px-2 text-xs">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <span>Quick Rules (Synced Live):</span>
+                    <span className="text-blue-700 dark:text-blue-400 font-normal">Auto-Saved</span>
+                  </div>
+                  <label className="flex items-center justify-between gap-2 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-700 dark:text-slate-300">
+                    <span>Include Clickable DOI URLs</span>
+                    <input
+                      type="checkbox"
+                      checked={options.includeDoi}
+                      onChange={(e) => setOptions((prev) => ({ ...prev, includeDoi: e.target.checked }))}
+                      className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-2 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-700 dark:text-slate-300">
+                    <span>Exclude Preprints (Peer-reviewed only)</span>
+                    <input
+                      type="checkbox"
+                      checked={options.excludePreprints}
+                      onChange={(e) => setOptions((prev) => ({ ...prev, excludePreprints: e.target.checked }))}
+                      className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-2 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-700 dark:text-slate-300">
+                    <span>Require Verified DOI</span>
+                    <input
+                      type="checkbox"
+                      checked={options.requireDoi}
+                      onChange={(e) => setOptions((prev) => ({ ...prev, requireDoi: e.target.checked }))}
+                      className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
+                    />
+                  </label>
+                </div>
               </div>
             )}
           </div>
