@@ -830,7 +830,7 @@ export const App: React.FC = () => {
                 <ExternalLink className="w-3 h-3 inline" />
               </a>
               <span className="text-slate-400">•</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">Some Rights Reserved (CC BY-NC-SA 4.0)</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">Licensed under CC BY-NC-SA 4.0</span>
             </div>
             <div className="text-slate-500 dark:text-slate-400 font-mono text-[11px] flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
