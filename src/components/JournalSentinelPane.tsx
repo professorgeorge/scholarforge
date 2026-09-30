@@ -22,7 +22,8 @@ import {
   Zap,
   Mail,
   Flame,
-  X
+  X,
+  Info
 } from 'lucide-react';
 import {
   matchJournalsForManuscript,
@@ -317,6 +318,14 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
               <span>7-Point Desk-Rejection Pre-Flight Triage</span>
             </div>
+          </div>
+
+          {/* Nominative Trademark & Heuristic Proxy Notice */}
+          <div className="mt-3.5 pt-3 border-t border-slate-700/60 text-[11px] text-slate-400 flex items-start gap-2">
+            <Info className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+            <span className="leading-relaxed">
+              <strong>Nominative Fair Use &amp; Metric Notice:</strong> Quartile ratings (Q1–Q4) and CiteScore estimates are heuristic scientometric approximations computed from open bibliographic records (OpenAlex CC0) for comparative research guidance. Scopus&reg; and CiteScore&trade; are registered trademarks of Elsevier B.V.; Web of Science&trade; is a trademark of Clarivate Analytics. ScholarForge is an independent scholarly tool and is not affiliated with, sponsored by, or endorsed by Elsevier B.V. or Clarivate.
+            </span>
           </div>
         </div>
       </div>

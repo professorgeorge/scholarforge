@@ -10,7 +10,8 @@ import {
   Copy, 
   BookOpen, 
   ExternalLink,
-  BadgeCheck
+  BadgeCheck,
+  Info
 } from 'lucide-react';
 import { 
   resolveGoogleScholarDossier, 
@@ -212,6 +213,14 @@ export const ScholarImpactTab: React.FC<ScholarImpactTabProps> = ({
             {impactError}
           </div>
         )}
+
+        {/* Nominative Trademark & Fair Use Notice */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 flex items-start gap-2">
+          <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+          <span className="leading-relaxed">
+            <strong>Nominative Fair Use Notice:</strong> Google Scholar&trade; is a trademark of Google LLC. ScholarForge is an independent scholarly software tool and is not affiliated with, sponsored by, or endorsed by Google LLC. Automated profile ingestion operates on user-initiated public researcher profiles or locally provided CSV/BibTeX exports under fair use for personal academic evaluation.
+          </span>
+        </div>
       </div>
 
       {/* Scholar Profile Results Presentation */}

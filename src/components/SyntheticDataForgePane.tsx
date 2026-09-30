@@ -18,6 +18,7 @@ import {
   Brain,
   LineChart,
   ShieldCheck,
+  ShieldAlert,
   Award,
   ArrowRight
 } from 'lucide-react';
@@ -412,8 +413,14 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
               </span>
             </div>
             <p className="text-xs text-blue-100/80 max-w-3xl leading-relaxed">
-              Generate publication-grade empirical datasets with specified structural pathways, verified interaction/moderation effects, latent factor models, or in-depth qualitative interview transcripts with natural thematic discourse.
+              Generate statistically realistic synthetic simulation datasets with specified structural pathways, verified interaction/moderation effects, latent factor models, or in-depth qualitative interview transcripts with natural thematic discourse for statistical pipeline testing, methodology pre-registration, power analysis, and pedagogical demonstration.
             </p>
+            <div className="pt-1.5 flex items-start gap-1.5 text-[11px] text-amber-200/90 leading-tight">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+              <span>
+                <strong>Academic Integrity &amp; Simulation Notice:</strong> All quantitative matrices and qualitative discourses generated are artificial mathematical simulations for methodological validation, research code testing, and instructional use. They must never be represented, submitted, or published as genuine empirical observations or real human subject data.
+              </span>
+            </div>
           </div>
 
           {/* Quick Mode Switcher */}

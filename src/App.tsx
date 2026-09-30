@@ -839,24 +839,44 @@ export const App: React.FC = () => {
           </div>
 
           {/* Bottom Row: Academic Terms of Service & Legal Disclaimer */}
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed space-y-2.5">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed space-y-3">
             <div>
               <div className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[9px] flex items-center gap-1 mb-0.5">
                 <ShieldCheck className="w-3 h-3 text-blue-600" />
                 <span>Academic Research License &amp; Intellectual Property Notice</span>
               </div>
               <p className="text-justify">
-                ScholarForge, its software architecture, workflow synthesizers, and analytical implementations are the intellectual property of Professor Babu George, released under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 (CC BY-NC-SA 4.0). This suite is shared openly for non-commercial academic research, teaching, and scholarly inquiry. Any use, derived research, adaptation, or deployment must prominently credit and cite Professor Babu George. Commercial redistribution, monetization, SaaS wrapping, or closed cloning is strictly prohibited without prior express written consent.
+                ScholarForge, its software architecture, workflow synthesizers, scientometric implementations, and analytical modules are the intellectual property of Professor Babu George, released under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0). This suite is made available strictly for non-commercial academic research, pedagogical instruction, and scholarly inquiry. Any use, derived research, adaptation, or deployment must prominently credit and cite Professor Babu George. Commercial exploitation, monetization, SaaS wrapping, or closed proprietary cloning is strictly prohibited without prior express written permission.
               </p>
             </div>
 
             <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
               <div className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[9px] flex items-center gap-1 mb-0.5">
                 <ShieldAlert className="w-3 h-3 text-amber-600" />
-                <span>Legal Disclaimer</span>
+                <span>Comprehensive Legal Disclaimer &amp; Absolute Limitation of Liability</span>
               </div>
               <p className="text-justify">
-                ScholarForge is provided strictly &ldquo;as is&rdquo; for research assistance and informational purposes without warranty of any kind. Users assume full, sole responsibility for all associated third-party API usage, token costs, rate limits, output verification, copyright compliance, and academic integrity. The creator, developers, and affiliated entities disclaim all liability for any costs, inaccuracies, damages, or consequences arising from the use of this tool.
+                ScholarForge is provided strictly &ldquo;as is&rdquo; and &ldquo;as available&rdquo; without warranty of any kind, express, statutory, or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, and non-infringement. Professor Babu George, developers, contributors, and affiliated academic institutions shall have NO liability whatsoever for any direct, indirect, incidental, consequential, special, punitive, or exemplary damages—including but not limited to financial losses, third-party API token consumption, rate-limiting penalties, data loss, manuscript desk-rejections, peer-review outcomes, academic or institutional disciplinary actions, tenure decisions, reputational harm, or service interruptions—arising out of or in connection with the access, use, interpretation, or inability to use this platform or any outputs generated herein. Users assume 100% sole responsibility for conducting independent verification of all citations, facts, statistical equations, and texts against primary literature. By accessing or using ScholarForge, users irrevocably agree to defend, indemnify, and hold harmless Professor Babu George and all project contributors from any third-party claims or liabilities resulting from their use or distribution of generated materials.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+              <div className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[9px] flex items-center gap-1 mb-0.5">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                <span>Nominative Fair Use &amp; Trademark Attribution Notice</span>
+              </div>
+              <p className="text-justify">
+                All product names, logos, trademarks, and registered trademarks cited within ScholarForge—including Google Scholar™ (Google LLC), Scopus® and CiteScore™ (Elsevier B.V.), Web of Science™ (Clarivate Analytics), PubMed® and MEDLINE® (U.S. National Library of Medicine / NIH), IEEE Xplore® (IEEE), Crossref® (Publishers International Linking Association, Inc.), IBM® SPSS® (International Business Machines Corporation), and Nature® (Springer Nature)—are the property of their respective owners. Their mention in ScholarForge is strictly for nominative, descriptive, and comparative scholarly identification purposes under nominative fair use principles. ScholarForge is an independent research platform and is NOT affiliated with, sponsored by, authorized by, or endorsed by any of the aforementioned entities.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+              <div className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[9px] flex items-center gap-1 mb-0.5">
+                <ShieldAlert className="w-3 h-3 text-blue-600" />
+                <span>Synthetic Simulation &amp; Scientific Integrity Policy</span>
+              </div>
+              <p className="text-justify">
+                All quantitative datasets, Likert scales, Monte Carlo models, regression coefficients, participant interview transcripts, focus group dialogues, and thematic matrices generated by the Synthetic Data Forge or AI assistants are purely artificial mathematical and algorithmic simulations designed solely for methodology testing, statistical power planning, pedagogical demonstration, and pre-registration pipeline validation. They must NEVER be submitted, published, represented, or relied upon as genuine empirical observations, human subject research, or real clinical data. Users are solely responsible for adhering to Committee on Publication Ethics (COPE) standards, Institutional Review Board (IRB) requirements, and academic honesty codes.
               </p>
             </div>
           </div>
