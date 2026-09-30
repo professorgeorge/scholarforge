@@ -11,11 +11,17 @@ import {
   Loader2, 
   Layers,
   Sparkles,
-  DownloadCloud
+  DownloadCloud,
+  RotateCcw,
+  Trash2,
+  AlertTriangle,
+  Database
 } from 'lucide-react';
 import type { CitationOptions } from '../types/citation';
 import { CITATION_STYLES } from '../services/citationFormatter';
-import { testLLMConnection, type LLMConfig } from '../services/llmService';
+import { testLLMConnection, DEFAULT_LLM_CONFIG, type LLMConfig } from '../services/llmService';
+import { getCartPapers, clearCart } from '../services/cartService';
+import { getBinderItems, clearBinder } from '../services/binderService';
 import {
   isWebGPUSupported,
   SAFE_UNRESTRICTED_WEBLM_MODELS,
@@ -32,6 +38,8 @@ interface SettingsModalProps {
   setLlmConfig: (config: LLMConfig) => void;
   sensitivity: 'all' | 'moderate' | 'high';
   setSensitivity: (s: 'all' | 'moderate' | 'high') => void;
+  onResetResearchData?: () => void;
+  onFullFactoryReset?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -43,8 +51,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   setLlmConfig,
   sensitivity,
   setSensitivity,
+  onResetResearchData,
+  onFullFactoryReset,
 }) => {
-  const [activeTab, setActiveTab] = useState<'llm' | 'quality' | 'citation' | 'claims'>('llm');
+  const [activeTab, setActiveTab] = useState<'llm' | 'quality' | 'citation' | 'claims' | 'data'>('llm');
   const [tempLLMConfig, setTempLLMConfig] = useState<LLMConfig>(llmConfig);
   const [isTesting, setIsTesting] = useState(false);
   const [webLlmProgress, setWebLlmProgress] = useState<WebLlmProgressReport | null>(null);
@@ -55,6 +65,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     latencyMs?: number;
     availableModels?: string[];
   } | null>(null);
+  const [resetStatus, setResetStatus] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [showConfirmFactory, setShowConfirmFactory] = useState(false);
+  const [cartCount, setCartCount] = useState<number>(() => getCartPapers().length);
+  const [binderCount, setBinderCount] = useState<number>(() => getBinderItems().length);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCartCount(getCartPapers().length);
+      setBinderCount(getBinderItems().length);
+      setResetStatus(null);
+      setShowConfirmFactory(false);
+      setTempLLMConfig(llmConfig);
+    }
+  }, [isOpen, llmConfig]);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -120,6 +144,41 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     localStorage.setItem('scholarforge_citation_options', JSON.stringify(options));
     localStorage.setItem('scholarforge_claim_sensitivity', sensitivity);
     onClose();
+  };
+
+  const handleResetResearchOnly = () => {
+    clearCart();
+    clearBinder();
+    setCartCount(0);
+    setBinderCount(0);
+    onResetResearchData?.();
+    setResetStatus({
+      type: 'success',
+      message: 'Research workspace cleared: Literature Cart & Research Binder emptied. Your API credentials, AI configurations, and citation styles were safely preserved.'
+    });
+  };
+
+  const handleFactoryReset = () => {
+    clearCart();
+    clearBinder();
+    setCartCount(0);
+    setBinderCount(0);
+    try {
+      localStorage.removeItem('citation_filler_llm_config');
+      localStorage.removeItem('scholarforge_citation_options');
+      localStorage.removeItem('scholarforge_claim_sensitivity');
+      localStorage.removeItem('scholarforge_research_cart_v1');
+      localStorage.removeItem('scholarforge_universal_binder');
+    } catch (e) {
+      console.error('Storage clear error', e);
+    }
+    setTempLLMConfig(DEFAULT_LLM_CONFIG);
+    setShowConfirmFactory(false);
+    onFullFactoryReset?.();
+    setResetStatus({
+      type: 'success',
+      message: 'Full Factory Reset complete! All stored API keys, custom endpoints, research cards, and preferences have been purged.'
+    });
   };
 
   return (
@@ -199,6 +258,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           >
             <SlidersHorizontal className="w-4 h-4" />
             <span>4. Claim Detection</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('data'); setResetStatus(null); setShowConfirmFactory(false); }}
+            className={`px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+              activeTab === 'data'
+                ? 'border-red-600 text-red-700 dark:text-red-400 bg-white dark:bg-slate-900'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900'
+            }`}
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>5. Workspace & Reset</span>
           </button>
         </div>
 
@@ -611,6 +682,160 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB 5: Workspace Storage & Reset */}
+          {activeTab === 'data' && (
+            <div className="space-y-5 animate-in fade-in duration-150">
+              
+              {/* Storage Overview Diagnostics */}
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3">
+                  <Database className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                  <span>Current Local Storage &amp; Workspace Footprint</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] text-slate-500 uppercase block font-semibold">Literature Cart</span>
+                    <span className="text-base font-bold text-slate-900 dark:text-white">{cartCount} papers</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] text-slate-500 uppercase block font-semibold">Research Binder</span>
+                    <span className="text-base font-bold text-slate-900 dark:text-white">{binderCount} items</span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] text-slate-500 uppercase block font-semibold">AI LLM Provider</span>
+                    <span className="text-xs font-bold text-blue-800 dark:text-blue-400 capitalize truncate block mt-0.5">
+                      {tempLLMConfig.provider}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-[10px] text-slate-500 uppercase block font-semibold">API Key Status</span>
+                    <span className={`text-xs font-bold block mt-0.5 ${tempLLMConfig.apiKey ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500'}`}>
+                      {tempLLMConfig.apiKey ? 'Configured' : 'None / Default'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Alert Banner */}
+              {resetStatus && (
+                <div className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs animate-in fade-in duration-200 ${
+                  resetStatus.type === 'success' 
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' 
+                    : 'bg-red-50 dark:bg-red-950/50 border-red-300 dark:border-red-800 text-red-900 dark:text-red-200'
+                }`}>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-bold">Operation Successful</div>
+                    <div className="mt-0.5 leading-relaxed">{resetStatus.message}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Two Reset Options */}
+              <div className="space-y-4">
+                
+                {/* OPTION 1: Reset Research Workspace (Keep API Keys & Config) */}
+                <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 uppercase tracking-wide">
+                          Option 1
+                        </span>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                          Reset Research Data &amp; Workspace
+                        </h4>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Clears your active manuscript draft, empties the Literature Cart, and purges Research Binder clips.
+                        <strong className="text-slate-900 dark:text-slate-200"> Preserves your API keys, custom endpoints, citation options, and theme</strong> so you can start a fresh inquiry without re-authenticating.
+                      </p>
+                      <ul className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5 pt-1">
+                        <li>• Empties Literature Cart &amp; Research Binder clips</li>
+                        <li>• Clears current draft manuscript &amp; claim extraction buffer</li>
+                        <li>• Keeps all Google Gemini, OpenAI, Groq, or Ollama credentials intact</li>
+                      </ul>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleResetResearchOnly}
+                      className="shrink-0 px-3.5 py-2 rounded-xl bg-white hover:bg-amber-100 dark:bg-amber-900/50 dark:hover:bg-amber-800/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset Research Only</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* OPTION 2: Full Factory Reset (Purge Everything Including API Keys) */}
+                <div className="p-4 rounded-xl bg-red-50/60 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60">
+                  <div className="space-y-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-red-200 dark:bg-red-900 text-red-900 dark:text-red-200 uppercase tracking-wide">
+                            Option 2
+                          </span>
+                          <h4 className="text-sm font-bold text-red-950 dark:text-red-300">
+                            Full Factory Reset (Purge All Data &amp; API Keys)
+                          </h4>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                          Permanently deletes <strong className="text-red-800 dark:text-red-300">ALL stored data from this browser</strong>, including saved API tokens (Gemini, OpenAI, Groq, DeepSeek), custom endpoints, literature collections, binder notes, and citation settings. Restores ScholarForge to a brand-new factory state.
+                        </p>
+                      </div>
+
+                      {!showConfirmFactory && (
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmFactory(true)}
+                          className="shrink-0 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Factory Reset...</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Inline Confirmation Card for Factory Reset */}
+                    {showConfirmFactory && (
+                      <div className="p-3.5 rounded-xl bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 animate-in fade-in duration-150 space-y-2.5">
+                        <div className="flex items-center gap-2 text-xs font-bold text-red-900 dark:text-red-200">
+                          <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                          <span>Are you absolutely certain? This will delete your stored API keys.</span>
+                        </div>
+                        <p className="text-[11px] text-red-800 dark:text-red-300 leading-relaxed">
+                          This action is irreversible. All local cache, private tokens, saved bibliographies, and configurations will be permanently purged.
+                        </p>
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={handleFactoryReset}
+                            className="px-3.5 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-bold cursor-pointer transition flex items-center gap-1 shadow-xs"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Yes, Delete Everything &amp; Reset</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmFactory(false)}
+                            className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-medium cursor-pointer transition hover:bg-slate-100"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                </div>
+
+              </div>
+
             </div>
           )}
 

@@ -455,6 +455,35 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleResetResearchData = () => {
+    setInputText('');
+    setClaims([]);
+    setProgress({ current: 0, total: 0 });
+    setSelectedClaimId(null);
+    setRebuttalPackage(null);
+    setOriginalPreRevisionText('');
+  };
+
+  const handleFullFactoryReset = () => {
+    setInputText('');
+    setClaims([]);
+    setProgress({ current: 0, total: 0 });
+    setSelectedClaimId(null);
+    setRebuttalPackage(null);
+    setOriginalPreRevisionText('');
+    setOptions({
+      style: 'apa',
+      includeDoi: true,
+      includeAbstracts: true,
+      maxAuthorsInText: 3,
+      linkCitations: true,
+      excludePreprints: true,
+      requireDoi: true,
+    });
+    setSensitivity('moderate');
+    setLlmConfig(DEFAULT_LLM_CONFIG);
+  };
+
   const hasActiveManuscript = claims.length > 0;
   const groundedClaimsCount = claims.filter((c) => !c.isExcluded && c.selectedPaper).length;
 
@@ -769,6 +798,8 @@ export const App: React.FC = () => {
         setLlmConfig={setLlmConfig}
         sensitivity={sensitivity}
         setSensitivity={setSensitivity}
+        onResetResearchData={handleResetResearchData}
+        onFullFactoryReset={handleFullFactoryReset}
       />
 
       {/* Manual Search Modal */}
