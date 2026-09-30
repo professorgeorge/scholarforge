@@ -16,7 +16,12 @@ import {
   Sparkles,
   Sliders,
   Check,
-  Database
+  Database,
+  Bot,
+  FolderKanban,
+  CheckCheck,
+  Terminal,
+  Loader2
 } from 'lucide-react';
 import {
   ATLAS,
@@ -32,20 +37,27 @@ import {
   generateMethodsParagraph,
   generateMarkdown,
   getAtlasEntry,
-  getAlternatives
+  getAlternatives,
+  recommendMethodologyAI,
+  type AIMethodologyRecommendation,
+  type CompassStack,
+  type QuickAnalysisGuide
 } from '../services/methodologyCompassService';
-import type { CompassStack, QuickAnalysisGuide } from '../services/methodologyCompassService';
+import { addBinderItem } from '../services/binderService';
+import { DEFAULT_LLM_CONFIG, type LLMConfig } from '../services/llmService';
 
-type ActiveCompassTab = 'selector' | 'guided' | 'coherence' | 'compendium' | 'exemplars' | 'glossary';
+type ActiveCompassTab = 'ai_advisor' | 'selector' | 'guided' | 'coherence' | 'compendium' | 'exemplars' | 'glossary';
 
 interface MethodologyCompassPaneProps {
-  onNavigateToSynthetic?: () => void;
+  onNavigateToSynthetic?: (preset?: string) => void;
+  llmConfig?: LLMConfig;
 }
 
 export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
-  onNavigateToSynthetic
+  onNavigateToSynthetic,
+  llmConfig = DEFAULT_LLM_CONFIG
 }) => {
-  const [activeTab, setActiveTab] = useState<ActiveCompassTab>('selector');
+  const [activeTab, setActiveTab] = useState<ActiveCompassTab>('ai_advisor');
 
   // Guided pathway state
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState<number>(0);
@@ -80,6 +92,96 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
   const [copiedParagraph, setCopiedParagraph] = useState(false);
   const [copiedMarkdown, setCopiedMarkdown] = useState(false);
   const [copiedSyntax, setCopiedSyntax] = useState<string | null>(null);
+
+  // AI Advisor State
+  const [aiObjective, setAiObjective] = useState('');
+  const [aiDataDesc, setAiDataDesc] = useState('');
+  const [aiDiscipline, setAiDiscipline] = useState('Business & Social Sciences');
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
+  const [aiRecommendation, setAiRecommendation] = useState<AIMethodologyRecommendation | null>(null);
+  const [activeCodeLang, setActiveCodeLang] = useState<'r' | 'python' | 'spssOrStata'>('r');
+  const [copiedAiProse, setCopiedAiProse] = useState(false);
+  const [copiedAiCode, setCopiedAiCode] = useState(false);
+  const [savedAiToBinder, setSavedAiToBinder] = useState(false);
+
+  const AI_EXEMPLAR_PRESETS = [
+    {
+      label: 'Moderated Regression',
+      objective: 'Investigate whether perceived organizational support moderates the negative impact of workplace stress on employee turnover intentions.',
+      data: 'Cross-sectional survey of 320 healthcare workers using validated 5-point Likert scales. Some missing values in demographics, outcome is slightly skewed.',
+      discipline: 'Business & Social Sciences'
+    },
+    {
+      label: 'Statistical Mediation',
+      objective: 'Determine whether psychological safety mediates the relationship between servant leadership and team innovative work behavior.',
+      data: 'Multi-source survey with 240 dyads (leaders and subordinates) across two measurement waves spaced 6 weeks apart.',
+      discipline: 'Psychology & Cognitive Sciences'
+    },
+    {
+      label: '2x2 Factorial Experiment',
+      objective: 'Evaluate the causal effect of generative AI feedback versus human tutor feedback on undergraduate essay revision quality across novice vs advanced students.',
+      data: 'Randomized 2x2 laboratory experiment with N=140 students randomly assigned to feedback conditions; baseline verbal SAT score recorded as covariate.',
+      discipline: 'Education & Pedagogy'
+    },
+    {
+      label: 'Qualitative Phenomenological Inquiry',
+      objective: 'Understand how mid-career academic clinicians experience and navigate existential burnout and administrative identity conflict during hospital restructuring.',
+      data: 'In-depth semi-structured interviews with 16 academic physicians with 10+ years tenure, average 65 minutes per interview, fully transcribed.',
+      discipline: 'Medicine & Healthcare'
+    },
+    {
+      label: 'Binary Logistic Churn Model',
+      objective: 'Identify predictive drivers of student dropout (persisted vs dropped out) based on LMS behavioral telemetry and socio-demographic indicators.',
+      data: 'Institutional registry of 1,800 first-year undergraduates with weekly LMS logins, assignment submission timeliness, GPA, and binary retention status (0/1).',
+      discipline: 'Computer Science & HCI'
+    }
+  ];
+
+  const handleRunAIAnalysis = async () => {
+    if (!aiObjective.trim()) return;
+    setIsAnalyzingAI(true);
+    setSavedAiToBinder(false);
+    try {
+      const rec = await recommendMethodologyAI(
+        aiObjective,
+        aiDataDesc || 'No specific data properties specified',
+        aiDiscipline,
+        llmConfig
+      );
+      setAiRecommendation(rec);
+    } catch (e) {
+      console.error('AI methodology error:', e);
+    } finally {
+      setIsAnalyzingAI(false);
+    }
+  };
+
+  const handleApplyAIToStack = (rec: AIMethodologyRecommendation) => {
+    setCustomStack({
+      ontology: rec.recommendedStack.ontology,
+      epistemology: rec.recommendedStack.epistemology,
+      paradigm: rec.recommendedStack.paradigm,
+      methodology: rec.recommendedStack.methodology,
+      method: rec.recommendedStack.method,
+      analysis: rec.recommendedStack.analysis,
+    });
+    setActiveTab('coherence');
+  };
+
+  const handleSaveAIToBinder = (rec: AIMethodologyRecommendation) => {
+    addBinderItem({
+      type: 'stat',
+      title: `Methodology: ${rec.recommendedStack.analysisName}`,
+      snippet: `${rec.summary}\n\nStack: ${rec.recommendedStack.methodologyName} -> ${rec.recommendedStack.analysisName}`,
+      sourcePillar: 'Methodology Compass (AI Advisor)',
+      metadata: {
+        stack: rec.recommendedStack,
+        apaProse: rec.apaMethodologyProse
+      }
+    });
+    setSavedAiToBinder(true);
+    setTimeout(() => setSavedAiToBinder(false), 2500);
+  };
 
   // Compute guided stack & coherence
   const stack = useMemo(() => {
@@ -233,7 +335,7 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
             </button>
             {onNavigateToSynthetic && (
               <button
-                onClick={onNavigateToSynthetic}
+                onClick={() => onNavigateToSynthetic()}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/80 dark:hover:bg-blue-900/80 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition shadow-xs cursor-pointer"
                 title="Generate Synthetic Pilot Data for this Research Architecture"
               >
@@ -253,10 +355,22 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center gap-1 overflow-x-auto">
+        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('ai_advisor')}
+            className={`px-3.5 py-2 text-xs font-bold rounded-lg transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'ai_advisor'
+                ? 'bg-blue-900 dark:bg-blue-800 text-white shadow-xs'
+                : 'text-blue-900 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/60'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>AI Research Design Advisor</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('selector')}
-            className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'selector'
                 ? 'bg-red-800 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -327,6 +441,445 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
           </button>
         </div>
       </div>
+
+      {/* TAB 0: AI METHODOLOGICAL ARCHITECT & RESEARCH DESIGN ADVISOR */}
+      {activeTab === 'ai_advisor' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          
+          {/* Natural Language Prompt & Input Card */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/60">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    AI Methodological Architect &amp; Research Design Advisor
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Describe what you want to study and your data properties in plain English. The AI synthesizes the optimal 6-layer epistemic stack, inspects statistical assumptions, provides executable R/Python/SPSS code, and formats APA 7th methodology prose.
+                </p>
+              </div>
+
+              {/* Provider Badge */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 shrink-0">
+                <Bot className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span className="font-semibold capitalize">{llmConfig?.provider || 'Built-in'}</span>
+                <span className="text-[10px] text-slate-400 font-mono">({llmConfig?.model || 'Deterministic Rules'})</span>
+              </div>
+            </div>
+
+            {/* Quick Inspiration Exemplar Chips */}
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+                Quick Exemplar Presets (Click to load):
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {AI_EXEMPLAR_PRESETS.map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setAiObjective(preset.objective);
+                      setAiDataDesc(preset.data);
+                      setAiDiscipline(preset.discipline);
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
+                  >
+                    💡 {preset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Input Form Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              <div className="md:col-span-8 space-y-1.5">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                  1. Research Objective, Question, or Planned Investigation:
+                </label>
+                <textarea
+                  value={aiObjective}
+                  onChange={(e) => setAiObjective(e.target.value)}
+                  rows={4}
+                  placeholder="e.g., I want to investigate whether workplace psychological safety moderates the negative impact of remote work isolation on employee turnover intention..."
+                  className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600/30"
+                />
+              </div>
+
+              <div className="md:col-span-4 space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                    Discipline / Scientific Domain:
+                  </label>
+                  <select
+                    value={aiDiscipline}
+                    onChange={(e) => setAiDiscipline(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white"
+                  >
+                    <option value="Business & Social Sciences">Business &amp; Social Sciences</option>
+                    <option value="Psychology & Cognitive Sciences">Psychology &amp; Behavioral Sciences</option>
+                    <option value="Medicine & Healthcare">Medicine &amp; Healthcare</option>
+                    <option value="Education & Pedagogy">Education &amp; Pedagogy</option>
+                    <option value="Computer Science & HCI">Computer Science &amp; HCI</option>
+                    <option value="Economics & Finance">Economics &amp; Finance</option>
+                    <option value="Sociology & Public Policy">Sociology &amp; Public Policy</option>
+                    <option value="Interdisciplinary">Interdisciplinary Social Sciences</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                    2. Data Characteristics &amp; Constraints:
+                  </label>
+                  <textarea
+                    value={aiDataDesc}
+                    onChange={(e) => setAiDataDesc(e.target.value)}
+                    rows={2}
+                    placeholder="e.g., Survey with 350 tech workers, 5-point Likert scales, continuous turnover intention metric..."
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-600/30"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Action Bar */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <span className="text-[11px] text-slate-400">
+                Tip: Mention variables, sample size, measurement format, or qualitative medium for highest precision.
+              </span>
+              <button
+                type="button"
+                onClick={handleRunAIAnalysis}
+                disabled={isAnalyzingAI || !aiObjective.trim()}
+                className="px-5 py-2.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {isAnalyzingAI ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Synthesizing Architecture...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Recommend Methodology &amp; Analysis</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* AI Recommendation Output Section */}
+          {aiRecommendation && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              
+              {/* Executive Strategic Summary Banner */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-blue-900 to-indigo-900 text-white shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-md bg-blue-800 text-blue-200 uppercase tracking-wider">
+                      Strategic Methodological Verdict
+                    </span>
+                    <h4 className="text-base font-bold mt-1">
+                      {aiRecommendation.recommendedStack.methodologyName} &amp; {aiRecommendation.recommendedStack.analysisName}
+                    </h4>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleApplyAIToStack(aiRecommendation)}
+                      className="px-3.5 py-1.5 rounded-xl bg-white text-blue-950 font-bold text-xs hover:bg-blue-50 transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      title="Load this recommended 6-layer stack into the Coherence Diagnostic Matrix"
+                    >
+                      <Sliders className="w-3.5 h-3.5 text-blue-800" />
+                      <span>Inspect Coherence Matrix &rarr;</span>
+                    </button>
+                    {onNavigateToSynthetic && (
+                      <button
+                        type="button"
+                        onClick={() => onNavigateToSynthetic(aiRecommendation.suggestedSyntheticPreset)}
+                        className="px-3.5 py-1.5 rounded-xl bg-blue-800/80 hover:bg-blue-700 text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 border border-blue-600/50 shadow-xs"
+                        title="Simulate empirical pilot data matching this architecture in the Synthetic Data Forge"
+                      >
+                        <Database className="w-3.5 h-3.5 text-amber-300" />
+                        <span>Simulate in Synthetic Forge &rarr;</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-blue-100 mt-2.5 leading-relaxed max-w-4xl">
+                  {aiRecommendation.summary}
+                </p>
+              </div>
+
+              {/* 6-Layer Epistemic Stack Grid */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span>Recommended 6-Layer Epistemic Alignment Stack</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyAIToStack(aiRecommendation)}
+                    className="text-xs font-bold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <span>Load Into Coherence Matrix</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">1. Ontology</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block mt-0.5 truncate" title={aiRecommendation.recommendedStack.ontologyName}>
+                      {aiRecommendation.recommendedStack.ontologyName}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">{aiRecommendation.recommendedStack.ontology}</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">2. Epistemology</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block mt-0.5 truncate" title={aiRecommendation.recommendedStack.epistemologyName}>
+                      {aiRecommendation.recommendedStack.epistemologyName}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">{aiRecommendation.recommendedStack.epistemology}</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">3. Paradigm</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block mt-0.5 truncate" title={aiRecommendation.recommendedStack.paradigmName}>
+                      {aiRecommendation.recommendedStack.paradigmName}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">{aiRecommendation.recommendedStack.paradigm}</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">4. Methodology</span>
+                    <span className="text-xs font-bold text-blue-800 dark:text-blue-400 block mt-0.5 truncate" title={aiRecommendation.recommendedStack.methodologyName}>
+                      {aiRecommendation.recommendedStack.methodologyName}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">{aiRecommendation.recommendedStack.methodology}</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">5. Method</span>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block mt-0.5 truncate" title={aiRecommendation.recommendedStack.methodName}>
+                      {aiRecommendation.recommendedStack.methodName}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">{aiRecommendation.recommendedStack.method}</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">6. Analysis</span>
+                    <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400 block mt-0.5 truncate" title={aiRecommendation.recommendedStack.analysisName}>
+                      {aiRecommendation.recommendedStack.analysisName}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">{aiRecommendation.recommendedStack.analysis}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Two Column Deep Dive: Rationale & Assumptions vs. Code & Prose */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* Left Column: Scientific Rationale, Assumptions, Sample Power */}
+                <div className="lg:col-span-6 space-y-5">
+                  
+                  {/* Scientific Rationale Card */}
+                  <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                      <GraduationCap className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                      <span>Methodological Defense &amp; Design Rationale</span>
+                    </div>
+                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed text-justify">
+                      {aiRecommendation.designRationale}
+                    </p>
+                  </div>
+
+                  {/* Key Assumptions Checklist */}
+                  <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Key Statistical &amp; Methodological Assumptions</span>
+                    </div>
+                    <div className="space-y-2">
+                      {aiRecommendation.keyAssumptions.map((assumption, idx) => (
+                        <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          <span className="leading-relaxed">{assumption}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sample Size Guidance */}
+                  <div className="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 flex items-start gap-3">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                        Sample Size &amp; Statistical Power Rule
+                      </span>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5 leading-relaxed">
+                        {aiRecommendation.sampleSizeGuidance}
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Right Column: Code Syntax, Publication Prose, Binder */}
+                <div className="lg:col-span-6 space-y-5">
+                  
+                  {/* Executable Code Syntax */}
+                  <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        <Terminal className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                        <span>Executable Analysis Syntax</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = aiRecommendation.softwareSyntax[activeCodeLang] || '';
+                          navigator.clipboard.writeText(code);
+                          setCopiedAiCode(true);
+                          setTimeout(() => setCopiedAiCode(false), 2000);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 transition cursor-pointer flex items-center gap-1"
+                      >
+                        {copiedAiCode ? (
+                          <>
+                            <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy Syntax</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Language Switcher */}
+                    <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveCodeLang('r')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                          activeCodeLang === 'r'
+                            ? 'bg-blue-900 text-white shadow-xs'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        R Script
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveCodeLang('python')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                          activeCodeLang === 'python'
+                            ? 'bg-blue-900 text-white shadow-xs'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        Python (statsmodels)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveCodeLang('spssOrStata')}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                          activeCodeLang === 'spssOrStata'
+                            ? 'bg-blue-900 text-white shadow-xs'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        SPSS / Stata
+                      </button>
+                    </div>
+
+                    {/* Syntax Code Block */}
+                    <div className="relative rounded-xl overflow-hidden bg-slate-950 p-4 font-mono text-xs text-slate-200 max-h-56 overflow-y-auto leading-relaxed whitespace-pre-wrap">
+                      {aiRecommendation.softwareSyntax[activeCodeLang] || '# No specific script available'}
+                    </div>
+                  </div>
+
+                  {/* APA 7th Methodology Paragraph */}
+                  <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                        <BookOpen className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                        <span>Publication-Ready APA 7th Methods Section</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(aiRecommendation.apaMethodologyProse);
+                          setCopiedAiProse(true);
+                          setTimeout(() => setCopiedAiProse(false), 2000);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 transition cursor-pointer flex items-center gap-1"
+                      >
+                        {copiedAiProse ? (
+                          <>
+                            <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy Prose</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-serif text-xs text-slate-800 dark:text-slate-200 leading-relaxed text-justify">
+                      {aiRecommendation.apaMethodologyProse}
+                    </div>
+
+                    {/* Persistent Binder & Actions */}
+                    <div className="pt-2 flex items-center justify-between">
+                      <span className="text-[11px] text-slate-400">
+                        Ready to integrate into Chapter 3 or journal manuscript.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveAIToBinder(aiRecommendation)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs ${
+                          savedAiToBinder
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                        }`}
+                      >
+                        {savedAiToBinder ? (
+                          <>
+                            <CheckCheck className="w-3.5 h-3.5" />
+                            <span>Saved to Binder!</span>
+                          </>
+                        ) : (
+                          <>
+                            <FolderKanban className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                            <span>Clip to Research Binder</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+        </div>
+      )}
 
       {/* TAB 1: WHICH ANALYSIS SHOULD I CHOOSE? */}
       {activeTab === 'selector' && (

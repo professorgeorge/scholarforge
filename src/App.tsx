@@ -618,7 +618,10 @@ export const App: React.FC = () => {
         {/* Pillar 7: Methodology & Analysis Compass */}
         {activePillar === 'methodology' && (
           <div className="py-2 animate-in fade-in duration-200">
-            <MethodologyCompassPane onNavigateToSynthetic={() => setActivePillar('synthetic')} />
+            <MethodologyCompassPane 
+              llmConfig={llmConfig}
+              onNavigateToSynthetic={() => setActivePillar('synthetic')} 
+            />
           </div>
         )}
 
