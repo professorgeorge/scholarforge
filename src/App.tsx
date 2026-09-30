@@ -621,6 +621,10 @@ export const App: React.FC = () => {
             <MethodologyCompassPane 
               llmConfig={llmConfig}
               onNavigateToSynthetic={() => setActivePillar('synthetic')} 
+              onNavigateToStudio={() => setActivePillar('studio')}
+              onAppendToDraft={(declarationText) => {
+                setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
+              }}
             />
           </div>
         )}
@@ -657,6 +661,10 @@ export const App: React.FC = () => {
                     setActivePillar('studio');
                   }}
                   onLoadSample={handleLoadExemplarManuscript}
+                  onNavigateToEthics={() => {
+                    setActivePillar('methodology');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   options={options}
                   setOptions={setOptions}
                   sensitivity={sensitivity}

@@ -21,8 +21,10 @@ import {
   FolderKanban,
   CheckCheck,
   Terminal,
-  Loader2
+  Loader2,
+  ShieldCheck
 } from 'lucide-react';
+import { IrbTriagePane } from './IrbTriagePane';
 import {
   ATLAS,
   QUESTIONS,
@@ -46,15 +48,19 @@ import {
 import { addBinderItem } from '../services/binderService';
 import { DEFAULT_LLM_CONFIG, type LLMConfig } from '../services/llmService';
 
-type ActiveCompassTab = 'ai_advisor' | 'selector' | 'guided' | 'coherence' | 'compendium' | 'exemplars' | 'glossary';
+type ActiveCompassTab = 'ai_advisor' | 'selector' | 'guided' | 'coherence' | 'compendium' | 'exemplars' | 'glossary' | 'irb_ethics';
 
 interface MethodologyCompassPaneProps {
   onNavigateToSynthetic?: (preset?: string) => void;
+  onNavigateToStudio?: () => void;
+  onAppendToDraft?: (text: string) => void;
   llmConfig?: LLMConfig;
 }
 
 export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
   onNavigateToSynthetic,
+  onNavigateToStudio,
+  onAppendToDraft,
   llmConfig = DEFAULT_LLM_CONFIG
 }) => {
   const [activeTab, setActiveTab] = useState<ActiveCompassTab>('ai_advisor');
@@ -344,6 +350,14 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
               </button>
             )}
             <button
+              onClick={() => setActiveTab('irb_ethics')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/80 dark:hover:bg-emerald-900/80 text-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition shadow-xs cursor-pointer"
+              title="Assess Human Subjects Ethics &amp; IRB Review Pathway for this Methodology"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>IRB Pre-Flight &rarr;</span>
+            </button>
+            <button
               onClick={handleDownloadDossier}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-800 hover:bg-red-900 text-white transition shadow-sm cursor-pointer"
               title="Download Full Markdown Research Architecture Dossier"
@@ -438,6 +452,18 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
           >
             <Layers className="w-3.5 h-3.5" />
             Viva &amp; Defense Glossary
+          </button>
+
+          <button
+            onClick={() => setActiveTab('irb_ethics')}
+            className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'irb_ethics'
+                ? 'bg-blue-900 text-white font-bold shadow-xs'
+                : 'text-blue-900 dark:text-blue-400 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/60'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>IRB &amp; Ethics Triage</span>
           </button>
         </div>
       </div>
@@ -842,31 +868,41 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
                     </div>
 
                     {/* Persistent Binder & Actions */}
-                    <div className="pt-2 flex items-center justify-between">
+                    <div className="pt-2 flex flex-wrap items-center justify-between gap-2">
                       <span className="text-[11px] text-slate-400">
                         Ready to integrate into Chapter 3 or journal manuscript.
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => handleSaveAIToBinder(aiRecommendation)}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs ${
-                          savedAiToBinder
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                        }`}
-                      >
-                        {savedAiToBinder ? (
-                          <>
-                            <CheckCheck className="w-3.5 h-3.5" />
-                            <span>Saved to Binder!</span>
-                          </>
-                        ) : (
-                          <>
-                            <FolderKanban className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
-                            <span>Clip to Research Binder</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('irb_ethics')}
+                          className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Run IRB Ethics Pre-Flight</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveAIToBinder(aiRecommendation)}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs ${
+                            savedAiToBinder
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                          }`}
+                        >
+                          {savedAiToBinder ? (
+                            <>
+                              <CheckCheck className="w-3.5 h-3.5" />
+                              <span>Saved to Binder!</span>
+                            </>
+                          ) : (
+                            <>
+                              <FolderKanban className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                              <span>Clip to Research Binder</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                   </div>
@@ -1363,6 +1399,18 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
                 <p className="text-xs font-serif italic text-slate-700 dark:text-slate-300 leading-relaxed">
                   &ldquo;{methodsParagraph}&rdquo;
                 </p>
+                <div className="pt-2 border-t border-red-200/60 dark:border-red-900/40 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Human subjects or primary empirical data?
+                  </span>
+                  <button
+                    onClick={() => setActiveTab('irb_ethics')}
+                    className="text-[11px] font-bold text-red-800 dark:text-red-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Run IRB Ethics Pre-Flight &rarr;</span>
+                  </button>
+                </div>
               </div>
 
               {/* Viable Alternatives Card */}
@@ -1873,6 +1921,16 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* TAB 7: THE IRB & RESEARCH ETHICS SENTINEL */}
+      {activeTab === 'irb_ethics' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <IrbTriagePane
+            onAppendToDraft={onAppendToDraft}
+            onNavigateToStudio={onNavigateToStudio}
+          />
         </div>
       )}
     </div>

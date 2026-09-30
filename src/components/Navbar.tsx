@@ -62,14 +62,14 @@ export const WORKFLOW_LENSES: WorkflowLensDef[] = [
     label: 'Methods & Data',
     icon: '📊',
     pillars: ['methodology', 'synthetic', 'claims'],
-    description: 'Methodology compass and Monte Carlo synthetic data simulation'
+    description: 'Methodology compass, IRB ethics triage, and synthetic data simulation'
   },
   {
     id: 'submission',
     label: 'Pre-Flight',
     icon: '🚀',
     pillars: ['journal', 'verify', 'scholars'],
-    description: 'Desk-rejection triage, Scopus journal matching, and reviewer outreach'
+    description: 'Desk-rejection triage, IRB ethics sentinel, journal matching, and reviewer outreach'
   }
 ];
 

@@ -39,6 +39,7 @@ interface ScholarLaunchpadProps {
   onStartGroundingDraft: (draftText: string) => void;
   onRebuttalPackageReady?: (result: PeerReviewOverhaulResult, originalDraft: string, claims: Claim[]) => void;
   onLoadSample?: () => void;
+  onNavigateToEthics?: () => void;
   options: CitationOptions;
   setOptions?: React.Dispatch<React.SetStateAction<CitationOptions>>;
   sensitivity?: 'all' | 'moderate' | 'high';
@@ -53,6 +54,7 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
   onStartGroundingDraft,
   onRebuttalPackageReady,
   onLoadSample,
+  onNavigateToEthics,
   options,
   setOptions,
   sensitivity = 'moderate',
@@ -705,6 +707,17 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
                     />
                     <span>Require Permanent DOI</span>
                   </label>
+                  {onNavigateToEthics && (
+                    <button
+                      type="button"
+                      onClick={onNavigateToEthics}
+                      className="text-xs font-semibold text-emerald-800 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer ml-auto"
+                      title="Triage human subjects research and IRB exemptions"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>IRB Ethics Pre-Flight</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}
