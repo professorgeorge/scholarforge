@@ -85,14 +85,12 @@ export const SyntheticDataForgePane: React.FC<SyntheticDataForgePaneProps> = ({
 
   // Qualitative Generator State
   const [qualType, setQualType] = useState<QualitativeDataType>('semi_structured_interviews');
-  const [qualDomain, setQualDomain] = useState<string>('Healthcare Worker Resilience & Moral Distress in Emergency Care');
+  const [qualDomain, setQualDomain] = useState<string>('');
   const [participantCount, setParticipantCount] = useState<number>(4);
   const [isGeneratingQual, setIsGeneratingQual] = useState<boolean>(false);
 
   // AI Prompt Synthesizer State
-  const [aiPrompt, setAiPrompt] = useState<string>(
-    'Create a quantitative dataset of 1000 records in which remote work autonomy predicts organizational commitment, significantly moderated by psychological safety, controlling for employee tenure and company size.'
-  );
+  const [aiPrompt, setAiPrompt] = useState<string>('');
   const [isAiProcessing, setIsAiProcessing] = useState<boolean>(false);
   const [aiStatusMsg, setAiStatusMsg] = useState<string>('');
 
@@ -248,7 +246,7 @@ export const SyntheticDataForgePane: React.FC<SyntheticDataForgePaneProps> = ({
     try {
       const config: QualitativeTranscriptConfig = {
         type: qualType,
-        domain: qualDomain,
+        domain: qualDomain.trim() || 'Healthcare Worker Resilience & Moral Distress in Emergency Care',
         participantCount,
         themes: [],
         conversationDepth: 'in_depth'

@@ -29,7 +29,7 @@ export const ScholarImpactTab: React.FC<ScholarImpactTabProps> = ({
   llmConfig = DEFAULT_LLM_CONFIG
 }) => {
   const [scholarInput, setScholarInput] = useState<GoogleScholarInput>({
-    scholarUrlOrId: 'https://scholar.google.com/citations?user=1knki-oAAAAJ&hl=en',
+    scholarUrlOrId: '',
     pastedScholarText: '',
   });
   const [isFetchingImpact, setIsFetchingImpact] = useState<boolean>(false);
@@ -136,7 +136,24 @@ export const ScholarImpactTab: React.FC<ScholarImpactTabProps> = ({
               <Link2 className="w-4 h-4 text-blue-600" />
               <span>Method A: Google Scholar Profile Link or User ID</span>
             </span>
-            <span className="text-[11px] text-slate-500 font-sans font-normal">Crawl public profile</span>
+            <span className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setScholarInput(prev => ({ ...prev, scholarUrlOrId: 'https://scholar.google.com/citations?user=1knki-oAAAAJ&hl=en' }))}
+                className="text-[11px] font-semibold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer font-sans"
+              >
+                Load Demo Profile
+              </button>
+              {scholarInput.scholarUrlOrId && (
+                <button
+                  type="button"
+                  onClick={() => setScholarInput(prev => ({ ...prev, scholarUrlOrId: '' }))}
+                  className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer font-sans"
+                >
+                  Clear
+                </button>
+              )}
+            </span>
           </label>
           <div className="flex gap-2">
             <input

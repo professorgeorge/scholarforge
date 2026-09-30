@@ -31,10 +31,10 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
   llmConfig = DEFAULT_LLM_CONFIG
 }) => {
   const [picoState, setPicoState] = useState<PicoQueryState>({
-    population: 'ICU nurses, critical care staff, healthcare providers',
-    intervention: 'resilience training, mindfulness programs, peer debriefing',
-    comparison: 'standard shifts, conventional staffing, no intervention',
-    outcome: 'burnout rates, turnover intention, medical errors',
+    population: '',
+    intervention: '',
+    comparison: '',
+    outcome: '',
   });
 
   const [questionInput, setQuestionInput] = useState('');
@@ -84,6 +84,11 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
 
   const compiledPico = compilePicoQueries(picoState);
   const platformUrls = buildPlatformUrls(compiledPico);
+  const hasPicoTerms = Boolean(picoState.population || picoState.intervention || picoState.comparison || picoState.outcome);
+
+  const handleClearPico = () => {
+    setPicoState({ population: '', intervention: '', comparison: '', outcome: '' });
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -112,6 +117,16 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
               {preset.label.split(' ')[0]}
             </button>
           ))}
+          {hasPicoTerms && (
+            <button
+              type="button"
+              onClick={handleClearPico}
+              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 cursor-pointer transition ml-1"
+              title="Clear all fields"
+            >
+              Clear All
+            </button>
+          )}
         </div>
       </div>
 

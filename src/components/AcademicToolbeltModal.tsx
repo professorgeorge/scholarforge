@@ -21,6 +21,19 @@ export interface AcademicToolbeltProps {
 
 export type ToolbeltToolId = 'anonymizer' | 'wordBudget' | 'bibtexCleaner' | 'titlePolisher' | 'irbTriage';
 
+const SAMPLE_ANON_TEXT = `This research was conducted in the Department of Psychology at Harvard University under IRB Protocol #2023-891. As demonstrated in our earlier work (George & Smith, 2023), cognitive resilience buffers occupational distress. Funding was generously provided by the National Science Foundation (NSF Grant #SES-2049182). We thank Dr. Eleanor Vance at Stanford University for providing the preliminary sample data.`;
+
+const SAMPLE_BUDGET = {
+  title: 'Cognitive Resilience and Moral Distress in Emergency Medicine: A Multi-Center Empirical Investigation',
+  runningHead: 'RESILIENCE & DISTRESS IN EMERGENCY MEDICINE',
+  abstract: 'Background: Healthcare professionals face unprecedented levels of moral distress and burnout in acute clinical environments. While psychological resilience has been proposed as a mitigating buffer, empirical mechanisms linking institutional autonomy and team safety remain contested.\n\nMethods: We conducted a multi-center cross-sectional investigation across 1,200 emergency department practitioners, deploying structural equation modeling and moderated regression.\n\nResults: Psychological safety significantly moderated the inverse relationship between work overload and performance (beta = 0.28, p < .001). Furthermore, team autonomy explained 34% of variance in retention intention.\n\nConclusions: Strategic organizational interventions prioritizing psychological safety yield measurable improvements in clinician retention and patient outcome metrics.',
+  highlights: `1. Emergency practitioners experience significant moral distress under severe clinical constraints.\n2. Team psychological safety buffers the detrimental effect of high patient acuity.\n3. Institutional autonomy explains 34% of long-term clinician retention variance.`
+};
+
+const SAMPLE_BIBTEX = `@article{10.1038/s41586-021-03819-2,\n  author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki},\n  title = {Attention is all you need},\n  journal = {Advances in Neural Information Processing Systems},\n  year = {2017},\n  volume = {30}\n}`;
+
+const SAMPLE_TITLE_TOPIC = 'AI in higher education, student critical thinking, and automated feedback systems';
+
 export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
   isOpen,
   onClose,
@@ -31,28 +44,20 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // 1. Anonymizer State
-  const [anonInput, setAnonInput] = useState<string>(
-    `This research was conducted in the Department of Psychology at Harvard University under IRB Protocol #2023-891. As demonstrated in our earlier work (George & Smith, 2023), cognitive resilience buffers occupational distress. Funding was generously provided by the National Science Foundation (NSF Grant #SES-2049182). We thank Dr. Eleanor Vance at Stanford University for providing the preliminary sample data.`
-  );
+  const [anonInput, setAnonInput] = useState<string>('');
 
   // 2. Word Budget State
-  const [budgetTitle, setBudgetTitle] = useState<string>('Cognitive Resilience and Moral Distress in Emergency Medicine: A Multi-Center Empirical Investigation');
-  const [budgetRunningHead, setBudgetRunningHead] = useState<string>('RESILIENCE & DISTRESS IN EMERGENCY MEDICINE');
-  const [budgetAbstract, setBudgetAbstract] = useState<string>(
-    'Background: Healthcare professionals face unprecedented levels of moral distress and burnout in acute clinical environments. While psychological resilience has been proposed as a mitigating buffer, empirical mechanisms linking institutional autonomy and team safety remain contested.\n\nMethods: We conducted a multi-center cross-sectional investigation across 1,200 emergency department practitioners, deploying structural equation modeling and moderated regression.\n\nResults: Psychological safety significantly moderated the inverse relationship between work overload and performance (beta = 0.28, p < .001). Furthermore, team autonomy explained 34% of variance in retention intention.\n\nConclusions: Strategic organizational interventions prioritizing psychological safety yield measurable improvements in clinician retention and patient outcome metrics.'
-  );
-  const [budgetHighlights, setBudgetHighlights] = useState<string>(
-    `1. Emergency practitioners experience significant moral distress under severe clinical constraints.\n2. Team psychological safety buffers the detrimental effect of high patient acuity.\n3. Institutional autonomy explains 34% of long-term clinician retention variance.`
-  );
+  const [budgetTitle, setBudgetTitle] = useState<string>('');
+  const [budgetRunningHead, setBudgetRunningHead] = useState<string>('');
+  const [budgetAbstract, setBudgetAbstract] = useState<string>('');
+  const [budgetHighlights, setBudgetHighlights] = useState<string>('');
 
   // 3. BibTeX Cleaner State
-  const [bibtexInput, setBibtexInput] = useState<string>(
-    `@article{10.1038/s41586-021-03819-2,\n  author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki},\n  title = {Attention is all you need},\n  journal = {Advances in Neural Information Processing Systems},\n  year = {2017},\n  volume = {30}\n}`
-  );
+  const [bibtexInput, setBibtexInput] = useState<string>('');
   const [keyConvention, setKeyConvention] = useState<'authorYear' | 'authorYearTitle' | 'authorYearJournal'>('authorYearTitle');
 
   // 4. Title Polisher State
-  const [topicInput, setTopicInput] = useState<string>('AI in higher education, student critical thinking, and automated feedback systems');
+  const [topicInput, setTopicInput] = useState<string>('');
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -310,14 +315,34 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                    <span>Draft Text / Introduction</span>
-                    <span className="text-[11px] text-slate-400 font-normal">Original Manuscript</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">
+                      Draft Text / Introduction
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAnonInput(SAMPLE_ANON_TEXT)}
+                        className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
+                      >
+                        Insert Sample
+                      </button>
+                      {anonInput && (
+                        <button
+                          type="button"
+                          onClick={() => setAnonInput('')}
+                          className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   <textarea
                     rows={9}
                     value={anonInput}
                     onChange={(e) => setAnonInput(e.target.value)}
+                    placeholder="Paste draft text, introduction, or acknowledgments to redact affiliations, self-citations, IRB numbers, and grants for double-blind review..."
                     className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
                   />
                 </div>
@@ -350,7 +375,7 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                     </div>
                   </div>
                   <div className="w-full h-[180px] p-3 rounded-xl bg-slate-100 dark:bg-slate-950 border border-purple-200 dark:border-purple-900/60 text-xs font-mono text-slate-800 dark:text-slate-200 overflow-y-auto leading-relaxed">
-                    {anonymizedOutput}
+                    {anonymizedOutput || <span className="text-slate-400 italic font-sans">Anonymized text will appear here automatically when text is provided...</span>}
                   </div>
                 </div>
               </div>
@@ -361,6 +386,38 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
           {activeTool === 'wordBudget' && (
             <div className="space-y-5">
               
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-xs text-slate-500 font-medium">Test limits against Elsevier, Springer, Nature, &amp; APA standards</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBudgetTitle(SAMPLE_BUDGET.title);
+                      setBudgetRunningHead(SAMPLE_BUDGET.runningHead);
+                      setBudgetAbstract(SAMPLE_BUDGET.abstract);
+                      setBudgetHighlights(SAMPLE_BUDGET.highlights);
+                    }}
+                    className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
+                  >
+                    Load Sample Budget
+                  </button>
+                  {(budgetTitle || budgetRunningHead || budgetAbstract || budgetHighlights) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBudgetTitle('');
+                        setBudgetRunningHead('');
+                        setBudgetAbstract('');
+                        setBudgetHighlights('');
+                      }}
+                      className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Title Section */}
               <div className="space-y-2 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between">
@@ -385,6 +442,7 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                   type="text"
                   value={budgetTitle}
                   onChange={(e) => setBudgetTitle(e.target.value)}
+                  placeholder="e.g. Cognitive Resilience and Moral Distress in Emergency Medicine: A Multi-Center Investigation"
                   className="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:border-purple-600"
                 />
               </div>
@@ -413,6 +471,7 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                   type="text"
                   value={budgetRunningHead}
                   onChange={(e) => setBudgetRunningHead(e.target.value.toUpperCase())}
+                  placeholder="e.g. RESILIENCE IN EMERGENCY MEDICINE (MAX 50 CHARACTERS)"
                   className="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono uppercase focus:outline-none focus:border-purple-600"
                 />
               </div>
@@ -441,6 +500,7 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                   rows={5}
                   value={budgetAbstract}
                   onChange={(e) => setBudgetAbstract(e.target.value)}
+                  placeholder="Paste or write your structured abstract here (Background, Methods, Results, Conclusions)..."
                   className="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs focus:outline-none focus:border-purple-600"
                 />
               </div>
@@ -454,7 +514,7 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                   rows={3}
                   value={budgetHighlights}
                   onChange={(e) => setBudgetHighlights(e.target.value)}
-                  placeholder="Enter 3 to 5 bullet highlights, one per line..."
+                  placeholder="Enter 3 to 5 bullet highlights, one per line (<= 85 characters each)..."
                   className="w-full p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs focus:outline-none focus:border-purple-600 mb-2"
                 />
                 <div className="space-y-1.5">
@@ -501,7 +561,7 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                       keyConvention === 'authorYear' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
-                    AuthorYear
+                    author_year
                   </button>
                   <button
                     onClick={() => setKeyConvention('authorYearJournal')}
@@ -509,18 +569,39 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                       keyConvention === 'authorYearJournal' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
-                    AuthorYearJournal
+                    author_year_journal
                   </button>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Raw BibTeX Entry</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Raw BibTeX Entry</label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setBibtexInput(SAMPLE_BIBTEX)}
+                        className="text-[11px] font-semibold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer"
+                      >
+                        Insert Sample
+                      </button>
+                      {bibtexInput && (
+                        <button
+                          type="button"
+                          onClick={() => setBibtexInput('')}
+                          className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   <textarea
                     rows={8}
                     value={bibtexInput}
                     onChange={(e) => setBibtexInput(e.target.value)}
+                    placeholder="Paste unstandardized BibTeX entry here (e.g. @article{10.1038/...})..."
                     className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:border-blue-600"
                   />
                 </div>
@@ -537,7 +618,7 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                     </button>
                   </div>
                   <pre className="w-full h-[160px] p-3 rounded-xl bg-slate-100 dark:bg-slate-950 border border-blue-200 dark:border-blue-900/60 text-xs font-mono text-blue-900 dark:text-blue-300 overflow-y-auto">
-                    {cleanedBibtex}
+                    {cleanedBibtex || <span className="text-slate-400 italic font-sans">Clean BibTeX will appear here...</span>}
                   </pre>
                 </div>
               </div>
@@ -548,14 +629,34 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
           {activeTool === 'titlePolisher' && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="font-bold text-slate-800 dark:text-slate-200">
-                  Enter Research Topic or Draft Working Title
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-800 dark:text-slate-200">
+                    Enter Research Topic or Draft Working Title
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTopicInput(SAMPLE_TITLE_TOPIC)}
+                      className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
+                    >
+                      Insert Sample
+                    </button>
+                    {topicInput && (
+                      <button
+                        type="button"
+                        onClick={() => setTopicInput('')}
+                        className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <input
                   type="text"
                   value={topicInput}
                   onChange={(e) => setTopicInput(e.target.value)}
-                  placeholder="e.g. mindfulness in critical care nursing and clinical error rates..."
+                  placeholder="e.g. AI in higher education, student critical thinking, and automated feedback systems..."
                   className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs font-semibold focus:outline-none focus:border-purple-600"
                 />
               </div>

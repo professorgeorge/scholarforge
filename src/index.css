@@ -73,6 +73,30 @@
     overflow-wrap: anywhere;
     word-break: break-word;
   }
+
+  /* Indicative Background Placeholders: Distinctly Subdued & Italicized so they never look like user-typed text */
+  input::placeholder,
+  textarea::placeholder,
+  ::placeholder {
+    color: #94a3b8 !important;
+    opacity: 0.85 !important;
+    font-style: italic !important;
+    font-weight: 400 !important;
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder,
+  .dark ::placeholder {
+    color: #64748b !important;
+    opacity: 0.8 !important;
+    font-style: italic !important;
+    font-weight: 400 !important;
+  }
+
+  input,
+  textarea {
+    font-style: normal;
+  }
 }
 
 /* Hide scrollbar for clean horizontal swiping on mobile */

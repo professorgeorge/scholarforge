@@ -60,8 +60,8 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
   onNavigateToStudio
 }) => {
   const [state, setState] = useState<IrbTriageState>(DEFAULT_STATE);
-  const [institutionName, setInstitutionName] = useState<string>('Institutional Review Board / Research Ethics Committee');
-  const [protocolId, setProtocolId] = useState<string>('IRB-2026-EXP-418');
+  const [institutionName, setInstitutionName] = useState<string>('');
+  const [protocolId, setProtocolId] = useState<string>('');
   
   // Deficiencies search
   const [defSearch, setDefSearch] = useState<string>('');
@@ -82,7 +82,14 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
   const audit = useMemo(() => computeSubmissionAudit(state), [state]);
   const requiredDocs = useMemo(() => buildIrbDocuments(state), [state]);
   const jurisdictionNotes = useMemo(() => buildJurisdictionNotes(state.jurisdiction), [state.jurisdiction]);
-  const formalStatement = useMemo(() => generateFormalEthicsStatement(state, institutionName, protocolId), [state, institutionName, protocolId]);
+  const formalStatement = useMemo(
+    () => generateFormalEthicsStatement(
+      state, 
+      institutionName.trim() || '[Name of University / Institutional Ethics Body]', 
+      protocolId.trim() || '[IRB Protocol #]'
+    ), 
+    [state, institutionName, protocolId]
+  );
 
   // Filtered Deficiencies
   const filteredDeficiencies = useMemo(() => {
@@ -921,6 +928,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                     type="text"
                     value={institutionName}
                     onChange={e => setInstitutionName(e.target.value)}
+                    placeholder="e.g. Institutional Review Board / Research Ethics Committee"
                     className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   />
                 </div>
@@ -930,6 +938,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                     type="text"
                     value={protocolId}
                     onChange={e => setProtocolId(e.target.value)}
+                    placeholder="e.g. IRB-2026-EXP-418"
                     className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   />
                 </div>
