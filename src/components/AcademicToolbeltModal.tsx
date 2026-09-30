@@ -612,7 +612,7 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
         {/* Modal Footer */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-between">
           <span className="text-xs text-slate-500">
-            Micro-Blades operate 100% locally in your browser with zero latency.
+            Micro-Blades operate client-side in your browser.
           </span>
           <button
             onClick={onClose}

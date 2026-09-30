@@ -702,7 +702,7 @@ export const App: React.FC = () => {
                         <span>•</span>
                         <span><strong>{uniquePapers.length}</strong> peer-reviewed journal papers</span>
                         <span>•</span>
-                        <span>100% verified DOIs</span>
+                        <span>Registry-indexed DOIs</span>
                       </div>
                     </div>
                   </div>

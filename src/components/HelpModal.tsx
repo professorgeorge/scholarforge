@@ -53,14 +53,14 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
           
-          {/* Core Philosophy: Zero Hallucination */}
+          {/* Core Philosophy: Registry Grounding */}
           <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-2">
             <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300 font-bold text-sm">
               <ShieldCheck className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-              <span>Authentic Scholarly Grounding • Zero Hallucinations</span>
+              <span>Authentic Scholarly Grounding • Registry-Linked DOIs</span>
             </div>
             <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans">
-              LLMs frequently hallucinate nonexistent citations and bogus DOIs. <strong>ScholarForge</strong> interfaces directly with official scholarly registries (<strong>OpenAlex</strong> indexing 250M+ works, <strong>Crossref</strong> official DOI authority, and <strong>Google Scholar</strong> profile crawling) to ensure 100% genuine citations and verifiable scientific evidence.
+              LLMs frequently hallucinate nonexistent citations and bogus DOIs. <strong>ScholarForge</strong> is designed to cross-reference literature directly against major open scholarly registries (such as <strong>OpenAlex</strong> and <strong>Crossref</strong>) to locate verified publications, match authentic DOIs, and significantly reduce citation fabrications.
             </p>
           </div>
 
@@ -235,10 +235,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           <div className="space-y-2">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 font-serif">
               <Cpu className="w-4 h-4 text-blue-800 dark:text-blue-400" />
-              <span>6. AI Engine Connections &amp; 100% Local Privacy</span>
+              <span>6. AI Engine Connections &amp; Privacy-First Architecture</span>
             </h4>
             <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
-              Connect your own API key for <strong>Gemini (e.g. Gemini 2.5 Flash / Pro)</strong>, <strong>OpenAI (GPT-4o, o3-mini)</strong>, <strong>Groq</strong>, <strong>DeepSeek</strong>, run <strong>Client-Side WebGPU in your browser</strong> (Qwen 2.5, SmolLM2 under Apache 2.0: zero install), or run <strong>100% Private Local Models with Ollama</strong> on your machine. A zero-configuration built-in heuristic engine is also available.
+              Connect your own API key for <strong>Gemini (e.g. Gemini 2.5 Flash / Pro)</strong>, <strong>OpenAI (GPT-4o, o3-mini)</strong>, <strong>Groq</strong>, <strong>DeepSeek</strong>, run <strong>Client-Side WebGPU in your browser</strong> (Qwen 2.5, SmolLM2 under Apache 2.0: zero install, runs in local browser memory), or run <strong>On-Device Local Models with Ollama</strong> on your machine. A zero-configuration built-in heuristic engine is also available.
             </p>
           </div>
 

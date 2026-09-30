@@ -727,7 +727,7 @@ export function generateVerificationWordReport(
           <strong>Authenticity Score:</strong> ${report.authenticityScore}%<br/>
           <strong>Verified Genuine:</strong> <span style="color: #15803d; font-weight: bold;">${report.verifiedCount}</span> | 
           <strong>Discrepancies Fixed:</strong> <span style="color: #b45309; font-weight: bold;">${report.discrepancyCount}</span> | 
-          <strong>Unindexed / Potential AI Hallucinations:</strong> <span style="color: #b91c1c; font-weight: bold;">${report.notFoundCount}</span>
+          <strong>Unindexed / Unconfirmed in Registries:</strong> <span style="color: #b91c1c; font-weight: bold;">${report.notFoundCount}</span>
         </td>
       </tr>
     </table>`;
@@ -750,11 +750,11 @@ export function generateVerificationWordReport(
       if (item.isRetracted) {
         badgeHtml = `<span style="background-color: #fee2e2; color: #991b1b; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #fca5a5;">RETRACTED PUBLICATION</span>`;
       } else if (item.status === 'verified') {
-        badgeHtml = `<span style="background-color: #dcfce7; color: #166534; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #86efac;">100% VERIFIED</span>`;
+        badgeHtml = `<span style="background-color: #dcfce7; color: #166534; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #86efac;">REGISTRY CONFIRMED</span>`;
       } else if (item.status === 'discrepancy') {
         badgeHtml = `<span style="background-color: #fef3c7; color: #92400e; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #fcd34d;">DISCREPANCIES FIXED</span>`;
       } else {
-        badgeHtml = `<span style="background-color: #fee2e2; color: #991b1b; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #fca5a5;">UNINDEXED / POTENTIAL AI HALLUCINATION</span>`;
+        badgeHtml = `<span style="background-color: #fee2e2; color: #991b1b; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #fca5a5;">UNINDEXED / UNCONFIRMED CITATION</span>`;
       }
 
       let discrepancyDetails = '';

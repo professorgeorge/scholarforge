@@ -415,7 +415,7 @@ export async function testLLMConnection(config: LLMConfig): Promise<{
       const text = reply.choices[0]?.message?.content?.trim() || 'OK';
       return {
         success: true,
-        message: `Successfully connected to in-browser WebGPU engine (${latencyMs}ms) using model '${modelId}'. 100% private in GPU memory. Response: "${text}"`,
+        message: `Successfully connected to in-browser WebGPU engine (${latencyMs}ms) using model '${modelId}'. Executed locally in GPU memory. Response: "${text}"`,
         latencyMs,
         availableModels: ['Qwen2.5-1.5B-Instruct-q4f16_1-MLC', 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', 'SmolLM2-1.7B-Instruct-q4f16_1-MLC'],
       };

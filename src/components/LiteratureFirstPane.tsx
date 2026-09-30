@@ -204,7 +204,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                 Literature-First Discovery & Grounded Synthesis
               </h2>
               <span className="text-xs px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800">
-                100% Grounded in Real Papers
+                Grounded in Open Registries
               </span>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 font-sans">

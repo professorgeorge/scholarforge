@@ -310,7 +310,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <option value="builtin">Built-in Academic Generator (Instant, Free, Zero Setup)</option>
                   <option value="webgpu">WebGPU In-Browser Engine (Private, Zero Install: Apache 2.0 Models)</option>
                   <option value="gemini">Google Gemini API (Gemini 2.5 Flash / Pro: Fast with 1M Context)</option>
-                  <option value="ollama">Local Ollama (http://localhost:11434: 100% Private on Your PC)</option>
+                  <option value="ollama">Local Ollama (http://localhost:11434: On-Device Processing)</option>
                   <option value="groq">Groq Cloud (Ultra-Fast: Llama 3.3 70B / 3.1 8B)</option>
                   <option value="openai">OpenAI API (GPT-4o / GPT-4o-mini / o3-mini)</option>
                   <option value="deepseek">DeepSeek API (DeepSeek-V3 / DeepSeek-R1)</option>
@@ -416,7 +416,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {/* Action row to preload/cache */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">
-                      Weights download directly from Hugging Face / MLC CDNs into local browser cache. Zero install, 100% private in GPU memory.
+                      Weights download directly from open model repositories into local browser cache. Zero installation required, executed in local GPU memory.
                     </p>
                     <button
                       type="button"

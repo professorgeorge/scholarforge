@@ -121,7 +121,7 @@ export const AIDrafterPane: React.FC<AIDrafterPaneProps> = ({
               </span>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 font-sans">
-              Drafts substantive scientific text <em>without hallucinating fake citations</em>, then automatically grounds every claim with verified peer-reviewed DOIs.
+              Drafts substantive scientific prose and cross-references empirical assertions with verified peer-reviewed literature.
             </p>
           </div>
         </div>
@@ -227,7 +227,7 @@ export const AIDrafterPane: React.FC<AIDrafterPaneProps> = ({
       <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
         <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-          <span>LLM drafts the prose • CitationFiller verifies and injects 100% genuine DOIs</span>
+          <span>LLM assists drafting • OpenAlex &amp; Crossref cross-reference authentic DOIs</span>
         </div>
 
         <div className="flex items-center gap-3">
