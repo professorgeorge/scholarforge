@@ -430,11 +430,11 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 font-serif leading-relaxed">
+                    <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 font-serif leading-relaxed break-words">
                       <strong>Assertion:</strong> "{activeClaim.text}"
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 pt-1 text-center text-xs font-semibold">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-center text-xs font-semibold">
                       <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                         <span className="block text-[10px] uppercase font-bold text-emerald-600">Consensus</span>
                         Supported ({(activeClaim.candidatePapers?.length || 0) > 0 ? '75%+' : '0%'})

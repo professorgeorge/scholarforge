@@ -59,6 +59,29 @@
   code, pre, .font-mono {
     font-family: var(--font-mono);
   }
+
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  p, span, h1, h2, h3, h4, h5, h6, a, div, td, th, li, label, button, kbd {
+    overflow-wrap: break-word;
+  }
+
+  a, code, pre, .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+/* Hide scrollbar for clean horizontal swiping on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Academic Card & Container Styles */

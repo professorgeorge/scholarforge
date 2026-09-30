@@ -820,7 +820,7 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
             {uniquePapers.length > 0 && (() => {
               const metrics = calculateDatasetMetrics(uniquePapers);
               return (
-                <div className="p-3 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800 grid grid-cols-4 gap-2 text-center">
+                <div className="p-3 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center">
                   <div>
                     <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
                       {metrics.hIndex}

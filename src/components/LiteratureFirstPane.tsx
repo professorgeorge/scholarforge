@@ -562,7 +562,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
           {(() => {
             const metrics = calculateDatasetMetrics(discoveredPapers);
             return (
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 grid grid-cols-4 gap-2 text-center">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center">
                 <div>
                   <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
                     {metrics.hIndex}
@@ -620,15 +620,15 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                   {/* Hidden COinS tag for Zotero / Mendeley detection */}
                   <span className="Z3988 hidden" title={generateCOinS(paper)} />
 
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
                       <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => togglePaperSelection(paper.id)}
                         className="mt-1 rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
                       />
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5 mb-1">
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.badgeClass}`}

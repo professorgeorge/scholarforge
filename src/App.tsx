@@ -708,7 +708,7 @@ export const App: React.FC = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => setActivePillar('methodology')}
                       className="px-3.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/60 dark:hover:bg-red-900/60 text-red-900 dark:text-red-300 text-xs font-semibold flex items-center gap-1.5 border border-red-200 dark:border-red-800 cursor-pointer transition"

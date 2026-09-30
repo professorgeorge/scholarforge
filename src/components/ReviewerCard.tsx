@@ -146,11 +146,11 @@ export const ReviewerCard: React.FC<ReviewerCardProps> = ({
       <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
         
         {/* Left: Checkbox + Name + Affiliation */}
-        <div className="flex items-start gap-3 flex-1 min-w-[260px]">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
           <button
             type="button"
             onClick={onToggleSelect}
-            className="mt-1 text-slate-400 hover:text-blue-800 dark:hover:text-blue-400 cursor-pointer"
+            className="mt-1 text-slate-400 hover:text-blue-800 dark:hover:text-blue-400 cursor-pointer shrink-0"
           >
             {isSelected ? (
               <CheckSquare className="w-5 h-5 text-blue-800 dark:text-blue-400" />
@@ -159,9 +159,9 @@ export const ReviewerCard: React.FC<ReviewerCardProps> = ({
             )}
           </button>
 
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-bold font-serif text-slate-900 dark:text-white">
+              <h3 className="text-base font-bold font-serif text-slate-900 dark:text-white break-words">
                 {candidate.name}
               </h3>
 

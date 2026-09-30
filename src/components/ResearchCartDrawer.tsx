@@ -149,7 +149,7 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
 
           {/* Dataset Scientometrics Banner */}
           {papers.length > 0 && (
-            <div className="px-6 py-3 bg-slate-100/70 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800 grid grid-cols-4 gap-3 text-center">
+            <div className="px-4 sm:px-6 py-3 bg-slate-100/70 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center">
               <div>
                 <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
                   {metrics.hIndex}
@@ -323,11 +323,11 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
                       </button>
                     </div>
 
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug mb-1">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug mb-1 break-words">
                       {paper.title}
                     </h4>
 
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 break-words">
                       {paper.authors.map((a) => a.name).join(', ') || 'Unknown Authors'} &bull;{' '}
                       {paper.year || 'n.d.'} &bull;{' '}
                       <span className="italic">{paper.venue || 'Academic Venue'}</span>
@@ -338,16 +338,16 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
 
                     {/* DOI & Abstract Toggle */}
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         {paper.doi && (
                           <a
                             href={`https://doi.org/${paper.doi}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-mono text-[11px]"
+                            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-mono text-[11px] break-all min-w-0"
                           >
-                            <span>DOI: {paper.doi}</span>
-                            <ExternalLink className="w-3 h-3" />
+                            <span className="truncate">DOI: {paper.doi}</span>
+                            <ExternalLink className="w-3 h-3 shrink-0" />
                           </a>
                         )}
                       </div>

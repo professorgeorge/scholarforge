@@ -100,7 +100,7 @@ export const ClaimCard: React.FC<ClaimCardProps> = ({
       </div>
 
       {/* Claim Sentence Text */}
-      <div className="text-sm font-serif text-slate-900 dark:text-slate-100 leading-relaxed mb-3 pl-2.5 border-l-2 border-blue-700 dark:border-blue-500">
+      <div className="text-sm font-serif text-slate-900 dark:text-slate-100 leading-relaxed mb-3 pl-2.5 border-l-2 border-blue-700 dark:border-blue-500 break-words">
         "{claim.text}"
       </div>
 
@@ -134,12 +134,12 @@ export const ClaimCard: React.FC<ClaimCardProps> = ({
           
           {/* Paper Title & Tag */}
           <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug font-serif">
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug font-serif break-words">
                 {selectedPaper.title}
               </h4>
               
-              <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <div className="text-xs text-slate-600 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 break-words">
                 <span className="font-medium text-slate-800 dark:text-slate-200">
                   {selectedPaper.authors.length > 0
                     ? selectedPaper.authors.slice(0, 3).map((a) => a.name).join(', ') + (selectedPaper.authors.length > 3 ? ' et al.' : '')

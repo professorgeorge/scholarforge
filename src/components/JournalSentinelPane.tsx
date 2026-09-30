@@ -704,7 +704,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
                           )}
                         </div>
 
-                        <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white leading-snug">
+                        <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white leading-snug break-words">
                           {journal.title}
                         </h3>
 
@@ -729,7 +729,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
                     </div>
 
                     {/* Editorial & Impact Metrics Strip */}
-                    <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
                       <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                         <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">
                           CiteScore

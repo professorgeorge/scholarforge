@@ -170,7 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {showLensMenu && (
-              <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1.5rem)] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                 <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   Select Workflow Lens
                 </div>
@@ -262,7 +262,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {showStyleMenu && (
               <div 
-                className="absolute right-0 mt-2 w-80 sm:w-96 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150"
+                className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150"
               >
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
                   <span>Select Citation Style</span>
@@ -387,11 +387,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* ROW 2: Dedicated Navigation Tab Strip (The 8 Academic Pillars) */}
       {onSelectPillar && (
-        <div className="w-full border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/90 dark:bg-slate-950/80 backdrop-blur-sm px-4 lg:px-8 py-1.5">
+        <div className="w-full border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/90 dark:bg-slate-950/80 backdrop-blur-sm px-3 sm:px-4 lg:px-8 py-1.5 overflow-hidden">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             
             {/* The 8 Pillar Navigation Tabs */}
-            <nav className="flex flex-wrap items-center gap-1 sm:gap-1.5 text-xs font-semibold py-0.5">
+            <nav className="flex items-center gap-1 sm:gap-1.5 text-xs font-semibold py-0.5 overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap max-w-full">
               
               {visiblePillars.includes('literature') && (
                 <button
