@@ -291,7 +291,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
         <div className="relative z-10 max-w-4xl space-y-2">
           <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-semibold border border-blue-400/30 backdrop-blur-md">
             <Compass className="w-3.5 h-3.5 text-blue-400" />
-            <span>Pillar 6 : Strategic Publishing Intelligence</span>
+            <span>Strategic Publishing Intelligence</span>
           </div>
 
           <h2 className="text-lg sm:text-xl font-serif font-bold text-white tracking-tight">

@@ -405,7 +405,7 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
                 <Database className="w-4 h-4 text-blue-300" />
               </span>
               <h2 className="text-xl font-bold font-serif tracking-tight">
-                Pillar 8: Synthetic Data Forge &amp; Applied Simulation
+                Synthetic Data Forge &amp; Applied Simulation
               </h2>
               <span className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-200 border border-blue-400/30">
                 Monte Carlo &amp; Discourse Engine
