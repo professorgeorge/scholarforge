@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar, type AcademicPillar } from './components/Navbar';
+import { Navbar, type AcademicPillar, type WorkflowLensId, WORKFLOW_LENSES } from './components/Navbar';
 import { ScholarLaunchpad } from './components/ScholarLaunchpad';
 import { ResultPane } from './components/ResultPane';
 import { EvidencePane } from './components/EvidencePane';
@@ -14,6 +14,9 @@ import { ScholarSearchPane } from './components/ScholarSearchPane';
 import { JournalSentinelPane } from './components/JournalSentinelPane';
 import { MethodologyCompassPane } from './components/MethodologyCompassPane';
 import { SyntheticDataForgePane } from './components/SyntheticDataForgePane';
+import { CommandPaletteModal } from './components/CommandPaletteModal';
+import { AcademicToolbeltModal } from './components/AcademicToolbeltModal';
+import { ResearchBinderDrawer } from './components/ResearchBinderDrawer';
 import { 
   EXEMPLAR_MANUSCRIPT_TEXT, 
   getExemplarClaims 
@@ -57,6 +60,23 @@ export const App: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [activePillar, setActivePillar] = useState<AcademicPillar>('literature');
+  const [activeLens, setActiveLens] = useState<WorkflowLensId>('full');
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState<boolean>(false);
+  const [isToolbeltOpen, setIsToolbeltOpen] = useState<boolean>(false);
+  const [activeToolbeltId, setActiveToolbeltId] = useState<string | undefined>('anonymizer');
+  const [isBinderOpen, setIsBinderOpen] = useState<boolean>(false);
+
+  // Global Keyboard Shortcuts (Ctrl+K or Cmd+K for Spotlight)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSpotlightOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
 
   // Cross-Platform Bridge: Detect incoming cart payloads from ScholarCite Express
   useEffect(() => {
@@ -450,8 +470,19 @@ export const App: React.FC = () => {
         onOpenHelp={() => setIsHelpOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenSpotlight={() => setIsSpotlightOpen(true)}
+        onOpenToolbelt={() => {
+          setActiveToolbeltId('anonymizer');
+          setIsToolbeltOpen(true);
+        }}
+        onOpenBinder={() => setIsBinderOpen(true)}
         activePillar={activePillar}
-        onSelectPillar={setActivePillar}
+        onSelectPillar={(pillar) => {
+          setActivePillar(pillar);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        activeLens={activeLens}
+        onSelectLens={setActiveLens}
       />
 
       {/* Main Container */}
@@ -783,6 +814,58 @@ export const App: React.FC = () => {
           setInputText(draft);
           setClaims(syntheticClaims);
           setIsCartOpen(false);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+
+      {/* Universal Command Palette (Scholar Spotlight) */}
+      <CommandPaletteModal
+        isOpen={isSpotlightOpen}
+        onClose={() => setIsSpotlightOpen(false)}
+        onSelectPillar={(pillar) => {
+          setActivePillar(pillar);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenHelp={() => setIsHelpOpen(true)}
+        onOpenCart={() => setIsCartOpen(true)}
+        isDarkMode={isDarkMode}
+        setIsDarkMode={setIsDarkMode}
+        citationOptions={options}
+        setCitationOptions={setOptions}
+        onOpenToolbelt={(toolId) => {
+          setActiveToolbeltId(toolId);
+          setIsToolbeltOpen(true);
+        }}
+        onSelectWorkflowLens={(lens) => {
+          const l = lens as WorkflowLensId;
+          setActiveLens(l);
+          const targetLens = WORKFLOW_LENSES.find((x) => x.id === l);
+          if (targetLens && !targetLens.pillars.includes(activePillar)) {
+            setActivePillar(targetLens.pillars[0]);
+          }
+        }}
+      />
+
+      {/* Academic Toolbelt Micro-Blades */}
+      <AcademicToolbeltModal
+        isOpen={isToolbeltOpen}
+        onClose={() => setIsToolbeltOpen(false)}
+        initialToolId={activeToolbeltId}
+        onSendToStudio={(text) => {
+          setInputText((prev) => (prev ? `${prev}\n\n${text}` : text));
+          setActivePillar('studio');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+
+      {/* Universal Research Binder Drawer */}
+      <ResearchBinderDrawer
+        isOpen={isBinderOpen}
+        onClose={() => setIsBinderOpen(false)}
+        onSendToStudio={(text) => {
+          setInputText((prev) => (prev ? `${prev}\n\n${text}` : text));
+          setActivePillar('studio');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
