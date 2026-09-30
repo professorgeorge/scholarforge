@@ -488,15 +488,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* TAB 2: Quality & Journal Filters */}
           {activeTab === 'quality' && (
             <div className="space-y-4">
-              <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-950 dark:text-blue-300 flex items-center justify-between">
-                <span className="font-medium">
-                  ⚡ <strong>Live Synced:</strong> These filters also appear directly inside <strong>Literature Discovery</strong> and <strong>Manuscript Studio</strong>.
-                </span>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-bold shrink-0">
-                  Active
-                </span>
-              </div>
-
               <label className="flex items-start justify-between gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 cursor-pointer">
                 <div>
                   <span className="font-bold block text-slate-900 dark:text-slate-100 text-xs">
@@ -536,15 +527,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* TAB 3: Citation Formatting */}
           {activeTab === 'citation' && (
             <div className="space-y-4">
-              <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-950 dark:text-blue-300 flex items-center justify-between">
-                <span className="font-medium">
-                  ⚡ <strong>Live Synced:</strong> Citation style and DOI format can also be switched directly on the <strong>top navigation bar</strong> and within the <strong>Studio manuscript canvas</strong>.
-                </span>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-bold shrink-0">
-                  Active
-                </span>
-              </div>
-
               <div>
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1">
                   Primary Citation Format:
@@ -584,15 +566,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* TAB 4: Claim Detection */}
           {activeTab === 'claims' && (
             <div className="space-y-4">
-              <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs text-blue-950 dark:text-blue-300 flex items-center justify-between">
-                <span className="font-medium">
-                  ⚡ <strong>Live Synced:</strong> Sensitivity can also be modified directly within the <strong>Claims Workbench</strong>, <strong>Studio Launchpad</strong>, and the <strong>Evidence Inspector</strong>.
-                </span>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-bold shrink-0">
-                  Active
-                </span>
-              </div>
-
               <div>
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
                   Default Claim Sensitivity:

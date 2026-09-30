@@ -340,11 +340,6 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                 />
                 <span>Require Verified Permanent DOI</span>
               </label>
-
-              <span className="text-[11px] text-blue-800 dark:text-blue-400 font-medium flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Synced with Settings</span>
-              </span>
             </div>
           </div>
         )}

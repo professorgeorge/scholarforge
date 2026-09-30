@@ -636,15 +636,10 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
 
           {/* Claim Sensitivity & Quality Settings for Grounding Drafts */}
           <div className="space-y-2.5 pt-1">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
-                <span>Claim Extraction Sensitivity:</span>
-              </label>
-              <span className="text-[11px] text-blue-800 dark:text-blue-400 font-medium">
-                ⚡ Synced with Settings &amp; Claims
-              </span>
-            </div>
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
+              <span>Claim Extraction Sensitivity:</span>
+            </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button

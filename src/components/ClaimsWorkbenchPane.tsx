@@ -262,7 +262,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
           </span>
         </div>
 
-        {/* Quality Filters & Sync Indicator */}
+        {/* Quality Filters */}
         <div className="flex items-center gap-4">
           {options && setOptions && (
             <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700 dark:text-slate-300">
@@ -275,11 +275,6 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
               <span>Exclude Preprints</span>
             </label>
           )}
-
-          <span className="text-[11px] text-blue-800 dark:text-blue-300 font-medium flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Synced with Settings</span>
-          </span>
         </div>
       </div>
 
