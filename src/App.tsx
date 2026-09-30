@@ -17,6 +17,9 @@ import { SyntheticDataForgePane } from './components/SyntheticDataForgePane';
 import { CommandPaletteModal } from './components/CommandPaletteModal';
 import { AcademicToolbeltModal } from './components/AcademicToolbeltModal';
 import { ResearchBinderDrawer } from './components/ResearchBinderDrawer';
+import { IrbTriagePane } from './components/IrbTriagePane';
+import { WritingToolbeltPane } from './components/WritingToolbeltPane';
+import { AnonymizerPane } from './components/AnonymizerPane';
 import { 
   EXEMPLAR_MANUSCRIPT_TEXT, 
   getExemplarClaims 
@@ -38,7 +41,8 @@ import {
   ShieldCheck,
   Users,
   Compass,
-  Database
+  Database,
+  Search
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { addMultiplePapersToCart } from './services/cartService';
@@ -540,17 +544,12 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Pillar 4: Verify & Audit Mode */}
-        {activePillar === 'verify' && (
-          <div className="py-2 animate-in fade-in duration-200">
-            <VerifierPane llmConfig={llmConfig} />
-          </div>
-        )}
-
-        {/* Pillar 1: Literature-First Discovery & Extraction */}
+        {/* STAGE 1: DISCOVER */}
+        {/* Tool 1A: Federated Multi-Source Literature Discovery */}
         {activePillar === 'literature' && (
-          <div className="py-2 animate-in fade-in duration-200">
+          <div className="py-2 animate-in fade-in duration-200 space-y-6">
             <LiteratureFirstPane
+              initialSubTab="federated"
               onManuscriptSynthesized={(m, c) => {
                 handleManuscriptReady(m, c);
                 setActivePillar('studio');
@@ -559,12 +558,203 @@ export const App: React.FC = () => {
               setOptions={setOptions}
               llmConfig={llmConfig}
             />
+            {/* Stage 1 Workflow Next-Step Bridge */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                <span className="font-bold text-slate-900 dark:text-white font-serif">Literature discovered?</span> Move to study design or start drafting:
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Compass className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                  <span>2. Design Methodology</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>3. Draft Manuscript</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Pillar 3: Empirical Claims & Evidence Consensus Workbench */}
+        {/* Tool 1B: PICO Systematic Search Strategy */}
+        {activePillar === 'pico' && (
+          <div className="py-2 animate-in fade-in duration-200 space-y-6">
+            <LiteratureFirstPane
+              initialSubTab="pico"
+              onManuscriptSynthesized={(m, c) => {
+                handleManuscriptReady(m, c);
+                setActivePillar('studio');
+              }}
+              options={options}
+              setOptions={setOptions}
+              llmConfig={llmConfig}
+            />
+            {/* Stage 1 Workflow Next-Step Bridge */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                <span className="font-bold text-slate-900 dark:text-white font-serif">PICO queries compiled?</span> Execute federated searches or design your study:
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('literature'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Search className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                  <span>Execute Federated Search</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>2. Design Methodology</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STAGE 2: DESIGN & DATA */}
+        {/* Tool 2A: Methodology & Analysis Compass */}
+        {activePillar === 'methodology' && (
+          <div className="py-2 animate-in fade-in duration-200 space-y-6">
+            <MethodologyCompassPane 
+              llmConfig={llmConfig}
+              onNavigateToSynthetic={() => { setActivePillar('synthetic'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+              onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onAppendToDraft={(declarationText) => {
+                setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
+              }}
+            />
+            {/* Stage 2 Workflow Next-Step Bridge */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                <span className="font-bold text-slate-900 dark:text-white font-serif">Methodology specified?</span> Generate synthetic pilot data or triage ethics:
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('synthetic'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Database className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                  <span>Simulate Empirical Data</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('irb'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Triage IRB Ethics</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>3. Draft in Studio</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tool 2B: Synthetic Data Forge & Applied Simulation */}
+        {activePillar === 'synthetic' && (
+          <div className="py-2 animate-in fade-in duration-200 space-y-6">
+            <SyntheticDataForgePane
+              llmConfig={llmConfig}
+              onNavigateToStudio={(seedText) => {
+                setInputText(prev => prev ? `${prev}\n\n${seedText}` : seedText);
+                setActivePillar('studio');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+            {/* Stage 2 Workflow Next-Step Bridge */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                <span className="font-bold text-slate-900 dark:text-white font-serif">Synthetic dataset generated?</span> Check ethics protocol or proceed to manuscript drafting:
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('irb'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>IRB Ethics Protocol</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>3. Draft in Studio</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tool 2C: IRB & Ethics Protocol Triage */}
+        {activePillar === 'irb' && (
+          <div className="py-2 animate-in fade-in duration-200 space-y-6">
+            <IrbTriagePane
+              onAppendToDraft={(declarationText) => {
+                setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
+              }}
+              onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            />
+            {/* Stage 2 Workflow Next-Step Bridge */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                <span className="font-bold text-slate-900 dark:text-white font-serif">Ethics protocol triaged?</span> Append statement to manuscript or review methods:
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <Compass className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                  <span>Methodology Compass</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  className="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>3. Draft in Studio</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STAGE 3: DRAFT & GROUND */}
+        {/* Tool 3B: Empirical Claims & Evidence Consensus Workbench */}
         {activePillar === 'claims' && (
-          <div className="py-2 animate-in fade-in duration-200">
+          <div className="py-2 animate-in fade-in duration-200 space-y-6">
             <ClaimsWorkbenchPane
               llmConfig={llmConfig}
               sensitivity={sensitivity}
@@ -582,23 +772,35 @@ export const App: React.FC = () => {
                   origin: { y: 0.8 },
                   colors: ['#0284c7', '#38bdf8', '#c084fc'],
                 });
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
           </div>
         )}
 
-        {/* Pillar 5: Scholars & Reviewers (Universal Scholar Search) */}
-        {activePillar === 'scholars' && (
-          <div className="py-2 animate-in fade-in duration-200">
-            <ScholarSearchPane
-              llmConfig={llmConfig}
-              initialTitle={inputText ? inputText.slice(0, 160) : ''}
-              initialAbstract={inputText && inputText.length > 160 ? inputText.slice(160, 1500) : ''}
+        {/* Tool 3C: Academic Writing Utilities (Title, Word Budget, BibTeX) */}
+        {activePillar === 'writing' && (
+          <div className="py-2 animate-in fade-in duration-200 space-y-6">
+            <WritingToolbeltPane
+              onSendToStudio={(text) => {
+                setInputText(prev => prev ? `${prev}\n\n${text}` : text);
+                setActivePillar('studio');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
         )}
 
-        {/* Pillar 6: The Journal Fit & Desk-Rejection Pre-Flight Sentinel */}
+        {/* STAGE 4: AUDIT & PUBLISH */}
+        {/* Tool 4A: Evidence & DOI Audit Mode */}
+        {activePillar === 'verify' && (
+          <div className="py-2 animate-in fade-in duration-200">
+            <VerifierPane llmConfig={llmConfig} />
+          </div>
+        )}
+
+        {/* Tool 4B: The Journal Fit & Desk-Rejection Pre-Flight Sentinel */}
         {activePillar === 'journal' && (
           <div className="py-2 animate-in fade-in duration-200">
             <JournalSentinelPane
@@ -610,34 +812,33 @@ export const App: React.FC = () => {
               onAppendToDraft={(declarationText) => {
                 setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
               }}
-              onNavigateToStudio={() => setActivePillar('studio')}
+              onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
         )}
 
-        {/* Pillar 7: Methodology & Analysis Compass */}
-        {activePillar === 'methodology' && (
+        {/* Tool 4C: Scholars & Reviewers (Universal Scholar Search) */}
+        {activePillar === 'scholars' && (
           <div className="py-2 animate-in fade-in duration-200">
-            <MethodologyCompassPane 
+            <ScholarSearchPane
               llmConfig={llmConfig}
-              onNavigateToSynthetic={() => setActivePillar('synthetic')} 
-              onNavigateToStudio={() => setActivePillar('studio')}
-              onAppendToDraft={(declarationText) => {
-                setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
-              }}
+              initialTitle={inputText ? inputText.slice(0, 160) : ''}
+              initialAbstract={inputText && inputText.length > 160 ? inputText.slice(160, 1500) : ''}
             />
           </div>
         )}
 
-        {/* Pillar 8: Synthetic Data Forge & Applied Simulation */}
-        {activePillar === 'synthetic' && (
+        {/* Tool 4D: Double-Blind Peer Review Anonymizer */}
+        {activePillar === 'anonymizer' && (
           <div className="py-2 animate-in fade-in duration-200">
-            <SyntheticDataForgePane
-              llmConfig={llmConfig}
-              onNavigateToStudio={(seedText) => {
-                setInputText(prev => prev ? `${prev}\n\n${seedText}` : seedText);
+            <AnonymizerPane
+              initialText={inputText}
+              onSendToStudio={(text) => {
+                setInputText(text);
                 setActivePillar('studio');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
+              onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
         )}

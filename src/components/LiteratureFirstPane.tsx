@@ -49,6 +49,7 @@ interface LiteratureFirstPaneProps {
   options: CitationOptions;
   setOptions?: React.Dispatch<React.SetStateAction<CitationOptions>>;
   llmConfig?: LLMConfig;
+  initialSubTab?: 'federated' | 'pico';
 }
 
 export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
@@ -56,10 +57,18 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   options,
   setOptions,
   llmConfig = DEFAULT_LLM_CONFIG,
+  initialSubTab = 'federated',
 }) => {
   const [topic, setTopic] = useState('');
   const [focus, setFocus] = useState('');
-  const [activeSubTab, setActiveSubTab] = useState<'federated' | 'pico'>('federated');
+  const [activeSubTab, setActiveSubTab] = useState<'federated' | 'pico'>(initialSubTab);
+
+  // Sync if initialSubTab changes
+  React.useEffect(() => {
+    if (initialSubTab) {
+      setActiveSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [isPromptsOpen, setIsPromptsOpen] = useState(false);

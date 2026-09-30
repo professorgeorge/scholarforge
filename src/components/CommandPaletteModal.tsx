@@ -20,7 +20,9 @@ import {
   CheckCircle2,
   Layers,
   FileCheck,
-  Target
+  Target,
+  Wrench,
+  ShieldAlert
 } from 'lucide-react';
 import type { AcademicPillar } from './Navbar';
 import { CITATION_STYLES } from '../services/citationFormatter';
@@ -45,7 +47,7 @@ interface CommandItem {
   id: string;
   title: string;
   description: string;
-  category: 'Pillars' | 'Tools & Features' | 'Calculators' | 'Workflow Lenses' | 'System & Preferences';
+  category: '1. Discover' | '2. Design & Data' | '3. Draft & Ground' | '4. Audit & Publish' | 'Tools & Features' | 'Workflow Lenses' | 'Calculators' | 'System & Preferences';
   icon: React.ReactNode;
   keywords: string[];
   shortcutBadge?: string;
@@ -140,86 +142,124 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
   // Master command registry
   const commands: CommandItem[] = useMemo(() => {
     return [
-      // --- PILLARS ---
+      // --- STAGE 1: DISCOVER ---
       {
         id: 'pillar-literature',
-        title: 'Literature Search & PRISMA Review',
-        description: 'Multi-source federated search (OpenAlex, PubMed, Crossref, arXiv) with PRISMA protocol',
-        category: 'Pillars',
+        title: 'Stage 1: Federated Literature Discovery',
+        description: 'Multi-source federated search across OpenAlex, PubMed, Semantic Scholar, Crossref & arXiv',
+        category: '1. Discover',
         icon: <Search className="w-4 h-4 text-blue-600" />,
-        keywords: ['literature', 'search', 'prisma', 'papers', 'citations', 'pubmed', 'openalex', 'crossref', 'arxiv'],
+        keywords: ['literature', 'search', 'discovery', 'papers', 'citations', 'pubmed', 'openalex', 'crossref', 'arxiv'],
         shortcutBadge: '1',
         action: () => onSelectPillar('literature')
       },
       {
+        id: 'pillar-pico',
+        title: 'Stage 1: PICO Systematic Search Strategy',
+        description: 'PRISMA-compliant boolean queries compiled for PubMed, Scopus, Web of Science & IEEE',
+        category: '1. Discover',
+        icon: <Compass className="w-4 h-4 text-blue-600" />,
+        keywords: ['pico', 'systematic', 'review', 'prisma', 'boolean', 'mesh', 'scopus', 'web of science'],
+        action: () => onSelectPillar('pico')
+      },
+
+      // --- STAGE 2: DESIGN & DATA ---
+      {
+        id: 'pillar-methodology',
+        title: 'Stage 2: Methodology & Epistemic Compass',
+        description: 'Ontology to Analysis epistemic matrix, guided quantitative/qualitative wizard & code blocks',
+        category: '2. Design & Data',
+        icon: <Compass className="w-4 h-4 text-red-600" />,
+        keywords: ['methodology', 'methods', 'compass', 'epistemic', 'ontology', 'epistemology', 'qualitative', 'quantitative'],
+        shortcutBadge: '2',
+        action: () => onSelectPillar('methodology')
+      },
+      {
+        id: 'pillar-synthetic',
+        title: 'Stage 2: Synthetic Data Forge & Applied Simulation',
+        description: 'Monte Carlo models (moderation, mediation, SEM, ANOVA, regression) & qualitative discourse',
+        category: '2. Design & Data',
+        icon: <Database className="w-4 h-4 text-blue-600" />,
+        keywords: ['synthetic', 'data', 'forge', 'monte carlo', 'simulation', 'moderation', 'mediation', 'likert', 'interviews'],
+        action: () => onSelectPillar('synthetic')
+      },
+      {
+        id: 'pillar-irb',
+        title: 'Stage 2: IRB Ethics Protocol & Exemption Triage',
+        description: 'Determine IRB exemption, evaluate participant risk, and generate formal ethics statements',
+        category: '2. Design & Data',
+        icon: <ShieldCheck className="w-4 h-4 text-emerald-600" />,
+        keywords: ['irb', 'ethics', 'exemption', 'protocol', 'consent', 'human subjects', 'triage'],
+        action: () => onSelectPillar('irb')
+      },
+
+      // --- STAGE 3: DRAFT & GROUND ---
+      {
         id: 'pillar-studio',
-        title: 'Grounded Manuscript Studio',
-        description: 'Author manuscripts with interactive cart evidence and dynamic multi-format citation styler',
-        category: 'Pillars',
+        title: 'Stage 3: Grounded Manuscript Studio',
+        description: 'Interactive manuscript editor, section writing, citation insertion, and file import',
+        category: '3. Draft & Ground',
         icon: <FileText className="w-4 h-4 text-indigo-600" />,
         keywords: ['studio', 'manuscript', 'write', 'draft', 'editor', 'r&r', 'revision', 'apa', 'mla'],
-        shortcutBadge: '2',
+        shortcutBadge: '3',
         action: () => onSelectPillar('studio')
       },
       {
         id: 'pillar-claims',
-        title: 'Empirical Claims Workbench',
-        description: 'Extract factual assertions from text and validate against literature consensus',
-        category: 'Pillars',
+        title: 'Stage 3: Empirical Claims & Consensus Workbench',
+        description: 'Extract factual assertions from text and validate against peer-reviewed consensus',
+        category: '3. Draft & Ground',
         icon: <CheckCircle2 className="w-4 h-4 text-teal-600" />,
         keywords: ['claims', 'workbench', 'empirical', 'verify', 'consensus', 'evidence', 'assertions'],
-        shortcutBadge: '3',
         action: () => onSelectPillar('claims')
       },
       {
+        id: 'pillar-writing',
+        title: 'Stage 3: Academic Writing Utilities',
+        description: 'High-Impact Title Polisher, Journal Word Budget Auditor, and BibTeX Cleaner',
+        category: '3. Draft & Ground',
+        icon: <Wrench className="w-4 h-4 text-purple-600" />,
+        keywords: ['writing', 'title', 'polisher', 'word budget', 'running head', 'bibtex', 'cleaner'],
+        action: () => onSelectPillar('writing')
+      },
+
+      // --- STAGE 4: AUDIT & PUBLISH ---
+      {
         id: 'pillar-verify',
-        title: 'Bibliography Verifier & DOI Audit',
-        description: 'Fuzzy match references, flag AI hallucinations, detect retractions, export clean BibTeX',
-        category: 'Pillars',
+        title: 'Stage 4: DOI Verifier & Retraction Audit',
+        description: 'Retraction Watch detection, Crossref metadata integrity check, and citation health',
+        category: '4. Audit & Publish',
         icon: <ShieldCheck className="w-4 h-4 text-amber-600" />,
         keywords: ['verify', 'bibliography', 'doi', 'references', 'audit', 'hallucination', 'retraction', 'bibtex'],
         shortcutBadge: '4',
         action: () => onSelectPillar('verify')
       },
       {
-        id: 'pillar-scholars',
-        title: 'Scholars & Reviewer Network',
-        description: 'Reviewer discovery, Google Scholar profile analysis, h-index, and career biosketches',
-        category: 'Pillars',
-        icon: <Users className="w-4 h-4 text-purple-600" />,
-        keywords: ['scholars', 'reviewers', 'google scholar', 'profile', 'tenure', 'bio', 'h-index', 'co-authors'],
-        shortcutBadge: '5',
-        action: () => onSelectPillar('scholars')
-      },
-      {
         id: 'pillar-journal',
-        title: 'Journal Sentinel & Pre-Flight Triage',
-        description: 'Scopus Q1-Q4 matching, $0 Diamond OA discovery, desk-rejection pre-flight audit',
-        category: 'Pillars',
+        title: 'Stage 4: Journal Sentinel & Pre-Flight Triage',
+        description: 'Scopus Q1-Q4 matching, $0 Diamond OA discovery, and desk-rejection risk audit',
+        category: '4. Audit & Publish',
         icon: <FileCheck className="w-4 h-4 text-emerald-600" />,
         keywords: ['journal', 'sentinel', 'scopus', 'q1', 'q2', 'diamond oa', 'apc', 'desk rejection', 'cover letter'],
-        shortcutBadge: '6',
         action: () => onSelectPillar('journal')
       },
       {
-        id: 'pillar-methodology',
-        title: 'Methodology & Epistemic Compass',
-        description: 'Ontology to Analysis epistemic matrix, guided decision wizard, and R/Python/SPSS code blocks',
-        category: 'Pillars',
-        icon: <Compass className="w-4 h-4 text-rose-600" />,
-        keywords: ['methodology', 'methods', 'compass', 'epistemic', 'ontology', 'epistemology', 'qualitative', 'quantitative'],
-        shortcutBadge: '7',
-        action: () => onSelectPillar('methodology')
+        id: 'pillar-scholars',
+        title: 'Stage 4: Scholar & Reviewer Finder',
+        description: 'Reviewer discovery, Google Scholar profile analysis, h-index, and scientometrics',
+        category: '4. Audit & Publish',
+        icon: <Users className="w-4 h-4 text-purple-600" />,
+        keywords: ['scholars', 'reviewers', 'google scholar', 'profile', 'tenure', 'bio', 'h-index', 'co-authors'],
+        action: () => onSelectPillar('scholars')
       },
       {
-        id: 'pillar-synthetic',
-        title: 'Synthetic Data Forge & Simulation',
-        description: 'Monte Carlo models (moderation, mediation, SEM, ANOVA, logistic, panel) & qualitative discourse',
-        category: 'Pillars',
-        icon: <Database className="w-4 h-4 text-blue-600" />,
-        keywords: ['synthetic', 'data', 'forge', 'monte carlo', 'simulation', 'moderation', 'mediation', 'likert', 'interviews'],
-        shortcutBadge: '8',
-        action: () => onSelectPillar('synthetic')
+        id: 'pillar-anonymizer',
+        title: 'Stage 4: Double-Blind Peer Review Anonymizer',
+        description: 'Sanitize self-citations, author identifiers, university affiliations, and grant numbers',
+        category: '4. Audit & Publish',
+        icon: <ShieldAlert className="w-4 h-4 text-rose-600" />,
+        keywords: ['anonymizer', 'double-blind', 'peer review', 'sanitize', 'redact', 'self-citation', 'blind review'],
+        action: () => onSelectPillar('anonymizer')
       },
 
       // --- WORKFLOW LENSES ---
