@@ -1,0 +1,2799 @@
+{
+  "ATLAS": {
+    "ontology": [
+      {
+        "id": "naive-realism",
+        "name": "Naïve Realism",
+        "tagline": "The world is, more or less, as we directly perceive it.",
+        "essence": "Reality exists independently of mind, and our senses give us roughly accurate access to it. Social facts are facts in the same sense as physical facts.",
+        "proponents": "Common-sense empiricism; early behaviourism; some quantitative social science in practice (if rarely in print).",
+        "assumptions": [
+          "One reality exists, independent of observers.",
+          "Observation is essentially transparent when done carefully.",
+          "Disagreement is mostly error or bias to be removed."
+        ],
+        "forecloses": "Anything that takes the constitution of categories seriously: discourse, power, performativity, the social shaping of measurement.",
+        "tensions": "Hard to defend in a doctoral viva. Almost no contemporary methodologist will own this label, but many statistical practices implicitly rely on it.",
+        "critique": "Cannot account for the historicity of categories (race, gender, mental illness), measurement-construct gaps, or paradigm shifts in what counts as a fact.",
+        "readings": [
+          "Searle, J. (1995). The Construction of Social Reality."
+        ]
+      },
+      {
+        "id": "critical-realism",
+        "name": "Critical Realism",
+        "tagline": "A real world with deep generative structures, knowable only fallibly.",
+        "essence": "Reality is stratified: the empirical (what we observe), the actual (what happens), and the real (the generative mechanisms that produce events). Knowledge is a social product, but its object is not.",
+        "proponents": "Roy Bhaskar; Margaret Archer; Andrew Sayer; Berth Danermark; in IS: Wynn & Williams.",
+        "assumptions": [
+          "Causality is about generative mechanisms, not constant conjunctions.",
+          "Open systems mean predictions are usually impossible; explanation is the goal.",
+          "Knowledge is fallible but improvable through retroduction."
+        ],
+        "forecloses": "Strong relativism (which collapses ontology into epistemology), and the search for universal covering laws in social life.",
+        "tensions": "Sometimes treated as a \"third way\" between positivism and constructionism. Critics on both sides accuse it of trying to have it both ways.",
+        "critique": "Vocabulary can become baroque. Empirical operationalisation is harder than the philosophy makes it sound.",
+        "readings": [
+          "Bhaskar, R. (1975). A Realist Theory of Science.",
+          "Sayer, A. (2000). Realism and Social Science.",
+          "Danermark et al. (2002). Explaining Society."
+        ]
+      },
+      {
+        "id": "social-constructionism",
+        "name": "Social Constructionism",
+        "tagline": "What we take as real is jointly produced through interaction, language, and history.",
+        "essence": "Categories, identities, institutions, and even \"facts\" are sustained by ongoing social practices. The world is not invented from nothing, but its sense is made, not found.",
+        "proponents": "Berger & Luckmann; Gergen; later Hacking (with caveats); Latour (with reservations); in organisation studies, Weick.",
+        "assumptions": [
+          "Meaning is jointly produced.",
+          "Social objects (money, gender, organisation) depend on shared practices.",
+          "Language is constitutive, not merely descriptive."
+        ],
+        "forecloses": "The idea that categories are simply read off nature. Often pushes back against straightforward causal modelling.",
+        "tensions": "Does \"constructed\" mean \"arbitrary\"? Most careful constructionists say no, but the distinction is easy to blur.",
+        "critique": "When pushed too far, becomes self-undermining (the claim that all is constructed is itself a construction). Less convincing for, say, cancer cells than for credit ratings.",
+        "readings": [
+          "Berger & Luckmann (1966). The Social Construction of Reality.",
+          "Hacking, I. (1999). The Social Construction of What?"
+        ]
+      },
+      {
+        "id": "relativism",
+        "name": "Relativism",
+        "tagline": "Reality is plural, contingent on framework, language, or community.",
+        "essence": "There is no single coherent description of \"the way things are\" that is independent of conceptual schemes. Different communities live in different worlds.",
+        "proponents": "Late Wittgenstein (forms of life); Kuhn on paradigm incommensurability; some readings of Foucault.",
+        "assumptions": [
+          "Truth is intra-paradigmatic.",
+          "Cross-framework adjudication is suspect or impossible."
+        ],
+        "forecloses": "Universal claims, ahistorical comparisons, naïve causal inference across populations.",
+        "tensions": "The reflexive paradox: is the claim that everything is relative itself relative?",
+        "critique": "Tends to be more useful as an analytic stance toward specific knowledge claims than as a working ontology for an empirical study.",
+        "readings": [
+          "Kuhn, T. (1962). The Structure of Scientific Revolutions.",
+          "Goodman, N. (1978). Ways of Worldmaking."
+        ]
+      },
+      {
+        "id": "pragmatist",
+        "name": "Pragmatist Ontology",
+        "tagline": "What is real is what makes a difference in practice.",
+        "essence": "Pragmatism sidesteps metaphysical debates. Concepts and categories are tools; their value is judged by what they enable us to do, predict, change, or live with.",
+        "proponents": "Peirce, James, Dewey; in social research: Morgan, Cherryholmes, Greene; in IS: Goldkuhl.",
+        "assumptions": [
+          "Inquiry begins with a problem in practice.",
+          "Methods serve questions, not philosophical purity.",
+          "Knowledge is provisional and revisable."
+        ],
+        "forecloses": "Methodological monism. Insistence that one philosophical stance is correct prior to inquiry.",
+        "tensions": "Sometimes accused of philosophical evasion. Defenders argue that is the point.",
+        "critique": "Without discipline, \"what works\" can collapse into \"what suits the funder\". Pragmatism needs democratic and ethical commitments to keep it from drifting.",
+        "readings": [
+          "Dewey, J. (1938). Logic: The Theory of Inquiry.",
+          "Morgan, D. (2014). Pragmatism as a Paradigm for Social Research."
+        ]
+      },
+      {
+        "id": "process-relational",
+        "name": "Process & Relational Ontology",
+        "tagline": "The world is a flow of becomings, not a still life of things.",
+        "essence": "Substances are temporary stabilisations of processes. Entities are constituted by their relations. Time and emergence are foundational, not derivative.",
+        "proponents": "Whitehead; Bergson; in organisation studies, Tsoukas, Langley, Hernes; in STS, Mol; in feminist new materialism, Barad.",
+        "assumptions": [
+          "Becoming is prior to being.",
+          "Relations precede relata.",
+          "Snapshots distort what is essentially temporal."
+        ],
+        "forecloses": "Variance theorising that treats entities as having stable essences whose properties one can correlate.",
+        "tensions": "Methodologically demanding: requires longitudinal, processual, often ethnographic engagement.",
+        "critique": "Can be operationally elusive. Generates rich description; rigorous causal claims are harder to articulate within it.",
+        "readings": [
+          "Langley, A. (1999). Strategies for Theorising from Process Data.",
+          "Mol, A. (2002). The Body Multiple.",
+          "Hernes, T. (2014). A Process Theory of Organisation."
+        ]
+      },
+      {
+        "id": "indigenous-relational",
+        "name": "Indigenous & Relational Ontologies",
+        "tagline": "Knowledge is held in relationship with land, community, ancestors, and the more-than-human.",
+        "essence": "Many indigenous traditions treat reality as fundamentally relational and reciprocal. Knowing is a moral and ceremonial act, not a detached survey. The researcher is accountable to community and place, not only to journals.",
+        "proponents": "Linda Tuhiwai Smith; Shawn Wilson; Margaret Kovach; Bagele Chilisa; Karen Martin.",
+        "assumptions": [
+          "Knowledge is collective, contextual, and place-based.",
+          "Researcher is responsible to those who share the knowledge.",
+          "Story, ceremony, and protocol are valid epistemic forms."
+        ],
+        "forecloses": "Extractive research that mines communities for data without reciprocity or sovereignty over knowledge produced.",
+        "tensions": "Cannot simply be borrowed by researchers outside the relevant community. Doing so without protocol and accountability is itself a category mistake.",
+        "critique": "The literature insists on the limits of generalisation; this is a feature, not a bug. The decolonising critique demands engagement, not method-shopping.",
+        "readings": [
+          "Smith, L. T. (2012). Decolonising Methodologies (2nd ed.).",
+          "Wilson, S. (2008). Research is Ceremony.",
+          "Chilisa, B. (2020). Indigenous Research Methodologies."
+        ]
+      },
+      {
+        "id": "new-materialism",
+        "name": "New Materialism & Posthumanism",
+        "tagline": "Matter is lively, agentive, entangled with meaning.",
+        "essence": "Rejects the human/non-human split. Bodies, technologies, environments, and discourse co-produce phenomena. Agency is distributed across human and non-human actors.",
+        "proponents": "Karen Barad; Jane Bennett; Bruno Latour (overlapping); Donna Haraway.",
+        "assumptions": [
+          "Subject and object are intra-actively constituted.",
+          "Materials, infrastructures, and devices have effects, not just symbols."
+        ],
+        "forecloses": "Strict humanism, neat subject/object boundaries, and methods that bracket materiality as backdrop.",
+        "tensions": "Can be dense and hard to operationalise. Best deployed when the phenomenon visibly involves entanglement (medicine, technology, climate, AI).",
+        "critique": "Strong claims about agency can blur ethical distinctions. Critics worry about diluting human responsibility.",
+        "readings": [
+          "Barad, K. (2007). Meeting the Universe Halfway.",
+          "Bennett, J. (2010). Vibrant Matter."
+        ]
+      }
+    ],
+    "epistemology": [
+      {
+        "id": "positivism",
+        "name": "Positivism",
+        "tagline": "Knowledge is what survives systematic testing against measurable evidence.",
+        "essence": "Hypothetico-deductive; phenomena reduced to variables; observation is taken to be neutral when properly instrumented; aims at law-like generalisations.",
+        "proponents": "Comte; the Vienna Circle; behaviourist psychology; much applied econometrics in spirit.",
+        "assumptions": [
+          "Theory is testable.",
+          "Researcher is value-neutral.",
+          "Replication is the criterion of truth."
+        ],
+        "forecloses": "Interpretive depth; the constitutive role of meaning; reflexivity about the researcher.",
+        "tensions": "Few contemporary social scientists self-identify as positivists, though many practices remain positivist in spirit.",
+        "critique": "Theory-ladenness of observation; underdetermination; failure to generalise from samples to messy social wholes.",
+        "readings": [
+          "Ayer, A. J. (1936). Language, Truth and Logic."
+        ]
+      },
+      {
+        "id": "post-positivism",
+        "name": "Post-Positivism",
+        "tagline": "Truth is approached, not reached. Knowledge is provisional and falsifiable.",
+        "essence": "Retains a realist commitment to an external world but acknowledges that all observation is theory-laden. Falsification, triangulation, and humility replace positivist confidence.",
+        "proponents": "Popper; Lakatos; Phillips; widely the working stance of empirical psychology and management science.",
+        "assumptions": [
+          "Theories are conjectural, never finally proven.",
+          "Multiple methods help approximate truth.",
+          "Bias is acknowledged and mitigated, not eliminated."
+        ],
+        "forecloses": "The strongest interpretivist insistence that meaning is the only proper object of social science.",
+        "tensions": "Often the de facto stance for \"rigorous quantitative\" work that wants epistemic modesty without surrendering causal ambition.",
+        "critique": "In practice, can drift toward operationalist positivism. The \"approximation\" metaphor presumes a single truth-target that some would deny.",
+        "readings": [
+          "Popper, K. (1959). The Logic of Scientific Discovery.",
+          "Phillips, D. C. (1990). Postpositivistic Science."
+        ]
+      },
+      {
+        "id": "interpretivism",
+        "name": "Interpretivism & Hermeneutics",
+        "tagline": "Social life is meaningful conduct; understanding requires interpretation.",
+        "essence": "The social world differs in kind from the natural; it is constituted by meaning. Verstehen, not Erklären. Methods aim at thick description and the recovery of insider sense.",
+        "proponents": "Weber, Dilthey, Schütz, Geertz, Gadamer, Taylor.",
+        "assumptions": [
+          "Meaning is the proper object.",
+          "Researcher’s interpretive frame is unavoidable; reflect on it.",
+          "Generalisation is analytic and contextual, not statistical."
+        ],
+        "forecloses": "Variable analysis as the path to understanding meaning. Pretensions to value-neutral observation.",
+        "tensions": "Historically defensive against accusations of being \"merely subjective\"; the better defence is to insist on disciplined interpretation, not to imitate positivist criteria.",
+        "critique": "Can drift into descriptive ethnography that does not engage power, structure, or comparison.",
+        "readings": [
+          "Geertz, C. (1973). The Interpretation of Cultures.",
+          "Gadamer, H.-G. (1960). Truth and Method."
+        ]
+      },
+      {
+        "id": "constructivism",
+        "name": "Constructivism",
+        "tagline": "Knowing is an active, situated construction, not the receipt of pre-existing facts.",
+        "essence": "Closely related to constructionism, but typically focused on how individuals or communities build knowledge from experience and prior frames. In research practice, often coupled with reflexivity and co-construction with participants.",
+        "proponents": "Piaget (cognitive); Charmaz (constructivist grounded theory); Lincoln & Guba (naturalistic inquiry).",
+        "assumptions": [
+          "Knowledge is constructed in engagement.",
+          "Researcher and participant co-shape findings.",
+          "Findings are time-, place-, and relationship-specific."
+        ],
+        "forecloses": "Detached, view-from-nowhere postures; confidence in unmediated access to participants’ experience.",
+        "tensions": "Where to stop: the researcher’s constructions about the participant’s constructions about the world…",
+        "critique": "Without methodological discipline, can become indistinguishable from confessional autobiography.",
+        "readings": [
+          "Charmaz, K. (2014). Constructing Grounded Theory (2nd ed.).",
+          "Lincoln & Guba (1985). Naturalistic Inquiry."
+        ]
+      },
+      {
+        "id": "critical",
+        "name": "Critical Theory",
+        "tagline": "Knowledge is implicated in power; inquiry should illuminate and unsettle domination.",
+        "essence": "Rejects neutrality. Research is judged not only by truth-tracking but by emancipatory potential. Reveals ideology, structural injustice, and the conditions of voice.",
+        "proponents": "Frankfurt School (Adorno, Horkheimer, Habermas); Freire; feminist standpoint theory (Harding, Smith); critical race theory; Marxist political economy.",
+        "assumptions": [
+          "Reality is shaped by historically situated power.",
+          "Researcher takes a stance.",
+          "Theory and practice (praxis) are linked."
+        ],
+        "forecloses": "The pretence that research can or should be politically detached.",
+        "tensions": "Tension with positivist criteria of validity; offers alternative criteria such as catalytic validity (Lather).",
+        "critique": "Can be charged with confirming its starting commitments. Best practice is to make the commitments explicit and submit them to challenge.",
+        "readings": [
+          "Habermas, J. (1971). Knowledge and Human Interests.",
+          "Harding, S. (1991). Whose Science? Whose Knowledge?",
+          "Lather, P. (1986). Issues of Validity in Openly Ideological Research."
+        ]
+      },
+      {
+        "id": "pragmatism",
+        "name": "Pragmatism (Epistemology)",
+        "tagline": "Knowledge is what does productive work in addressing real problems.",
+        "essence": "Truth is judged by consequences in inquiry. Mixed methods are natural rather than awkward. The researcher follows the question, not the school.",
+        "proponents": "Dewey, James; Tashakkori & Teddlie; Creswell & Plano Clark.",
+        "assumptions": [
+          "Methods are tools.",
+          "Theoretical eclecticism is permissible if disciplined.",
+          "Inquiry is iterative, abductive, and fallibilist."
+        ],
+        "forecloses": "The insistence that one must be either a positivist or an interpretivist before doing empirical work.",
+        "tensions": "Critics from both sides accuse pragmatism of philosophical evasion.",
+        "critique": "Without explicit value commitments, can become technocratic. Coupled with Deweyan democracy, it becomes more demanding than it first sounds.",
+        "readings": [
+          "Tashakkori, A., & Teddlie, C. (2010). Sage Handbook of Mixed Methods Research.",
+          "Morgan, D. (2007). Paradigms Lost and Pragmatism Regained."
+        ]
+      },
+      {
+        "id": "post-structural",
+        "name": "Post-structuralism",
+        "tagline": "Discourse constitutes the very objects it claims to describe.",
+        "essence": "Knowledge is bound up with regimes of power. Categories are historically contingent. The subject is a discursive achievement, not a stable knower.",
+        "proponents": "Foucault, Derrida, Butler, Deleuze.",
+        "assumptions": [
+          "Truth is plural and historically situated.",
+          "Texts and discourses are sites of analysis.",
+          "The researcher is also produced by discourse."
+        ],
+        "forecloses": "Stable subject positions; categorical certainties; some forms of variable analysis.",
+        "tensions": "Easily caricatured. Productive when its analytic tools (genealogy, deconstruction) are used with rigour.",
+        "critique": "Can underplay material constraints (bodies, infrastructures, capital). Often paired with new materialism to address this.",
+        "readings": [
+          "Foucault, M. (1969). The Archaeology of Knowledge.",
+          "Butler, J. (1990). Gender Trouble."
+        ]
+      },
+      {
+        "id": "participatory",
+        "name": "Participatory & Co-constructed",
+        "tagline": "Those affected by the inquiry are co-authors of its knowledge.",
+        "essence": "Refuses the researcher/researched divide. Communities frame questions, gather data, interpret findings, and decide what to do with them.",
+        "proponents": "Reason & Bradbury; Fals-Borda; Freire; PAR (participatory action research) traditions.",
+        "assumptions": [
+          "Knowledge serves those whose lives it concerns.",
+          "Co-creation is both ethical and epistemic.",
+          "Action is part of knowing."
+        ],
+        "forecloses": "Extractive research postures.",
+        "tensions": "Tension between participatory ideals and academic timelines, IP regimes, and publication norms.",
+        "critique": "Risks of co-optation, tokenism, and unequal power within partnerships are real and require continual attention.",
+        "readings": [
+          "Reason, P., & Bradbury, H. (eds., 2008). The SAGE Handbook of Action Research."
+        ]
+      },
+      {
+        "id": "indigenous-epistemologies",
+        "name": "Indigenous Ways of Knowing",
+        "tagline": "Knowledge is held communally, transmitted through story and ceremony, accountable to place.",
+        "essence": "Plural traditions in which knowing is moral, relational, and bound to land, language, kinship, and ancestors. Demands protocols of reciprocity and sovereignty.",
+        "proponents": "See also Indigenous Ontologies entry.",
+        "assumptions": [
+          "Knowledge is shared, not owned.",
+          "Validity is a function of relationship and accountability.",
+          "Story, song, and dream are valid epistemic forms."
+        ],
+        "forecloses": "Extractive sampling; treating community knowledge as raw material for academic outputs.",
+        "tensions": "Outsider researchers must engage on community terms or not engage at all.",
+        "critique": "Insists that decolonisation is a real project, not a metaphor.",
+        "readings": [
+          "Smith, L. T. (2012). Decolonising Methodologies.",
+          "Kovach, M. (2009). Indigenous Methodologies."
+        ]
+      }
+    ],
+    "paradigm": [
+      {
+        "id": "functionalist",
+        "name": "Functionalist",
+        "tagline": "Order, function, and regulation. The dominant paradigm in mainstream social science.",
+        "essence": "Burrell & Morgan’s name for the realist-objectivist quadrant. Society as a system to be explained, with knowledge serving prediction and management.",
+        "proponents": "Parsons; mainstream econometrics; managerial scholarship; positivist sociology.",
+        "assumptions": [
+          "Stability and integration are baselines; conflict is dysfunction.",
+          "Empirical regularities can be discovered.",
+          "Knowledge is broadly cumulative."
+        ],
+        "forecloses": "Radical critique; deep interpretivism; performative theorising.",
+        "tensions": "Has dominated business and management research; the bulk of \"rigour\" debates assume this paradigm without naming it.",
+        "critique": "Underplays power, conflict, history; treats current arrangements as natural.",
+        "readings": [
+          "Burrell, G., & Morgan, G. (1979). Sociological Paradigms and Organisational Analysis."
+        ]
+      },
+      {
+        "id": "interpretive",
+        "name": "Interpretive",
+        "tagline": "Meaning, order, and regulation. The world as a text to be read.",
+        "essence": "Subjective-regulatory quadrant. The social world is the meaningful production of actors; the analyst recovers and articulates these meanings.",
+        "proponents": "Weber, Schütz, Garfinkel (overlap), Geertz, ethnomethodology, much qualitative organisation studies.",
+        "assumptions": [
+          "Reality is intersubjectively constituted.",
+          "Researcher seeks insider sense.",
+          "Generalisation is analytical or naturalistic."
+        ],
+        "forecloses": "Strong claims to causal generalisation; politically engaged critique unless explicitly added.",
+        "tensions": "In business schools, interpretive work has had to fight for legitimacy alongside functionalism.",
+        "critique": "Can be apolitical and ahistorical unless deliberately combined with critical commitments.",
+        "readings": [
+          "Burrell & Morgan (1979)."
+        ]
+      },
+      {
+        "id": "radical-humanist",
+        "name": "Radical Humanist",
+        "tagline": "Meaning, but in the service of human emancipation.",
+        "essence": "Subjective-radical quadrant. Critique of consciousness, ideology, and the self-imposed constraints that keep human potential captive.",
+        "proponents": "Frankfurt School; existentialist Marxism; some currents of feminism.",
+        "assumptions": [
+          "Subjectivity is the site of liberation.",
+          "Critique unsettles taken-for-granted meanings.",
+          "Inquiry has emancipatory ends."
+        ],
+        "forecloses": "Detached objectivity; managerial neutrality.",
+        "tensions": "Sometimes accused of romanticising consciousness while ignoring structural constraints.",
+        "critique": "Strongest when paired with structural analysis; otherwise risks idealism.",
+        "readings": [
+          "Burrell & Morgan (1979)."
+        ]
+      },
+      {
+        "id": "radical-structuralist",
+        "name": "Radical Structuralist",
+        "tagline": "Objective structures of domination, ripe for transformation.",
+        "essence": "Objective-radical quadrant. Marxist and Marxisant traditions that locate change in material structures, classes, and modes of production.",
+        "proponents": "Marx; Althusser; Wright; political economy of organisations.",
+        "assumptions": [
+          "Structures generate observable patterns of conflict.",
+          "Praxis links analysis to change."
+        ],
+        "forecloses": "Voluntarism; methodological individualism.",
+        "tensions": "Has fallen out of fashion in many business schools; remains alive in critical management studies and political economy.",
+        "critique": "Can underplay agency, culture, and discourse if not extended.",
+        "readings": [
+          "Burrell & Morgan (1979)."
+        ]
+      },
+      {
+        "id": "feminist",
+        "name": "Feminist",
+        "tagline": "Gender as a constitutive axis of social life and of knowledge production.",
+        "essence": "Plural traditions (liberal, standpoint, post-structural, intersectional) sharing a commitment to gender as analytic category and to the situated nature of knowledge.",
+        "proponents": "Harding, Haraway, hooks, Crenshaw, Smith, Collins, Butler.",
+        "assumptions": [
+          "Knowledge is situated.",
+          "Gender intersects with race, class, sexuality, ability, coloniality.",
+          "Research can and should challenge gendered hierarchies."
+        ],
+        "forecloses": "Pretensions to \"view from nowhere\".",
+        "tensions": "Internal debates over essentialism, identity, and intersection are productive rather than fatal.",
+        "critique": "Strongest when intersectional and reflexive about its own situatedness.",
+        "readings": [
+          "Harding, S. (1991). Whose Science? Whose Knowledge?",
+          "Crenshaw, K. (1989). Demarginalising the Intersection of Race and Sex."
+        ]
+      },
+      {
+        "id": "critical-race",
+        "name": "Critical Race & Decolonial",
+        "tagline": "Race, racism, and coloniality as enduring structures of social life and of inquiry.",
+        "essence": "A family of traditions (CRT, decolonial theory, postcolonial studies) treating race and coloniality as foundational, historically produced, and reproduced through institutions and knowledge regimes.",
+        "proponents": "Bell, Crenshaw, Delgado, Bonilla-Silva; Mignolo, Quijano, Said; Mbembe.",
+        "assumptions": [
+          "Race is a social construction with material force.",
+          "Counter-stories from the margins generate knowledge.",
+          "Knowledge production is itself a colonial site."
+        ],
+        "forecloses": "Colour-blind methodology; universalising claims that erase difference.",
+        "tensions": "Often in productive friction with positivist work that seeks to \"control for\" race.",
+        "critique": "Demands more from researchers than method choices; demands accountability.",
+        "readings": [
+          "Delgado, R., & Stefancic, J. (2017). Critical Race Theory: An Introduction.",
+          "Quijano, A. (2000). Coloniality of Power."
+        ]
+      },
+      {
+        "id": "pragmatist-paradigm",
+        "name": "Pragmatist",
+        "tagline": "A working paradigm grounded in inquiry and consequence.",
+        "essence": "Treats methodological choice as a question of fit between problem and tools. Hospitable to mixed methods, abductive reasoning, and democratic engagement.",
+        "proponents": "Dewey, James, Peirce; Morgan, Greene.",
+        "assumptions": [
+          "Inquiry begins in problems.",
+          "Methods serve questions.",
+          "Knowledge is judged by consequences in practice."
+        ],
+        "forecloses": "Methodological tribalism; foreclosed-by-philosophy designs.",
+        "tensions": "Sometimes treated as a \"no-paradigm\" stance; defenders see it as a paradigm with explicit values.",
+        "critique": "Needs strong democratic and ethical commitments to avoid technocratic drift.",
+        "readings": [
+          "Dewey, J. (1938). Logic.",
+          "Greene, J. (2007). Mixed Methods in Social Inquiry."
+        ]
+      }
+    ],
+    "methodology": [
+      {
+        "id": "experimental",
+        "name": "Experimental",
+        "tagline": "Random assignment to conditions; the gold standard for causal inference within scope.",
+        "essence": "Manipulate independent variable(s); randomise to conditions; measure outcomes. Used in lab, field, and online settings; conjoint and vignette experiments are common in social science.",
+        "proponents": "Fisher; Campbell & Stanley; Shadish, Cook & Campbell; in econ, Duflo and the credibility revolution.",
+        "assumptions": [
+          "Internal validity is a priority.",
+          "Causes can be isolated through randomisation.",
+          "Generalisation requires further work."
+        ],
+        "forecloses": "Studies of phenomena that resist randomisation (history, structures, large-scale change).",
+        "tensions": "External validity often weak; ecological validity contested.",
+        "critique": "WEIRD sampling; effect-size inflation; replication problems in psychology and behavioural science.",
+        "readings": [
+          "Shadish, Cook & Campbell (2002). Experimental and Quasi-Experimental Designs."
+        ]
+      },
+      {
+        "id": "quasi-experimental",
+        "name": "Quasi-Experimental",
+        "tagline": "Causal inference without full randomisation, using design and statistics to approximate it.",
+        "essence": "Differences-in-differences, regression discontinuity, instrumental variables, propensity scores, synthetic controls.",
+        "proponents": "Campbell; Angrist & Pischke; in policy, the credibility revolution.",
+        "assumptions": [
+          "Identification rests on credible assumptions about counterfactuals.",
+          "Robustness checks substitute for randomisation."
+        ],
+        "forecloses": "Anything where credible identification is impossible.",
+        "tensions": "The price of \"credibility\" can be small effects on narrow questions.",
+        "critique": "Critics worry about the displacement of theoretically interesting questions in favour of those that admit identification.",
+        "readings": [
+          "Angrist, J., & Pischke, J.-S. (2009). Mostly Harmless Econometrics."
+        ]
+      },
+      {
+        "id": "survey",
+        "name": "Survey Research",
+        "tagline": "Standardised measurement of attitudes, behaviours, or attributes across samples.",
+        "essence": "Cross-sectional or longitudinal; probability or non-probability; instruments developed through validation.",
+        "proponents": "Groves; Dillman; Saris & Gallhofer.",
+        "assumptions": [
+          "Constructs can be measured with calibrated instruments.",
+          "Sampling permits inference to a population."
+        ],
+        "forecloses": "Depth of meaning; emergent themes outside instrument.",
+        "tensions": "Response rates falling; weighting and non-response models matter more than ever.",
+        "critique": "Instrument design is a craft; bad surveys produce confident garbage.",
+        "readings": [
+          "Groves et al. (2009). Survey Methodology.",
+          "Dillman et al. (2014). Internet, Phone, Mail, and Mixed-Mode Surveys."
+        ]
+      },
+      {
+        "id": "case-study",
+        "name": "Case Study",
+        "tagline": "Intensive analysis of a bounded instance to illuminate a phenomenon.",
+        "essence": "Single or multiple cases; typically with multiple data sources; aims at analytical, not statistical, generalisation.",
+        "proponents": "Yin (post-positivist); Stake (interpretive); Eisenhardt (theory-building); Flyvbjerg (phronetic).",
+        "assumptions": [
+          "Context is constitutive.",
+          "Phenomena reveal themselves at depth, not at scale alone."
+        ],
+        "forecloses": "Statistical claims about populations.",
+        "tensions": "Different exemplars of \"case study\" sit in different paradigms; explicit choice is needed.",
+        "critique": "Charges of non-generalisability misread the methodology; the proper criteria are analytic.",
+        "readings": [
+          "Yin, R. (2018). Case Study Research and Applications.",
+          "Stake, R. (1995). The Art of Case Study Research.",
+          "Eisenhardt, K. (1989). Building Theories from Case Study Research.",
+          "Flyvbjerg, B. (2006). Five Misunderstandings about Case-Study Research."
+        ]
+      },
+      {
+        "id": "ethnography",
+        "name": "Ethnography",
+        "tagline": "Sustained immersion in a setting to render its life from the inside.",
+        "essence": "Participant observation, fieldnotes, conversations, artefacts; the ethnographer is the instrument; produces thick description.",
+        "proponents": "Malinowski; Geertz; Van Maanen; in organisation studies, Watson, Kunda; multi-sited (Marcus); digital (Hine).",
+        "assumptions": [
+          "Understanding requires presence.",
+          "The researcher’s embodied participation is data.",
+          "Time deepens claims."
+        ],
+        "forecloses": "Claims about populations beyond the field; quick studies.",
+        "tensions": "Access, exit, reciprocity, and writing all carry ethical weight.",
+        "critique": "Without reflexivity, can romanticise or essentialise. Modern ethnography is acutely aware of its colonial inheritances.",
+        "readings": [
+          "Geertz, C. (1973). The Interpretation of Cultures.",
+          "Van Maanen, J. (2011). Tales of the Field.",
+          "Hine, C. (2015). Ethnography for the Internet."
+        ]
+      },
+      {
+        "id": "autoethnography",
+        "name": "Autoethnography",
+        "tagline": "The researcher’s own life used as a window onto the cultural and structural.",
+        "essence": "Personal experience analysed in dialogue with theory; ranges from evocative to analytic; demands disciplined reflexivity.",
+        "proponents": "Ellis & Bochner (evocative); Anderson (analytic); Adams, Holman Jones.",
+        "assumptions": [
+          "The personal is theoretical.",
+          "Vulnerability is methodological.",
+          "Aesthetic craft serves analytic purpose."
+        ],
+        "forecloses": "Claims to disengaged objectivity.",
+        "tensions": "Risks of solipsism are real; the discipline lies in connecting the autobiographical to the cultural.",
+        "critique": "Strong work pulls weight beyond the author’s life; weak work does not.",
+        "readings": [
+          "Ellis, C. (2004). The Ethnographic I.",
+          "Anderson, L. (2006). Analytic Autoethnography."
+        ]
+      },
+      {
+        "id": "phenomenology",
+        "name": "Phenomenology",
+        "tagline": "The structure of lived experience as it appears to consciousness.",
+        "essence": "Descriptive (Husserlian) or interpretive (Heideggerian/hermeneutic). Brackets prior assumptions to attend to the texture of experience.",
+        "proponents": "Husserl; Heidegger; Merleau-Ponty; Giorgi; Van Manen; Smith (IPA).",
+        "assumptions": [
+          "Experience has structures recoverable through careful description.",
+          "Bracketing prior theory is possible (descriptive) or always partial (interpretive)."
+        ],
+        "forecloses": "Variable analysis; treating experience as effect.",
+        "tensions": "Descriptive vs interpretive variants matter; do not blur them.",
+        "critique": "Strong work resists psychologising; situates experience in body, history, and world.",
+        "readings": [
+          "Van Manen, M. (1990). Researching Lived Experience.",
+          "Smith, J., Flowers, P., & Larkin, M. (2009). Interpretative Phenomenological Analysis."
+        ]
+      },
+      {
+        "id": "grounded-theory",
+        "name": "Grounded Theory",
+        "tagline": "Build theory from data through constant comparison and theoretical sampling.",
+        "essence": "Three principal variants: classic Glaserian (emergent), Straussian (more structured coding), Charmazian constructivist (reflexive, co-constructed).",
+        "proponents": "Glaser & Strauss (1967); Strauss & Corbin; Charmaz; Clarke (situational analysis).",
+        "assumptions": [
+          "Data, sampling, and analysis interweave.",
+          "Theory emerges through saturation and integration."
+        ],
+        "forecloses": "Treating prior theory as operational hypotheses to test.",
+        "tensions": "Choosing the variant has paradigmatic consequences; do not pick & mix without saying so.",
+        "critique": "Misuse: calling thematic analysis \"grounded theory\" because the words are familiar.",
+        "readings": [
+          "Charmaz, K. (2014). Constructing Grounded Theory.",
+          "Clarke, A. (2005). Situational Analysis."
+        ]
+      },
+      {
+        "id": "narrative-inquiry",
+        "name": "Narrative Inquiry",
+        "tagline": "Stories as the principal way humans organise experience.",
+        "essence": "Studies how narratives are told, with what plot, voice, sequence, and to what effect. Includes life history, oral history, and small stories analysis.",
+        "proponents": "Riessman; Clandinin & Connelly; Bruner; Bamberg.",
+        "assumptions": [
+          "Narrative is constitutive, not decorative.",
+          "Form and function matter as much as content."
+        ],
+        "forecloses": "Reduction of stories to attitudes or facts.",
+        "tensions": "Several distinct schools (thematic, structural, dialogic/performative, visual); declaring which matters.",
+        "critique": "Without analytic discipline, can become anthology rather than analysis.",
+        "readings": [
+          "Riessman, C. K. (2008). Narrative Methods for the Human Sciences."
+        ]
+      },
+      {
+        "id": "discourse-analysis",
+        "name": "Discourse Analysis",
+        "tagline": "Language as social action; texts as sites of meaning, power, and identity work.",
+        "essence": "Includes Foucauldian discourse analysis, critical discourse analysis (Fairclough, Wodak), conversation analysis (Sacks, Schegloff), discursive psychology, multimodal CDA.",
+        "proponents": "Fairclough; Wodak; Foucault (genealogically); Potter & Wetherell.",
+        "assumptions": [
+          "Language constitutes its objects.",
+          "Power circulates through discourse.",
+          "Texts are material objects of analysis."
+        ],
+        "forecloses": "Treating language as transparent reporting of attitudes.",
+        "tensions": "Variants matter: CA studies turns of talk; FDA studies regimes of truth; CDA studies ideological function.",
+        "critique": "Reducing CDA to \"find the bias in the text\" is a misreading.",
+        "readings": [
+          "Fairclough, N. (2003). Analysing Discourse.",
+          "Wodak, R., & Meyer, M. (2016). Methods of Critical Discourse Studies."
+        ]
+      },
+      {
+        "id": "action-research",
+        "name": "Action Research / PAR",
+        "tagline": "Inquiry that changes the situation it studies, in collaboration with those affected.",
+        "essence": "Cycles of plan-act-observe-reflect, in partnership with practitioners or communities. Participatory action research (PAR) emphasises co-ownership.",
+        "proponents": "Lewin; Reason & Bradbury; Fals-Borda; Heron; in education, McNiff.",
+        "assumptions": [
+          "Knowledge serves change.",
+          "Practitioners are co-researchers.",
+          "Validity has an action component (catalytic, dialogic)."
+        ],
+        "forecloses": "Detached observer postures.",
+        "tensions": "Tensions with academic timelines and authorship norms are real.",
+        "critique": "Risk of co-optation by managerial agendas if \"participation\" is thin.",
+        "readings": [
+          "Reason, P., & Bradbury, H. (2008). The SAGE Handbook of Action Research."
+        ]
+      },
+      {
+        "id": "design-science",
+        "name": "Design Science Research",
+        "tagline": "Build something that addresses a class of problems; evaluate and theorise from it.",
+        "essence": "Originated in IS and engineering. Produces artefacts (constructs, models, methods, instantiations) and design knowledge through cycles of build and evaluate.",
+        "proponents": "Hevner et al.; Peffers et al.; Sein et al. (Action Design Research); Gregor & Hevner.",
+        "assumptions": [
+          "Knowledge can take design form.",
+          "Utility is a legitimate criterion.",
+          "Evaluation is rigorous and theorised."
+        ],
+        "forecloses": "Designs without theoretical contribution; \"consultancy\" with the label.",
+        "tensions": "Maintaining theoretical contribution alongside practical artefact is the central craft.",
+        "critique": "Easy to do badly; the literature has tightened expectations significantly.",
+        "readings": [
+          "Hevner et al. (2004). Design Science in Information Systems Research.",
+          "Sein et al. (2011). Action Design Research."
+        ]
+      },
+      {
+        "id": "mixed-methods",
+        "name": "Mixed Methods",
+        "tagline": "Designed integration of quantitative and qualitative components.",
+        "essence": "Convergent, explanatory sequential, exploratory sequential, embedded, transformative, and multi-phase designs. Integration is the defining feature.",
+        "proponents": "Tashakkori & Teddlie; Creswell & Plano Clark; Greene; Mertens (transformative).",
+        "assumptions": [
+          "Different evidence answers different facets.",
+          "Pragmatist or transformative paradigms typically frame the design.",
+          "Integration is intentional, not incidental."
+        ],
+        "forecloses": "Tossing some interview quotes into a survey paper and calling it mixed methods.",
+        "tensions": "The \"incompatibility thesis\" (paradigms cannot mix) was once standard; pragmatism made the field tractable.",
+        "critique": "Done without integration, mixed methods produce two thin papers in one cover.",
+        "readings": [
+          "Creswell, J. W., & Plano Clark, V. L. (2018). Designing and Conducting Mixed Methods Research."
+        ]
+      },
+      {
+        "id": "systematic-review",
+        "name": "Systematic & Realist Reviews",
+        "tagline": "Disciplined synthesis of existing evidence.",
+        "essence": "Systematic review (Cochrane-style) for effectiveness; scoping review for breadth; realist review (Pawson) for what works for whom under what conditions; meta-synthesis for qualitative literatures.",
+        "proponents": "Cochrane; PRISMA; Pawson & Tilley; Sandelowski & Barroso.",
+        "assumptions": [
+          "Cumulation is possible if disciplined.",
+          "Protocols, screening, and appraisal matter."
+        ],
+        "forecloses": "Naïve narrative literature reviews dressed up as systematic.",
+        "tensions": "Realist and meta-ethnographic approaches sit uneasily with strict positivist review tradition.",
+        "critique": "Heavy on procedure; the value depends on judgement throughout.",
+        "readings": [
+          "Pawson, R. (2006). Evidence-Based Policy.",
+          "Higgins et al. (2019). Cochrane Handbook."
+        ]
+      },
+      {
+        "id": "computational",
+        "name": "Computational Social Science",
+        "tagline": "Large-scale digital data, simulation, and machine learning brought to social questions.",
+        "essence": "Encompasses observational analysis of digital traces, agent-based modelling, network analysis, NLP on text corpora, and ML for social prediction or classification.",
+        "proponents": "Lazer; Salganik (Bit by Bit); Watts; Macy; for ABM, Epstein & Axtell.",
+        "assumptions": [
+          "Patterns at scale reveal mechanisms invisible at small N.",
+          "Simulation allows controlled exploration of social mechanisms.",
+          "Computational craft is methodological craft."
+        ],
+        "forecloses": "Pure interpretivism without quantification; though hybrid forms are growing.",
+        "tensions": "Risks of platform bias, algorithmic confounding, and ethics around digital trace data are central.",
+        "critique": "Big data is not necessarily good data; selection bias at scale is still selection bias.",
+        "readings": [
+          "Salganik, M. (2018). Bit by Bit.",
+          "Lazer et al. (2009). Computational Social Science."
+        ]
+      },
+      {
+        "id": "historical",
+        "name": "Historical & Archival",
+        "tagline": "Make sense of the present by retrieving how it came to be.",
+        "essence": "Use of primary sources, archives, and contextual reading to reconstruct events, structures, or meanings over time. Includes oral history.",
+        "proponents": "Bloch; Tilly; for organisations, Kipping & Üsdiken; Decker.",
+        "assumptions": [
+          "Sources are partial and produced under conditions.",
+          "Periodisation is itself an analytic choice."
+        ],
+        "forecloses": "A-historical comparison; presentist accounts.",
+        "tensions": "Archival access is uneven; absence is itself a finding.",
+        "critique": "History done well humbles confident causal stories.",
+        "readings": [
+          "Tilly, C. (1984). Big Structures, Large Processes, Huge Comparisons."
+        ]
+      },
+      {
+        "id": "qca",
+        "name": "Configurational (QCA) Methods",
+        "tagline": "Causation as configuration: outcomes follow from combinations of conditions.",
+        "essence": "Qualitative Comparative Analysis (Ragin) treats cases as configurations and uses set-theoretic logic to identify necessary and sufficient conditions, including equifinality and causal asymmetry.",
+        "proponents": "Ragin; Schneider & Wagemann; in management, Fiss.",
+        "assumptions": [
+          "Causation is often configurational, not net.",
+          "Cases are wholes, not collections of independent variables."
+        ],
+        "forecloses": "Linear-additive imagination of causation.",
+        "tensions": "Bridges qualitative and quantitative sensibilities; sometimes treated suspiciously by both.",
+        "critique": "Calibration choices have consequences; transparency is essential.",
+        "readings": [
+          "Ragin, C. (2008). Redesigning Social Inquiry.",
+          "Schneider, C., & Wagemann, C. (2012). Set-Theoretic Methods."
+        ]
+      },
+      {
+        "id": "arts-based",
+        "name": "Arts-based & Post-qualitative",
+        "tagline": "When the rendering of experience exceeds the standard text-and-table format.",
+        "essence": "Includes performative ethnography, poetic inquiry, photovoice, video, comics-based research, and post-qualitative inquiry that rejects method-as-procedure.",
+        "proponents": "Leavy; Jackson & Mazzei (post-qualitative); St. Pierre.",
+        "assumptions": [
+          "Aesthetic form is epistemic.",
+          "Some phenomena exceed propositional capture."
+        ],
+        "forecloses": "Method-as-step-by-step; some criteria of replicability.",
+        "tensions": "Operates at the edge of what counts as social science; quality criteria require explicit articulation.",
+        "critique": "Best when the form is justified by the question, not chosen for novelty.",
+        "readings": [
+          "Leavy, P. (2020). Method Meets Art.",
+          "Jackson, A., & Mazzei, L. (2012). Thinking with Theory in Qualitative Research."
+        ]
+      }
+    ],
+    "method": [
+      {
+        "id": "structured-interview",
+        "name": "Structured Interview",
+        "tagline": "Standardised questions across respondents.",
+        "essence": "Same wording, same order; interviewer minimally interpretive. Used for surveys, exit polls, structured diagnostic instruments."
+      },
+      {
+        "id": "semi-structured-interview",
+        "name": "Semi-Structured Interview",
+        "tagline": "A flexible guide with room to follow what matters.",
+        "essence": "A topic guide anchors comparability; the interviewer follows promising threads. The dominant qualitative method in management and education research."
+      },
+      {
+        "id": "in-depth-interview",
+        "name": "In-Depth / Narrative Interview",
+        "tagline": "Conversation oriented to story, meaning, and biography.",
+        "essence": "Long, sometimes multiple, sessions. Encourages reflection and story-telling. Often paired with phenomenological or narrative analysis."
+      },
+      {
+        "id": "focus-group",
+        "name": "Focus Group",
+        "tagline": "Group conversation as a generator of shared meanings and disagreements.",
+        "essence": "Useful for surfacing collective vocabulary, contested issues, and norms. Group dynamics are part of the data, not noise."
+      },
+      {
+        "id": "participant-observation",
+        "name": "Participant Observation",
+        "tagline": "Being there, with notebook and judgement.",
+        "essence": "Sustained presence in a setting, taking part to varying degrees. Generates fieldnotes, embodied insights, and access to backstage life."
+      },
+      {
+        "id": "document-archival",
+        "name": "Document & Archival Analysis",
+        "tagline": "Texts and records as data.",
+        "essence": "Reports, minutes, policies, letters, social media posts. Useful both as primary data and as triangulation. Demands attention to authorship, audience, and absence."
+      },
+      {
+        "id": "survey-instrument",
+        "name": "Survey Instrument",
+        "tagline": "A standardised questionnaire administered at scale.",
+        "essence": "Self- or interviewer-administered. Mode (web, mail, phone, in-person) shapes response. Validation and pretesting are central."
+      },
+      {
+        "id": "experiment",
+        "name": "Experimental Manipulation",
+        "tagline": "Random assignment to a controlled condition.",
+        "essence": "Lab, online (e.g., Prolific), or field. Includes vignette and conjoint experiments for attitudinal targets."
+      },
+      {
+        "id": "visual-methods",
+        "name": "Visual & Sensory Methods",
+        "tagline": "Photographs, video, drawings, sound, and walking.",
+        "essence": "Includes photo elicitation, photovoice, video ethnography, and walking interviews. Good for embodied, spatial, and aesthetic phenomena."
+      },
+      {
+        "id": "digital-trace",
+        "name": "Digital Trace Data",
+        "tagline": "Logs, posts, transactions, network records.",
+        "essence": "Drawn from APIs, web scraping, platform partnerships, or research deployments. Ethical and validity considerations are non-trivial."
+      },
+      {
+        "id": "diary",
+        "name": "Diary & Experience Sampling",
+        "tagline": "Repeated, time-anchored reports of experience.",
+        "essence": "Paper or app-based; daily diaries, ESM, day reconstruction methods. Closer to lived rhythm than retrospective interviews."
+      },
+      {
+        "id": "biometric",
+        "name": "Sensors & Biometrics",
+        "tagline": "Wearables, eye tracking, skin conductance, neuroimaging.",
+        "essence": "Measures physiological correlates of attention, affect, or behaviour. Validity claims must be careful: physiology is not psychology."
+      },
+      {
+        "id": "q-methodology",
+        "name": "Q-Methodology",
+        "tagline": "Sorting statements to surface viewpoint structures.",
+        "essence": "Participants rank-order a Q-sample; factor analysis identifies shared subjectivities. Good for typologies of opinion and meaning."
+      },
+      {
+        "id": "secondary-data",
+        "name": "Secondary & Administrative Data",
+        "tagline": "Existing datasets, public records, organisational data.",
+        "essence": "Census, panel surveys, transactional data, registers. Cost-effective; but their construction shapes what is askable."
+      }
+    ],
+    "analysis": [
+      {
+        "id": "descriptive-stats",
+        "name": "Descriptive Statistics",
+        "tagline": "Summarising the shape of the data.",
+        "essence": "Means, distributions, dispersion, cross-tabs, visualisation. Always the first step; sometimes the only step a question warrants."
+      },
+      {
+        "id": "inferential-stats",
+        "name": "Inferential Statistics",
+        "tagline": "Generalising from sample to population under uncertainty.",
+        "essence": "Hypothesis testing, confidence intervals, p-values; increasing use of Bayesian alternatives."
+      },
+      {
+        "id": "regression",
+        "name": "Regression Modelling",
+        "tagline": "Conditional means and adjustments.",
+        "essence": "OLS, logistic, multinomial, count models. Workhorse of social science; powerful with care, misleading without."
+      },
+      {
+        "id": "multilevel",
+        "name": "Multilevel / Hierarchical Models",
+        "tagline": "When observations nest in groups.",
+        "essence": "Students in schools, employees in firms, patients in hospitals. Partitions variance across levels; supports cross-level interactions."
+      },
+      {
+        "id": "sem",
+        "name": "Structural Equation Modelling",
+        "tagline": "Latent constructs and pathways of effect.",
+        "essence": "CFA validates measurement; SEM tests theorised structures. Demanding on sample size, identification, and theoretical clarity."
+      },
+      {
+        "id": "longitudinal-models",
+        "name": "Longitudinal & Panel Models",
+        "tagline": "Change, growth, and trajectories over time.",
+        "essence": "Fixed effects, random effects, growth curves, latent class growth, survival models, time series."
+      },
+      {
+        "id": "ml",
+        "name": "Machine Learning",
+        "tagline": "Algorithms tuned for prediction or pattern.",
+        "essence": "Supervised (classification, regression), unsupervised (clustering, topic models), increasingly deep learning. In social science, prediction is rarely the prize; explanation and validity are."
+      },
+      {
+        "id": "nlp",
+        "name": "NLP & Computational Text Analysis",
+        "tagline": "Text at scale, with linguistic and statistical tools.",
+        "essence": "Topic modelling, embeddings, sentiment, NER, classification. Works with discourse-aware critique to avoid reductive readings."
+      },
+      {
+        "id": "network-analysis",
+        "name": "Network Analysis",
+        "tagline": "Structures of relations among actors or objects.",
+        "essence": "Centrality, community detection, ERGM, dynamic networks. Connects naturally to relational and process ontologies."
+      },
+      {
+        "id": "thematic-analysis",
+        "name": "Thematic Analysis",
+        "tagline": "Patterns of meaning, generated through coding and reflexive engagement.",
+        "essence": "Braun & Clarke distinguish six approaches under the \"thematic analysis\" label. Reflexive TA is distinct from coding-reliability TA; do not blur them."
+      },
+      {
+        "id": "framework-analysis",
+        "name": "Framework Analysis",
+        "tagline": "A matrix-based approach for applied policy work.",
+        "essence": "Originally developed at NatCen. Five stages: familiarisation, framework development, indexing, charting, mapping & interpretation. Strong for team analysis with policy timelines."
+      },
+      {
+        "id": "content-analysis",
+        "name": "Content Analysis",
+        "tagline": "Systematic coding of texts for manifest or latent content.",
+        "essence": "Quantitative when frequencies and reliability matter; qualitative when categories are interpretively built."
+      },
+      {
+        "id": "ipa",
+        "name": "Interpretative Phenomenological Analysis (IPA)",
+        "tagline": "Idiographic, hermeneutic analysis of small numbers of in-depth interviews.",
+        "essence": "Small, purposive samples; double hermeneutic; case-by-case before across-case patterning. Good for identity, illness, and lived meaning."
+      },
+      {
+        "id": "gt-coding",
+        "name": "Grounded Theory Coding",
+        "tagline": "Open, focused/axial, theoretical coding toward integrated theory.",
+        "essence": "Variants differ. Constant comparison, memo-writing, theoretical sampling, and saturation are non-negotiable."
+      },
+      {
+        "id": "narrative-analysis",
+        "name": "Narrative Analysis",
+        "tagline": "Analysing stories as form, function, and content.",
+        "essence": "Thematic, structural, dialogic/performative, visual variants (Riessman). Different variants suit different questions."
+      },
+      {
+        "id": "discourse-cda",
+        "name": "Critical & Foucauldian Discourse Analysis",
+        "tagline": "Texts as sites of power, ideology, and subject formation.",
+        "essence": "CDA (Fairclough, Wodak) examines ideological function; FDA (after Foucault) traces regimes of truth and subject positions."
+      },
+      {
+        "id": "conversation-analysis",
+        "name": "Conversation Analysis",
+        "tagline": "The micro-architecture of talk-in-interaction.",
+        "essence": "Turn-taking, repair, sequence, preference. Demanding transcription (Jefferson). Studies how social order is produced moment by moment."
+      },
+      {
+        "id": "qca-analysis",
+        "name": "QCA (Set-Theoretic) Analysis",
+        "tagline": "Necessary and sufficient configurations.",
+        "essence": "csQCA, fsQCA, mvQCA. Requires careful calibration and case knowledge; reports consistency and coverage rather than coefficients."
+      },
+      {
+        "id": "visual-analysis",
+        "name": "Visual & Multimodal Analysis",
+        "tagline": "Images, video, and design read systematically.",
+        "essence": "Combines compositional analysis with social semiotics; in CDA, multimodal critical discourse analysis (Kress & van Leeuwen)."
+      },
+      {
+        "id": "meta-synthesis",
+        "name": "Meta-Synthesis & Meta-Ethnography",
+        "tagline": "Interpretive synthesis of qualitative literatures.",
+        "essence": "Noblit & Hare’s meta-ethnography and related approaches. Aims at higher-order interpretation rather than aggregation of effect sizes."
+      }
+    ]
+  },
+  "COMPAT": {
+    "ontoEpi": {
+      "naive-realism": {
+        "positivism": 1,
+        "post-positivism": 0.6,
+        "interpretivism": -1,
+        "constructivism": -1,
+        "critical": -0.5,
+        "pragmatism": 0,
+        "post-structural": -1,
+        "participatory": -0.5,
+        "indigenous-epistemologies": -1
+      },
+      "critical-realism": {
+        "positivism": 0.2,
+        "post-positivism": 1,
+        "interpretivism": 0.7,
+        "constructivism": 0.6,
+        "critical": 0.9,
+        "pragmatism": 0.7,
+        "post-structural": 0.2,
+        "participatory": 0.7,
+        "indigenous-epistemologies": 0.3
+      },
+      "social-constructionism": {
+        "positivism": -1,
+        "post-positivism": -0.4,
+        "interpretivism": 1,
+        "constructivism": 1,
+        "critical": 0.6,
+        "pragmatism": 0.6,
+        "post-structural": 0.8,
+        "participatory": 0.8,
+        "indigenous-epistemologies": 0.5
+      },
+      "relativism": {
+        "positivism": -1,
+        "post-positivism": -0.6,
+        "interpretivism": 0.7,
+        "constructivism": 0.8,
+        "critical": 0.3,
+        "pragmatism": 0.4,
+        "post-structural": 1,
+        "participatory": 0.5,
+        "indigenous-epistemologies": 0.5
+      },
+      "pragmatist": {
+        "positivism": 0.2,
+        "post-positivism": 0.7,
+        "interpretivism": 0.7,
+        "constructivism": 0.7,
+        "critical": 0.6,
+        "pragmatism": 1,
+        "post-structural": 0.3,
+        "participatory": 0.8,
+        "indigenous-epistemologies": 0.4
+      },
+      "process-relational": {
+        "positivism": -0.4,
+        "post-positivism": 0.2,
+        "interpretivism": 0.8,
+        "constructivism": 0.7,
+        "critical": 0.6,
+        "pragmatism": 0.7,
+        "post-structural": 0.8,
+        "participatory": 0.6,
+        "indigenous-epistemologies": 0.7
+      },
+      "indigenous-relational": {
+        "positivism": -0.8,
+        "post-positivism": -0.5,
+        "interpretivism": 0.5,
+        "constructivism": 0.6,
+        "critical": 0.7,
+        "pragmatism": 0.4,
+        "post-structural": 0.3,
+        "participatory": 0.9,
+        "indigenous-epistemologies": 1
+      },
+      "new-materialism": {
+        "positivism": -0.6,
+        "post-positivism": -0.2,
+        "interpretivism": 0.5,
+        "constructivism": 0.6,
+        "critical": 0.7,
+        "pragmatism": 0.5,
+        "post-structural": 0.8,
+        "participatory": 0.5,
+        "indigenous-epistemologies": 0.6
+      }
+    },
+    "epiMeth": {
+      "positivism": [
+        "experimental",
+        "quasi-experimental",
+        "survey",
+        "computational",
+        "systematic-review"
+      ],
+      "post-positivism": [
+        "experimental",
+        "quasi-experimental",
+        "survey",
+        "case-study",
+        "mixed-methods",
+        "computational",
+        "qca",
+        "systematic-review"
+      ],
+      "interpretivism": [
+        "ethnography",
+        "phenomenology",
+        "grounded-theory",
+        "narrative-inquiry",
+        "case-study",
+        "historical",
+        "discourse-analysis"
+      ],
+      "constructivism": [
+        "grounded-theory",
+        "narrative-inquiry",
+        "phenomenology",
+        "case-study",
+        "autoethnography",
+        "discourse-analysis",
+        "arts-based"
+      ],
+      "critical": [
+        "discourse-analysis",
+        "historical",
+        "action-research",
+        "ethnography",
+        "case-study",
+        "arts-based"
+      ],
+      "pragmatism": [
+        "mixed-methods",
+        "design-science",
+        "case-study",
+        "action-research",
+        "survey",
+        "computational"
+      ],
+      "post-structural": [
+        "discourse-analysis",
+        "historical",
+        "autoethnography",
+        "arts-based",
+        "narrative-inquiry"
+      ],
+      "participatory": [
+        "action-research",
+        "ethnography",
+        "arts-based",
+        "narrative-inquiry",
+        "case-study"
+      ],
+      "indigenous-epistemologies": [
+        "action-research",
+        "ethnography",
+        "narrative-inquiry",
+        "arts-based",
+        "historical"
+      ]
+    },
+    "methToMethods": {
+      "experimental": [
+        "experiment",
+        "survey-instrument",
+        "biometric"
+      ],
+      "quasi-experimental": [
+        "secondary-data",
+        "survey-instrument",
+        "experiment"
+      ],
+      "survey": [
+        "survey-instrument",
+        "secondary-data"
+      ],
+      "case-study": [
+        "semi-structured-interview",
+        "document-archival",
+        "participant-observation",
+        "survey-instrument"
+      ],
+      "ethnography": [
+        "participant-observation",
+        "in-depth-interview",
+        "document-archival",
+        "visual-methods"
+      ],
+      "autoethnography": [
+        "diary",
+        "document-archival",
+        "visual-methods"
+      ],
+      "phenomenology": [
+        "in-depth-interview",
+        "diary",
+        "visual-methods"
+      ],
+      "grounded-theory": [
+        "semi-structured-interview",
+        "in-depth-interview",
+        "document-archival",
+        "participant-observation"
+      ],
+      "narrative-inquiry": [
+        "in-depth-interview",
+        "document-archival",
+        "visual-methods"
+      ],
+      "discourse-analysis": [
+        "document-archival",
+        "digital-trace",
+        "visual-methods"
+      ],
+      "action-research": [
+        "participant-observation",
+        "semi-structured-interview",
+        "focus-group",
+        "visual-methods"
+      ],
+      "design-science": [
+        "experiment",
+        "semi-structured-interview",
+        "document-archival",
+        "survey-instrument"
+      ],
+      "mixed-methods": [
+        "survey-instrument",
+        "semi-structured-interview",
+        "document-archival",
+        "experiment"
+      ],
+      "systematic-review": [
+        "document-archival",
+        "secondary-data"
+      ],
+      "computational": [
+        "digital-trace",
+        "secondary-data",
+        "survey-instrument"
+      ],
+      "historical": [
+        "document-archival",
+        "in-depth-interview"
+      ],
+      "qca": [
+        "document-archival",
+        "semi-structured-interview",
+        "secondary-data"
+      ],
+      "arts-based": [
+        "visual-methods",
+        "in-depth-interview",
+        "diary"
+      ]
+    },
+    "methToAnalysis": {
+      "experimental": [
+        "descriptive-stats",
+        "inferential-stats",
+        "regression",
+        "multilevel"
+      ],
+      "quasi-experimental": [
+        "regression",
+        "longitudinal-models",
+        "inferential-stats"
+      ],
+      "survey": [
+        "descriptive-stats",
+        "inferential-stats",
+        "regression",
+        "sem",
+        "multilevel"
+      ],
+      "case-study": [
+        "thematic-analysis",
+        "framework-analysis",
+        "narrative-analysis",
+        "qca-analysis"
+      ],
+      "ethnography": [
+        "thematic-analysis",
+        "narrative-analysis",
+        "discourse-cda",
+        "visual-analysis"
+      ],
+      "autoethnography": [
+        "narrative-analysis",
+        "thematic-analysis"
+      ],
+      "phenomenology": [
+        "ipa",
+        "thematic-analysis"
+      ],
+      "grounded-theory": [
+        "gt-coding",
+        "thematic-analysis"
+      ],
+      "narrative-inquiry": [
+        "narrative-analysis",
+        "discourse-cda",
+        "visual-analysis"
+      ],
+      "discourse-analysis": [
+        "discourse-cda",
+        "conversation-analysis",
+        "visual-analysis",
+        "nlp"
+      ],
+      "action-research": [
+        "thematic-analysis",
+        "narrative-analysis",
+        "framework-analysis"
+      ],
+      "design-science": [
+        "descriptive-stats",
+        "inferential-stats",
+        "thematic-analysis",
+        "framework-analysis"
+      ],
+      "mixed-methods": [
+        "regression",
+        "thematic-analysis",
+        "framework-analysis",
+        "sem"
+      ],
+      "systematic-review": [
+        "meta-synthesis",
+        "descriptive-stats"
+      ],
+      "computational": [
+        "nlp",
+        "network-analysis",
+        "ml",
+        "longitudinal-models"
+      ],
+      "historical": [
+        "narrative-analysis",
+        "discourse-cda",
+        "thematic-analysis"
+      ],
+      "qca": [
+        "qca-analysis"
+      ],
+      "arts-based": [
+        "visual-analysis",
+        "narrative-analysis",
+        "thematic-analysis"
+      ]
+    }
+  },
+  "QUESTIONS": [
+    {
+      "id": "question-form",
+      "layer": "Question",
+      "prompt": "What is your research question really asking?",
+      "context": "The grammar of the question, not its surface, drives method. A \"how do people experience X\" question and a \"what causes X\" question live in different worlds.",
+      "options": [
+        {
+          "label": "Descriptive: what is the case, how prevalent, how distributed?",
+          "detail": "You want to map a phenomenon: incidence, distribution, demographics, types.",
+          "votes": {
+            "ontology": {
+              "critical-realism": 0.5,
+              "naive-realism": 0.3,
+              "pragmatist": 0.4
+            },
+            "epistemology": {
+              "post-positivism": 0.7,
+              "positivism": 0.4,
+              "pragmatism": 0.5
+            },
+            "methodology": {
+              "survey": 1,
+              "systematic-review": 0.6,
+              "case-study": 0.4,
+              "computational": 0.5
+            }
+          }
+        },
+        {
+          "label": "Explanatory: why does X happen, what causes Y?",
+          "detail": "You want causal accounts, mechanisms, predictors, conditions.",
+          "votes": {
+            "ontology": {
+              "critical-realism": 0.9,
+              "pragmatist": 0.4,
+              "naive-realism": 0.3
+            },
+            "epistemology": {
+              "post-positivism": 0.9,
+              "positivism": 0.5,
+              "critical": 0.5
+            },
+            "methodology": {
+              "experimental": 0.9,
+              "quasi-experimental": 0.9,
+              "qca": 0.6,
+              "case-study": 0.4,
+              "computational": 0.4
+            }
+          }
+        },
+        {
+          "label": "Interpretive: what does X mean to those who live it?",
+          "detail": "You want lived meaning, sense-making, the texture of experience.",
+          "votes": {
+            "ontology": {
+              "social-constructionism": 0.9,
+              "process-relational": 0.5,
+              "critical-realism": 0.3
+            },
+            "epistemology": {
+              "interpretivism": 1,
+              "constructivism": 0.9,
+              "post-structural": 0.5
+            },
+            "methodology": {
+              "phenomenology": 0.9,
+              "ethnography": 0.7,
+              "narrative-inquiry": 0.7,
+              "grounded-theory": 0.5,
+              "case-study": 0.4
+            }
+          }
+        },
+        {
+          "label": "Critical: how does X reproduce inequality? How could it be otherwise?",
+          "detail": "You want to expose hidden power, ideology, exclusion; possibly to transform.",
+          "votes": {
+            "ontology": {
+              "critical-realism": 0.7,
+              "social-constructionism": 0.6,
+              "process-relational": 0.4
+            },
+            "epistemology": {
+              "critical": 1,
+              "post-structural": 0.7,
+              "participatory": 0.5
+            },
+            "methodology": {
+              "discourse-analysis": 0.9,
+              "historical": 0.6,
+              "ethnography": 0.5,
+              "action-research": 0.6,
+              "arts-based": 0.4
+            }
+          }
+        },
+        {
+          "label": "Transformative: how can we change X with those affected?",
+          "detail": "You want inquiry that changes the situation, with participants as co-researchers.",
+          "votes": {
+            "ontology": {
+              "pragmatist": 0.7,
+              "social-constructionism": 0.6,
+              "indigenous-relational": 0.6
+            },
+            "epistemology": {
+              "participatory": 1,
+              "critical": 0.7,
+              "pragmatism": 0.6
+            },
+            "methodology": {
+              "action-research": 1,
+              "arts-based": 0.5,
+              "ethnography": 0.4
+            }
+          }
+        },
+        {
+          "label": "Design: how do we build something that works for X?",
+          "detail": "You want to produce an artefact (tool, model, intervention) and evaluate it.",
+          "votes": {
+            "ontology": {
+              "pragmatist": 1,
+              "critical-realism": 0.5
+            },
+            "epistemology": {
+              "pragmatism": 1,
+              "post-positivism": 0.5
+            },
+            "methodology": {
+              "design-science": 1,
+              "mixed-methods": 0.5,
+              "experimental": 0.4
+            }
+          }
+        },
+        {
+          "label": "Conceptual / theoretical: what concepts best capture X?",
+          "detail": "You want to refine a vocabulary, dissect a construct, or build new theory from rich data.",
+          "votes": {
+            "ontology": {
+              "social-constructionism": 0.7,
+              "process-relational": 0.7,
+              "critical-realism": 0.5
+            },
+            "epistemology": {
+              "interpretivism": 0.7,
+              "constructivism": 0.7,
+              "post-structural": 0.5,
+              "critical": 0.4
+            },
+            "methodology": {
+              "grounded-theory": 0.9,
+              "case-study": 0.6,
+              "historical": 0.5,
+              "systematic-review": 0.4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stance",
+      "layer": "Ontology",
+      "prompt": "Which stance toward the social world rings most true to you?",
+      "context": "Not what is fashionable, but what you actually believe when you stop performing methods. Your committee will ask.",
+      "options": [
+        {
+          "label": "There is a real world out there, broadly knowable through evidence.",
+          "detail": "You take the existence of social phenomena as something we can study with disciplined observation.",
+          "votes": {
+            "ontology": {
+              "naive-realism": 0.5,
+              "critical-realism": 0.6
+            },
+            "epistemology": {
+              "positivism": 0.6,
+              "post-positivism": 0.7
+            }
+          }
+        },
+        {
+          "label": "A real world exists, but our access is mediated by structures and concepts.",
+          "detail": "Critical realism: there is a world; our knowledge of it is always partial, theory-laden, and corrigible.",
+          "votes": {
+            "ontology": {
+              "critical-realism": 1
+            },
+            "epistemology": {
+              "post-positivism": 0.7,
+              "critical": 0.5,
+              "interpretivism": 0.4
+            }
+          }
+        },
+        {
+          "label": "The social world is constituted through meaning. To bracket meaning is to lose it.",
+          "detail": "Constructionist: social reality is sustained by interpretation, language, and shared practices.",
+          "votes": {
+            "ontology": {
+              "social-constructionism": 1,
+              "process-relational": 0.5
+            },
+            "epistemology": {
+              "interpretivism": 0.8,
+              "constructivism": 0.9
+            }
+          }
+        },
+        {
+          "label": "Reality is shaped by power and is contested terrain.",
+          "detail": "Critical: knowledge cannot be detached from power and history. Inquiry should illuminate domination.",
+          "votes": {
+            "ontology": {
+              "critical-realism": 0.5,
+              "social-constructionism": 0.5
+            },
+            "epistemology": {
+              "critical": 1,
+              "post-structural": 0.6,
+              "participatory": 0.5
+            }
+          }
+        },
+        {
+          "label": "Truth is what works. Inquiry begins in problems, not metaphysics.",
+          "detail": "Pragmatist: ontological debates are useful only insofar as they help us address consequential questions.",
+          "votes": {
+            "ontology": {
+              "pragmatist": 1
+            },
+            "epistemology": {
+              "pragmatism": 1
+            }
+          }
+        },
+        {
+          "label": "Reality is process and relation. Snapshots distort what is essentially temporal.",
+          "detail": "Process/relational ontology: becoming is prior to being; entities are constituted by relations.",
+          "votes": {
+            "ontology": {
+              "process-relational": 1,
+              "social-constructionism": 0.4
+            },
+            "epistemology": {
+              "interpretivism": 0.6,
+              "constructivism": 0.6,
+              "post-structural": 0.5
+            }
+          }
+        },
+        {
+          "label": "Knowing is held in relationship; the categories of \"real\" and \"constructed\" miss what matters.",
+          "detail": "Indigenous-relational and posthumanist sensibilities, where knowledge is accountable to people, place, and the more-than-human.",
+          "votes": {
+            "ontology": {
+              "indigenous-relational": 0.8,
+              "new-materialism": 0.7,
+              "process-relational": 0.5
+            },
+            "epistemology": {
+              "indigenous-epistemologies": 0.8,
+              "participatory": 0.6,
+              "post-structural": 0.4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "layer": "Evidence",
+      "prompt": "What kind of evidence will be most credible for your question?",
+      "context": "Read this as: what would persuade a hostile but honest reviewer? Different audiences trust different signals.",
+      "options": [
+        {
+          "label": "Numbers at scale: replicable findings across many cases.",
+          "detail": "Surveys, experiments, secondary statistical data.",
+          "votes": {
+            "methodology": {
+              "survey": 0.9,
+              "experimental": 0.9,
+              "quasi-experimental": 0.8,
+              "computational": 0.6
+            },
+            "epistemology": {
+              "positivism": 0.7,
+              "post-positivism": 0.8
+            }
+          }
+        },
+        {
+          "label": "In-depth accounts: rich understanding of fewer instances.",
+          "detail": "Interviews, ethnographic observation, document close-reading.",
+          "votes": {
+            "methodology": {
+              "ethnography": 0.7,
+              "phenomenology": 0.6,
+              "narrative-inquiry": 0.6,
+              "case-study": 0.7,
+              "grounded-theory": 0.6
+            },
+            "epistemology": {
+              "interpretivism": 0.7,
+              "constructivism": 0.6
+            }
+          }
+        },
+        {
+          "label": "Both numeric and textual, in conversation.",
+          "detail": "Mixed methods design with deliberate integration.",
+          "votes": {
+            "methodology": {
+              "mixed-methods": 1,
+              "case-study": 0.4,
+              "design-science": 0.4
+            },
+            "epistemology": {
+              "pragmatism": 0.9,
+              "post-positivism": 0.4
+            }
+          }
+        },
+        {
+          "label": "Documents, archives, and traces.",
+          "detail": "Historical records, organisational artefacts, digital footprints.",
+          "votes": {
+            "methodology": {
+              "historical": 0.9,
+              "discourse-analysis": 0.7,
+              "computational": 0.6,
+              "systematic-review": 0.4
+            },
+            "epistemology": {
+              "interpretivism": 0.5,
+              "critical": 0.5,
+              "post-structural": 0.5
+            }
+          }
+        },
+        {
+          "label": "Working artefacts: things we built, tested, and refined.",
+          "detail": "Prototypes, interventions, models, designs.",
+          "votes": {
+            "methodology": {
+              "design-science": 1,
+              "action-research": 0.6,
+              "experimental": 0.4
+            },
+            "epistemology": {
+              "pragmatism": 0.9,
+              "post-positivism": 0.4
+            }
+          }
+        },
+        {
+          "label": "Embodied, sensory, aesthetic data.",
+          "detail": "Photo, video, sound, walking, performance, drawing.",
+          "votes": {
+            "methodology": {
+              "arts-based": 1,
+              "ethnography": 0.5,
+              "narrative-inquiry": 0.4
+            },
+            "epistemology": {
+              "post-structural": 0.6,
+              "constructivism": 0.5,
+              "critical": 0.4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "unit",
+      "layer": "Unit",
+      "prompt": "What is your unit of inquiry?",
+      "context": "The level at which you locate the phenomenon shapes your sampling, your data, and your analysis.",
+      "options": [
+        {
+          "label": "Individuals: their attitudes, behaviours, experiences.",
+          "detail": "Survey, experiment, interview at the personal level.",
+          "votes": {
+            "methodology": {
+              "survey": 0.6,
+              "experimental": 0.7,
+              "phenomenology": 0.6,
+              "narrative-inquiry": 0.6
+            }
+          }
+        },
+        {
+          "label": "Interactions and relationships.",
+          "detail": "Conversation, dyads, classroom episodes.",
+          "votes": {
+            "methodology": {
+              "ethnography": 0.6,
+              "discourse-analysis": 0.7
+            }
+          }
+        },
+        {
+          "label": "Groups, organisations, communities.",
+          "detail": "Teams, firms, neighbourhoods.",
+          "votes": {
+            "methodology": {
+              "case-study": 0.9,
+              "ethnography": 0.6,
+              "action-research": 0.5
+            }
+          }
+        },
+        {
+          "label": "Texts, discourses, artefacts.",
+          "detail": "Speeches, policy documents, social media corpora.",
+          "votes": {
+            "methodology": {
+              "discourse-analysis": 1,
+              "historical": 0.6,
+              "computational": 0.5,
+              "systematic-review": 0.4
+            }
+          }
+        },
+        {
+          "label": "Practices and routines.",
+          "detail": "What people do, repeatedly and visibly.",
+          "votes": {
+            "methodology": {
+              "ethnography": 0.7,
+              "discourse-analysis": 0.5,
+              "case-study": 0.5
+            }
+          }
+        },
+        {
+          "label": "Systems, fields, networks.",
+          "detail": "Markets, ecosystems, supply chains, citation networks.",
+          "votes": {
+            "methodology": {
+              "computational": 0.9,
+              "qca": 0.5,
+              "historical": 0.5
+            }
+          }
+        },
+        {
+          "label": "Events, episodes, processes.",
+          "detail": "Crises, transitions, interventions over time.",
+          "votes": {
+            "methodology": {
+              "case-study": 0.6,
+              "historical": 0.7,
+              "narrative-inquiry": 0.5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "time",
+      "layer": "Time",
+      "prompt": "What time horizon does your study require?",
+      "context": "Process questions need processual data. Snapshots will not capture trajectories.",
+      "options": [
+        {
+          "label": "A single point in time.",
+          "detail": "Cross-sectional design.",
+          "votes": {
+            "methodology": {
+              "survey": 0.6,
+              "experimental": 0.5,
+              "case-study": 0.3
+            }
+          }
+        },
+        {
+          "label": "Multiple waves over months or years.",
+          "detail": "Longitudinal panel; repeated waves.",
+          "votes": {
+            "methodology": {
+              "survey": 0.5,
+              "quasi-experimental": 0.5,
+              "case-study": 0.4,
+              "ethnography": 0.4
+            },
+            "analysis": {
+              "longitudinal-models": 0.9
+            }
+          }
+        },
+        {
+          "label": "Real-time, processual, in-the-moment.",
+          "detail": "Continuous engagement, event-based.",
+          "votes": {
+            "methodology": {
+              "ethnography": 0.9,
+              "action-research": 0.7,
+              "case-study": 0.5
+            },
+            "ontology": {
+              "process-relational": 0.6
+            }
+          }
+        },
+        {
+          "label": "Historical or retrospective.",
+          "detail": "Working back from records and memory.",
+          "votes": {
+            "methodology": {
+              "historical": 1,
+              "narrative-inquiry": 0.5,
+              "discourse-analysis": 0.5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "sampling",
+      "layer": "Sampling",
+      "prompt": "What is your sampling logic?",
+      "context": "Different logics support different generalisations. Statistical, theoretical, naturalistic, and analytical generalisation are not the same.",
+      "options": [
+        {
+          "label": "Probability sampling: I want to generalise to a population.",
+          "detail": "Statistical inference is the goal.",
+          "votes": {
+            "methodology": {
+              "survey": 0.9,
+              "quasi-experimental": 0.6
+            },
+            "epistemology": {
+              "post-positivism": 0.6,
+              "positivism": 0.5
+            }
+          }
+        },
+        {
+          "label": "Theoretical / purposive: I want depth, contrast, saturation.",
+          "detail": "Cases chosen for their conceptual yield.",
+          "votes": {
+            "methodology": {
+              "grounded-theory": 0.9,
+              "case-study": 0.7,
+              "ethnography": 0.5,
+              "phenomenology": 0.6
+            }
+          }
+        },
+        {
+          "label": "A single illustrative or revelatory case.",
+          "detail": "Critical, extreme, or unique cases.",
+          "votes": {
+            "methodology": {
+              "case-study": 0.9,
+              "autoethnography": 0.5,
+              "ethnography": 0.5
+            }
+          }
+        },
+        {
+          "label": "A few comparative cases.",
+          "detail": "Contrast across organisations, regions, or eras.",
+          "votes": {
+            "methodology": {
+              "case-study": 0.8,
+              "qca": 0.7,
+              "historical": 0.5
+            }
+          }
+        },
+        {
+          "label": "The full population (e.g., all listed firms).",
+          "detail": "Census or comprehensive coverage.",
+          "votes": {
+            "methodology": {
+              "computational": 0.7,
+              "qca": 0.5
+            }
+          }
+        },
+        {
+          "label": "Following the phenomenon wherever it goes.",
+          "detail": "Multi-sited, mobile, or ethnomethodological logic.",
+          "votes": {
+            "methodology": {
+              "ethnography": 0.7,
+              "discourse-analysis": 0.5,
+              "arts-based": 0.4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "theory-relation",
+      "layer": "Theory",
+      "prompt": "What is your relationship with existing theory?",
+      "context": "Are you testing, building, applying, critiquing, or bracketing? This is more than a footnote choice; it shapes design.",
+      "options": [
+        {
+          "label": "Test and refine existing theory.",
+          "detail": "Hypotheses derived from a literature; design tests them.",
+          "votes": {
+            "methodology": {
+              "experimental": 0.7,
+              "quasi-experimental": 0.6,
+              "survey": 0.6,
+              "case-study": 0.4
+            },
+            "epistemology": {
+              "post-positivism": 0.7,
+              "positivism": 0.5
+            }
+          }
+        },
+        {
+          "label": "Build new theory from rich data.",
+          "detail": "Inductive or abductive theory development.",
+          "votes": {
+            "methodology": {
+              "grounded-theory": 1,
+              "case-study": 0.5,
+              "ethnography": 0.4
+            },
+            "epistemology": {
+              "interpretivism": 0.5,
+              "constructivism": 0.6,
+              "pragmatism": 0.4
+            }
+          }
+        },
+        {
+          "label": "Use theory as an interpretive lens.",
+          "detail": "Apply a framework (e.g., Bourdieu, Foucault) to make sense of data.",
+          "votes": {
+            "methodology": {
+              "ethnography": 0.5,
+              "discourse-analysis": 0.7,
+              "historical": 0.5,
+              "case-study": 0.5
+            },
+            "epistemology": {
+              "interpretivism": 0.5,
+              "critical": 0.6,
+              "post-structural": 0.6
+            }
+          }
+        },
+        {
+          "label": "Critique and dismantle theoretical assumptions.",
+          "detail": "Genealogy, deconstruction, problematisation.",
+          "votes": {
+            "methodology": {
+              "discourse-analysis": 1,
+              "historical": 0.6,
+              "arts-based": 0.4
+            },
+            "epistemology": {
+              "post-structural": 1,
+              "critical": 0.6
+            }
+          }
+        },
+        {
+          "label": "Bracket theory; attend to experience as such.",
+          "detail": "Phenomenological reduction, post-qualitative bracketing.",
+          "votes": {
+            "methodology": {
+              "phenomenology": 0.9,
+              "arts-based": 0.6
+            },
+            "epistemology": {
+              "interpretivism": 0.6,
+              "post-structural": 0.4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "researcher-stance",
+      "layer": "Stance",
+      "prompt": "What is your relationship with participants or with the data?",
+      "context": "How close are you, and what role do they play in producing knowledge?",
+      "options": [
+        {
+          "label": "I observe and measure from outside.",
+          "detail": "Detached observer, minimising \"interference\".",
+          "votes": {
+            "methodology": {
+              "experimental": 0.8,
+              "survey": 0.7,
+              "quasi-experimental": 0.6,
+              "computational": 0.5
+            },
+            "epistemology": {
+              "positivism": 0.7,
+              "post-positivism": 0.6
+            }
+          }
+        },
+        {
+          "label": "I interpret while remaining reflexive.",
+          "detail": "Acknowledging the researcher’s frame as part of the analysis.",
+          "votes": {
+            "methodology": {
+              "ethnography": 0.7,
+              "phenomenology": 0.5,
+              "grounded-theory": 0.5,
+              "case-study": 0.5
+            },
+            "epistemology": {
+              "interpretivism": 0.7,
+              "constructivism": 0.7
+            }
+          }
+        },
+        {
+          "label": "I engage and dialogue.",
+          "detail": "A two-way conversation; the researcher’s understanding evolves.",
+          "votes": {
+            "methodology": {
+              "narrative-inquiry": 0.7,
+              "ethnography": 0.5,
+              "action-research": 0.5
+            },
+            "epistemology": {
+              "constructivism": 0.6,
+              "interpretivism": 0.5,
+              "participatory": 0.6
+            }
+          }
+        },
+        {
+          "label": "I co-research with participants as partners.",
+          "detail": "Participatory action; shared authorship of the inquiry.",
+          "votes": {
+            "methodology": {
+              "action-research": 1,
+              "arts-based": 0.5
+            },
+            "epistemology": {
+              "participatory": 1,
+              "indigenous-epistemologies": 0.5
+            }
+          }
+        },
+        {
+          "label": "I work with traces, archives, or non-human data.",
+          "detail": "No live participants; texts, records, sensors, code.",
+          "votes": {
+            "methodology": {
+              "historical": 0.8,
+              "discourse-analysis": 0.6,
+              "computational": 0.7
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "pragmatic",
+      "layer": "Constraints",
+      "prompt": "Which practical and ethical considerations weigh on your design?",
+      "context": "Picking a beautiful methodology that you cannot ethically or practically execute is a false economy. Be honest now.",
+      "options": [
+        {
+          "label": "I have access constraints (gatekeepers, geography, time).",
+          "detail": "May rule out long-term ethnography or large surveys.",
+          "votes": {
+            "methodology": {
+              "systematic-review": 0.5,
+              "computational": 0.5,
+              "case-study": 0.3
+            }
+          }
+        },
+        {
+          "label": "I work with vulnerable populations or sensitive topics.",
+          "detail": "Calls for participatory, narrative, or arts-based approaches with care.",
+          "votes": {
+            "methodology": {
+              "narrative-inquiry": 0.6,
+              "action-research": 0.6,
+              "phenomenology": 0.4,
+              "arts-based": 0.5
+            },
+            "epistemology": {
+              "participatory": 0.6,
+              "critical": 0.4
+            }
+          }
+        },
+        {
+          "label": "I work in indigenous or non-Western contexts.",
+          "detail": "Decolonising commitments must be foregrounded.",
+          "votes": {
+            "methodology": {
+              "action-research": 0.7,
+              "ethnography": 0.5,
+              "arts-based": 0.4
+            },
+            "epistemology": {
+              "indigenous-epistemologies": 1,
+              "participatory": 0.7
+            },
+            "ontology": {
+              "indigenous-relational": 1
+            }
+          }
+        },
+        {
+          "label": "I work with very large digital datasets.",
+          "detail": "Computational methods plus careful ethics around platforms and consent.",
+          "votes": {
+            "methodology": {
+              "computational": 1
+            }
+          }
+        },
+        {
+          "label": "I am bound by tight timelines and resources.",
+          "detail": "Realistic about what one researcher can do.",
+          "votes": {
+            "methodology": {
+              "systematic-review": 0.5,
+              "case-study": 0.4,
+              "survey": 0.4,
+              "computational": 0.4
+            }
+          }
+        },
+        {
+          "label": "None of these dominate; the question itself is the constraint.",
+          "detail": "You have flexibility; let the question lead.",
+          "votes": {}
+        }
+      ]
+    },
+    {
+      "id": "standards",
+      "layer": "Quality",
+      "prompt": "Which quality criteria will you be defending against?",
+      "context": "Choose criteria that match your stack. Mismatched criteria is a top reason designs fail review.",
+      "options": [
+        {
+          "label": "Validity and reliability (psychometric).",
+          "detail": "Construct validity, internal/external validity, reliability, replicability.",
+          "votes": {
+            "epistemology": {
+              "positivism": 0.5,
+              "post-positivism": 0.6
+            }
+          }
+        },
+        {
+          "label": "Trustworthiness (Lincoln & Guba): credibility, transferability, dependability, confirmability.",
+          "detail": "The standard for naturalistic and constructivist work.",
+          "votes": {
+            "epistemology": {
+              "interpretivism": 0.6,
+              "constructivism": 0.7
+            }
+          }
+        },
+        {
+          "label": "Catalytic and dialogic validity (Lather, action research).",
+          "detail": "Did the research help participants act? Did it generate dialogue across difference?",
+          "votes": {
+            "epistemology": {
+              "critical": 0.7,
+              "participatory": 0.7
+            }
+          }
+        },
+        {
+          "label": "Crystallisation, resonance, aesthetic merit.",
+          "detail": "Multiple genres, evocative power, theoretical depth.",
+          "votes": {
+            "epistemology": {
+              "post-structural": 0.5,
+              "constructivism": 0.4
+            },
+            "methodology": {
+              "arts-based": 0.5,
+              "autoethnography": 0.4
+            }
+          }
+        },
+        {
+          "label": "Pragmatic warrant: did the artefact or intervention work?",
+          "detail": "Utility, fit, transferability of design knowledge.",
+          "votes": {
+            "epistemology": {
+              "pragmatism": 0.7
+            },
+            "methodology": {
+              "design-science": 0.6,
+              "action-research": 0.4
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "GLOSSARY": [
+    {
+      "term": "Abduction",
+      "def": "Inference to the best explanation; reasoning from a surprising observation to a candidate account that, if true, would render it unsurprising. Central to grounded theory and pragmatist inquiry."
+    },
+    {
+      "term": "Analytic generalisation",
+      "def": "Generalising findings to theory rather than to populations; the proper aim of well-designed case research (Yin)."
+    },
+    {
+      "term": "Axiology",
+      "def": "The role of values in inquiry. Positivists aim for value-neutrality; critical and participatory researchers reject it as either impossible or undesirable."
+    },
+    {
+      "term": "Bracketing (epoché)",
+      "def": "Phenomenological practice of suspending prior theoretical commitments to attend to experience as it appears. Always partial."
+    },
+    {
+      "term": "Coding",
+      "def": "The process of attaching analytic labels to segments of data. Differs across methodologies: open/axial/selective in grounded theory; reflexive coding in TA; line-by-line in IPA."
+    },
+    {
+      "term": "Coherence",
+      "def": "The fit between ontology, epistemology, methodology, methods, and analysis. The single most common reason research designs fail review."
+    },
+    {
+      "term": "Constant comparison",
+      "def": "Iterative comparison of new data with prior categories and emerging theory. The engine of grounded theory."
+    },
+    {
+      "term": "Construct validity",
+      "def": "Whether the measure captures the intended theoretical construct. Established through multiple sources of evidence."
+    },
+    {
+      "term": "Crystallisation",
+      "def": "Richardson’s alternative to triangulation: multiple genres, voices, and angles produce a faceted understanding rather than a single point."
+    },
+    {
+      "term": "Decolonising methodology",
+      "def": "A research stance and practice oriented to sovereignty, reciprocity, and accountability with indigenous communities; refuses extractive research."
+    },
+    {
+      "term": "Dependability",
+      "def": "In trustworthiness criteria, the equivalent of reliability: consistency of process, often demonstrated through audit trails."
+    },
+    {
+      "term": "Discourse",
+      "def": "In Foucault, organised knowledge that produces its objects. In CDA, language as social practice. In CA, talk-in-interaction."
+    },
+    {
+      "term": "Double hermeneutic",
+      "def": "Giddens’s phrase: the social scientist interprets a world that is itself constituted by lay interpretations. IPA names this explicitly."
+    },
+    {
+      "term": "Emergence",
+      "def": "New properties arising at higher levels not reducible to lower levels. Central to critical realism and process ontology."
+    },
+    {
+      "term": "Epistemology",
+      "def": "Theory of knowledge: what counts as knowing, what makes a claim warranted."
+    },
+    {
+      "term": "Equifinality",
+      "def": "In configurational analysis (QCA), the principle that several different configurations of conditions can produce the same outcome."
+    },
+    {
+      "term": "Generative mechanism",
+      "def": "In critical realism, an underlying causal structure that, when triggered, produces tendencies toward certain events."
+    },
+    {
+      "term": "Hermeneutics",
+      "def": "The discipline of interpretation; from biblical exegesis to Gadamer’s philosophical hermeneutics. Underwrites interpretive social science."
+    },
+    {
+      "term": "Idiographic",
+      "def": "Concerned with the particular case in its specificity, as opposed to nomothetic (law-seeking) inquiry. Phenomenology and IPA are idiographic."
+    },
+    {
+      "term": "Identification (causal)",
+      "def": "In econometrics and quasi-experimental work, the assumptions under which an estimate has a causal interpretation."
+    },
+    {
+      "term": "Intersectionality",
+      "def": "Crenshaw’s analytic of overlapping axes of difference (race, gender, class, sexuality) producing distinct experiences not reducible to their components."
+    },
+    {
+      "term": "Methodology",
+      "def": "A coherent strategy for inquiry that links philosophical commitments to specific methods."
+    },
+    {
+      "term": "Method",
+      "def": "A technique for generating or analysing data: interview, observation, regression, coding."
+    },
+    {
+      "term": "Mixed methods",
+      "def": "Designed integration of qualitative and quantitative components such that the integration produces inferences neither alone could deliver."
+    },
+    {
+      "term": "Naturalistic generalisation",
+      "def": "Stake’s notion: readers come to recognise something of their own settings in a rich case description."
+    },
+    {
+      "term": "Ontology",
+      "def": "Theory of what exists; the kind of stuff the social world is made of."
+    },
+    {
+      "term": "Paradigm",
+      "def": "Kuhn: a community-shared exemplar and worldview. In social research often used (after Burrell & Morgan) to label families of philosophical commitments."
+    },
+    {
+      "term": "Phronesis",
+      "def": "Aristotelian practical wisdom; for Flyvbjerg, what social science should aim at: judgement in particulars, attentive to power."
+    },
+    {
+      "term": "Praxis",
+      "def": "Action informed by theory and reflection; central to critical and participatory traditions."
+    },
+    {
+      "term": "Reflexivity",
+      "def": "Disciplined attention to how the researcher’s position, history, and choices shape what is seen and said."
+    },
+    {
+      "term": "Retroduction",
+      "def": "Critical realist mode of inference: from events to the structures that must be present for them to be possible."
+    },
+    {
+      "term": "Saturation",
+      "def": "In qualitative sampling, the point at which further data yield diminishing analytic returns. Often misused; Braun & Clarke prefer \"rich engagement\"."
+    },
+    {
+      "term": "Symbolic interactionism",
+      "def": "Blumer’s tradition: meaning is produced in interaction; objects, selves, and societies are continuously enacted."
+    },
+    {
+      "term": "Thematic analysis",
+      "def": "A family of qualitative analyses identifying patterns of meaning. Reflexive TA (Braun & Clarke) differs sharply from coding-reliability TA."
+    },
+    {
+      "term": "Theoretical sampling",
+      "def": "Sampling driven by emerging theoretical needs rather than fixed in advance; the engine of grounded theory."
+    },
+    {
+      "term": "Transferability",
+      "def": "The qualitative analogue of external validity: provide enough context for readers to judge applicability."
+    },
+    {
+      "term": "Triangulation",
+      "def": "Use of multiple methods, sources, theories, or investigators to corroborate findings. Crystallisation is an alternative metaphor."
+    },
+    {
+      "term": "Trustworthiness",
+      "def": "Lincoln & Guba’s overarching criterion for naturalistic inquiry, comprising credibility, transferability, dependability, and confirmability."
+    },
+    {
+      "term": "Validity (catalytic)",
+      "def": "Lather’s criterion: did the research re-orient participants toward action and self-understanding?"
+    },
+    {
+      "term": "Validity (communicative)",
+      "def": "A Habermasian criterion: claims survive ideal-speech-style critical dialogue with stakeholders."
+    },
+    {
+      "term": "Verstehen",
+      "def": "Weber’s \"understanding\"; grasping the subjective meaning of action. The interpretive vocation."
+    },
+    {
+      "term": "WEIRD samples",
+      "def": "Western, Educated, Industrialised, Rich, Democratic. Henrich, Heine & Norenzayan’s reminder that most psychology generalises from a sliver of humanity."
+    }
+  ],
+  "EXEMPLARS": [
+    {
+      "title": "Asylums",
+      "author": "Erving Goffman, 1961",
+      "discipline": "Sociology",
+      "stack": {
+        "ontology": "social-constructionism",
+        "epistemology": "interpretivism",
+        "methodology": "ethnography",
+        "method": "participant-observation",
+        "analysis": "thematic-analysis"
+      },
+      "summary": "A year of fieldwork at St Elizabeths Hospital became one of the foundational works of organisational ethnography. Goffman’s \"total institution\" is theory built from data through close observation; the analysis returns to phenomenology and interactionist theory without subordinating either to the other.",
+      "lesson": "Sustained presence, paired with theoretically alert writing, can produce concepts that outlast their setting."
+    },
+    {
+      "title": "Sensemaking in Organisations",
+      "author": "Karl Weick, 1995",
+      "discipline": "Organisation Studies",
+      "stack": {
+        "ontology": "process-relational",
+        "epistemology": "constructivism",
+        "methodology": "case-study",
+        "method": "document-archival",
+        "analysis": "narrative-analysis"
+      },
+      "summary": "Weick’s analyses (the Mann Gulch fire, the Tenerife air disaster) treat sensemaking as a retrospective, social, and ongoing accomplishment. Theoretical work threaded through case readings rather than dataset analysis.",
+      "lesson": "Cases can be theoretically generative when read with care, even when the cases are public records."
+    },
+    {
+      "title": "Constructing Grounded Theory",
+      "author": "Kathy Charmaz, 2014",
+      "discipline": "Sociology / Health",
+      "stack": {
+        "ontology": "social-constructionism",
+        "epistemology": "constructivism",
+        "methodology": "grounded-theory",
+        "method": "in-depth-interview",
+        "analysis": "gt-coding"
+      },
+      "summary": "Charmaz reframes Glaser and Strauss’s grounded theory as constructivist: the researcher and participant co-produce categories, and reflexivity is central. Worked exemplars draw on her interviews with people living with chronic illness.",
+      "lesson": "Methodological revisions can be themselves theoretically articulated; you can update the canon without abandoning it."
+    },
+    {
+      "title": "The Body Multiple",
+      "author": "Annemarie Mol, 2002",
+      "discipline": "STS / Medical Anthropology",
+      "stack": {
+        "ontology": "process-relational",
+        "epistemology": "post-structural",
+        "methodology": "ethnography",
+        "method": "participant-observation",
+        "analysis": "discourse-cda"
+      },
+      "summary": "A multi-sited ethnography of atherosclerosis in a Dutch hospital. Mol shows how \"the disease\" is enacted differently in clinic, lab, and pathology, and theorises ontology as multiple rather than single.",
+      "lesson": "Ontology is something one can do empirically, not only argue philosophically."
+    },
+    {
+      "title": "Distinction",
+      "author": "Pierre Bourdieu, 1979",
+      "discipline": "Sociology",
+      "stack": {
+        "ontology": "critical-realism",
+        "epistemology": "critical",
+        "methodology": "mixed-methods",
+        "method": "survey-instrument",
+        "analysis": "regression"
+      },
+      "summary": "Bourdieu’s mixed-methods study of taste in 1960s France integrates large-scale survey data with ethnographic and interview material to articulate concepts of habitus, field, and cultural capital.",
+      "lesson": "Mixed methods serves theory only when integration is conceptual, not just procedural."
+    },
+    {
+      "title": "Decolonising Methodologies",
+      "author": "Linda Tuhiwai Smith, 1999/2012",
+      "discipline": "Indigenous Studies / Education",
+      "stack": {
+        "ontology": "indigenous-relational",
+        "epistemology": "indigenous-epistemologies",
+        "methodology": "action-research",
+        "method": "in-depth-interview",
+        "analysis": "narrative-analysis"
+      },
+      "summary": "Smith’s text reframes research as a site of colonial harm and articulates Maori-led research practices grounded in protocol, accountability, and sovereignty over knowledge.",
+      "lesson": "The most consequential methodological choice may be whose knowledge gets to count."
+    },
+    {
+      "title": "The Phantom Public Sphere",
+      "author": "study using NLP on news corpora",
+      "discipline": "Computational Communication",
+      "stack": {
+        "ontology": "critical-realism",
+        "epistemology": "post-positivism",
+        "methodology": "computational",
+        "method": "digital-trace",
+        "analysis": "nlp"
+      },
+      "summary": "A representative class of contemporary studies that uses topic modelling and embeddings on news archives to study agenda-setting, framing, and ideological alignment over decades. Pairs computational analysis with theoretical scaffolding from public sphere theory.",
+      "lesson": "Computational methods are most powerful when paired with explicit theoretical commitments, not as a substitute for them."
+    },
+    {
+      "title": "Engaging Knowledge for Action: a PAR project",
+      "author": "community-academic partnership exemplar",
+      "discipline": "Public Health",
+      "stack": {
+        "ontology": "critical-realism",
+        "epistemology": "participatory",
+        "methodology": "action-research",
+        "method": "focus-group",
+        "analysis": "thematic-analysis"
+      },
+      "summary": "A representative participatory action research design in which a community defines the problem (e.g., environmental injustice), co-designs the inquiry, gathers data through focus groups and walking interviews, and uses results in advocacy.",
+      "lesson": "PAR’s validity is judged by what changed, not only by what was published."
+    },
+    {
+      "title": "Design Science and the IS Research Cycle",
+      "author": "Hevner, March, Park & Ram, 2004",
+      "discipline": "Information Systems",
+      "stack": {
+        "ontology": "pragmatist",
+        "epistemology": "pragmatism",
+        "methodology": "design-science",
+        "method": "experiment",
+        "analysis": "inferential-stats"
+      },
+      "summary": "Articulated the design science research framework for IS: building artefacts (constructs, models, methods, instantiations) and evaluating them as a contribution to design knowledge.",
+      "lesson": "Design knowledge is theoretical knowledge in artefactual form; \"we built something\" is not enough."
+    }
+  ],
+  "ELI5": {
+    "naive-realism": "Imagine you point at a chair. There is a chair. Naïve realism says the social world works the same way: things are just out there, and good observation gets at them. Most contemporary scholars find this hard to defend, but a lot of everyday measurement quietly assumes it.",
+    "critical-realism": "There is a real world, but we never see it directly. Underneath what happens are hidden mechanisms (think gravity for the social: power, market forces, cultural rules). We can never prove these mechanisms perfectly, but we can argue for them with evidence, like a detective.",
+    "social-constructionism": "Money is real, but only because we all agree to treat it as real. Same for grades, gender roles, \"nations\". Social constructionism says lots of things we treat as solid facts are actually held in place by collective agreement and could in principle be otherwise.",
+    "relativism": "Different communities live in different worlds. What counts as a valid argument in one tradition may be nonsense in another. Strong relativists say we cannot judge across these worlds; softer versions just say we should be modest about claiming universals.",
+    "pragmatist": "Stop arguing about what is \"really real\" and ask what works. A concept or method is valuable to the extent it helps you act, predict, or solve a problem. Pragmatists are happy mixing tools as long as the inquiry helps somebody.",
+    "process-relational": "Reality is verbs, not nouns. What we call \"the firm\" or \"the market\" or \"the self\" is a pattern of relations and ongoing activity, not a fixed thing. To understand something, watch it become.",
+    "indigenous-relational": "Knowledge is not extracted from the world; it is shared in relationship with land, ancestors, kin, and community. Research done well is reciprocal: it gives back, it has accountability, and the categories of inquiry come from the community, not imposed from outside.",
+    "new-materialism": "Stop putting humans at the centre. Things have agency too: a virus, a river, an algorithm, a building all shape what happens. Reality is a tangle of human and non-human actors doing things together.",
+    "positivism": "Science is the model. Find the patterns, test them rigorously, throw out what does not survive. Knowledge is what survives many tests. Personal opinions and values should be kept out.",
+    "post-positivism": "Like positivism, but more humble. We can never fully prove anything, only fail to disprove it for now. All observation is shaped by theory. Be rigorous, but admit your view is partial.",
+    "interpretivism": "To understand human action, you have to grasp what it means to the people doing it. A wink and a blink look the same on video. The meaning is in the context, the history, the shared codes.",
+    "constructivism": "Knowledge is built, jointly, through interaction between researcher and the people studied. A good interview does not just record beliefs; it creates a moment in which beliefs get articulated. The researcher is part of the picture.",
+    "critical": "Knowledge is never neutral. It tends to serve someone, often those in power. The job of inquiry is to expose how things came to be the way they are, especially the hidden mechanisms of inequality, and to open space for change.",
+    "pragmatism": "Choose your epistemology like you choose your tools, by the job. Some questions need numbers, some need stories, some need both. The standard is whether the inquiry helps people understand or change something.",
+    "post-structural": "Categories like \"woman\", \"criminal\", or \"consumer\" are not neutral descriptions; they are produced by language and power. The job of analysis is to show how these categories get made and unmade, and what they exclude.",
+    "participatory": "The people affected by an issue should help shape the inquiry into it, not be its objects. Research becomes a collaboration, with shared decisions about question, method, interpretation, and what to do about the findings.",
+    "indigenous-epistemologies": "Indigenous communities have their own theories of knowing, often grounded in relationship, story, ceremony, and obligation. These are not \"pre-scientific\" curiosities; they are coherent epistemologies with long histories and contemporary practitioners.",
+    "functionalist": "The mainstream of business and social science: assume society and organisations mostly work, look for patterns and predictions, treat your job as helping things run better. Most journal articles in business and economics quietly sit here.",
+    "interpretive": "Get inside the heads of the people you study. Ask what their world looks like to them. Useful for organisational culture, consumer experience, professional identities.",
+    "radical-humanist": "People can be trapped by their own consciousness: by ideologies, false beliefs, and identities they did not choose. Inquiry that helps them see this clearly is a form of liberation.",
+    "radical-structuralist": "The trap is not in our heads, it is in the structures we live inside: capitalism, patriarchy, colonialism. These produce predictable patterns of conflict, and only structural change moves the picture.",
+    "feminist": "Gender is not a control variable; it is a constitutive force in how knowledge is made and how social life is organised. Different feminisms emphasise different things (liberal, standpoint, intersectional, post-structural), but all refuse the \"view from nowhere\".",
+    "critical-race": "Race and coloniality are not optional add-ons; they are foundations of how modern societies, economies, and academic disciplines were built. Inquiry should reckon with that, not pretend it is neutral.",
+    "pragmatist-paradigm": "A working stance: pick the methods that fit the problem, mix freely, and judge results by what they let you do. Most practical research in management and policy implicitly works here.",
+    "experimental": "Manipulate something on purpose, with random assignment to conditions, and see what happens. The gold standard for causal claims, where it can be done ethically and meaningfully.",
+    "quasi-experimental": "You cannot randomise (cannot randomly assign people to be poor, to have a stroke, to live in a war zone), so you find natural variation that approximates an experiment. Strong on causality without the lab.",
+    "survey": "Ask many people the same questions in the same way, then count and compare. Best for incidence, distribution, attitudes at scale, and relationships among measured variables.",
+    "case-study": "Pick one or a few situations, organisations, or events and study them in depth from many angles. Best for \"how\" and \"why\" questions about complex phenomena in context.",
+    "ethnography": "Spend time. Be there. Learn the language and the daily rhythms of a community or workplace from inside. The aim is to understand a way of life, not just answer one question.",
+    "autoethnography": "Use your own life as the data: a hospital stay, a divorce, a workplace experience. The point is not navel-gazing; it is using one well-examined life to illuminate something larger.",
+    "phenomenology": "Study the texture of lived experience. What is it actually like to be unemployed, to grieve, to recover from surgery, before we explain it away with theory? Strong descriptive method, not a tool for big causal claims.",
+    "grounded-theory": "Build theory from the ground up. Talk to people, code what they say, look for patterns, refine your categories with each new conversation, until you have a model that explains the situation.",
+    "narrative-inquiry": "Pay attention to the stories people tell about themselves, their work, their lives. The structure of the story (who the heroes are, where things went wrong) is itself the data.",
+    "discourse-analysis": "Study language not as a window into thought, but as social action. What does this text or talk do? Whose interests does it serve? What does it make hard to say?",
+    "action-research": "Research and change at the same time. Work with the community or organisation to identify a problem, try something, learn from it, try again. Findings are judged by what changed, not just what got published.",
+    "design-science": "Build a thing (a tool, a model, an intervention), evaluate whether it works, and theorise from the building. Common in IS, computing, and design research.",
+    "mixed-methods": "Use qualitative and quantitative approaches together, on purpose, so each does what the other cannot. Done well, the integration produces inferences neither alone could deliver.",
+    "systematic-review": "A protocol-driven, transparent, reproducible synthesis of existing studies. Not a casual literature review; closer to a research project of its own.",
+    "computational": "Use computers and large datasets (digital traces, archives, social media, transactions) with algorithmic tools (NLP, networks, ML) to study social phenomena at scale.",
+    "historical": "Reconstruct what happened and why, using documents, archives, and oral history. Strong on long-run processes, change over time, and questions of contingency.",
+    "qca": "Compare a moderate number of cases (10 to 50, say) and look for the combinations of conditions that produce an outcome. Good for \"complex causation\" where it is the recipe, not any single ingredient, that matters.",
+    "arts-based": "Use creative and artistic forms (poetry, photography, performance, fiction) as inquiry, not just dissemination. Useful when standard prose flattens what the research is trying to convey.",
+    "in-depth-interview": "A long, conversational interview where the agenda is shared between researcher and participant. Less like a questionnaire, more like a focused two-person seminar.",
+    "semi-structured-interview": "You bring a guide of topics and key questions, but you let the conversation breathe. Allows comparability without crushing the unexpected.",
+    "participant-observation": "You hang around. You take part in what people do (working, worshiping, consuming, deciding) and you note what you learn from being there.",
+    "focus-group": "A small group conversation where the group dynamics themselves generate insight. People react to each other in ways no individual interview captures.",
+    "survey-instrument": "A standardised set of questions, usually closed-ended, delivered identically to many respondents.",
+    "document-archival": "Existing texts (memos, court records, newspaper articles, organisational reports) treated as data.",
+    "digital-trace": "Data left behind by digital activity: posts, clicks, transactions, GPS pings. Vast and messy; powerful when handled with care.",
+    "visual-methods": "Photographs, video, drawings, maps, either as data sources or as elicitation prompts in interviews.",
+    "diary": "Participants record events, reflections, or experiences over time, often in a structured way. Captures what is hard to recall later.",
+    "experiment": "A controlled study where the researcher manipulates one or more variables. Strict version is randomised; many variants exist.",
+    "biometric": "Heart rate, eye-tracking, skin conductance, and similar physiological signals as data.",
+    "secondary-data": "Data someone else collected, repurposed for your question.",
+    "descriptive-stats": "Means, medians, distributions, proportions. The basic summary statistics that describe a dataset before any inference.",
+    "inferential-stats": "Tests and confidence intervals that ask whether a pattern in your sample probably holds in the population.",
+    "regression": "A workhorse: model an outcome as a function of one or more predictors. Useful when you control well for confounders, dangerous when you do not.",
+    "multilevel": "Models that respect the nested structure of social data (students within schools, employees within firms).",
+    "sem": "Structural equation modelling: estimate relationships among latent constructs and observed measures simultaneously.",
+    "longitudinal-models": "Models for change over time: fixed effects, growth curves, event history.",
+    "ml": "Machine learning: algorithmic methods for prediction and pattern detection. Great for prediction, harder for explanation.",
+    "nlp": "Natural language processing: computational analysis of text at scale (topic models, embeddings, sentiment, classification).",
+    "network-analysis": "Treat actors and their ties as a graph. Map who is connected to whom, and ask what flows through.",
+    "thematic-analysis": "Identify, name, and interpret patterns of meaning across qualitative data. The most flexible qualitative analytic, when done with method.",
+    "framework-analysis": "Apply a pre-specified analytic framework to qualitative data, often in policy and applied research.",
+    "narrative-analysis": "Analyse the form, structure, and rhetoric of stories told in interviews or documents.",
+    "gt-coding": "The grounded theory coding cycle: open, axial, selective, with constant comparison.",
+    "ipa": "Interpretative Phenomenological Analysis: idiographic, careful attention to the texture of each participant’s experience before any cross-case work.",
+    "discourse-cda": "Critical discourse analysis: linguistic analysis with attention to power and ideology.",
+    "conversation-analysis": "Microanalysis of talk-in-interaction: turn-taking, repair, sequence organisation. Demands transcription detail.",
+    "visual-analysis": "Systematic interpretation of images, video, or material objects.",
+    "qca-analysis": "The set-theoretic analysis behind QCA: necessary and sufficient conditions, configurations, equifinality.",
+    "meta-synthesis": "Qualitative synthesis across studies: more interpretive than meta-analysis."
+  },
+  "ADJACENT": {
+    "critical-realism": [
+      "social-constructionism",
+      "pragmatist"
+    ],
+    "social-constructionism": [
+      "process-relational",
+      "relativism",
+      "critical-realism"
+    ],
+    "naive-realism": [
+      "critical-realism"
+    ],
+    "pragmatist": [
+      "critical-realism",
+      "process-relational"
+    ],
+    "process-relational": [
+      "new-materialism",
+      "social-constructionism"
+    ],
+    "new-materialism": [
+      "process-relational",
+      "indigenous-relational"
+    ],
+    "indigenous-relational": [
+      "new-materialism",
+      "process-relational"
+    ],
+    "relativism": [
+      "social-constructionism",
+      "post-structural"
+    ],
+    "positivism": [
+      "post-positivism"
+    ],
+    "post-positivism": [
+      "positivism",
+      "critical-realism",
+      "pragmatism"
+    ],
+    "interpretivism": [
+      "constructivism",
+      "critical"
+    ],
+    "constructivism": [
+      "interpretivism",
+      "participatory"
+    ],
+    "critical": [
+      "post-structural",
+      "participatory"
+    ],
+    "pragmatism": [
+      "post-positivism",
+      "interpretivism"
+    ],
+    "post-structural": [
+      "critical",
+      "constructivism"
+    ],
+    "participatory": [
+      "critical",
+      "pragmatism",
+      "indigenous-epistemologies"
+    ],
+    "indigenous-epistemologies": [
+      "participatory",
+      "critical"
+    ],
+    "experimental": [
+      "quasi-experimental",
+      "survey"
+    ],
+    "quasi-experimental": [
+      "experimental",
+      "computational"
+    ],
+    "survey": [
+      "experimental",
+      "mixed-methods",
+      "computational"
+    ],
+    "case-study": [
+      "ethnography",
+      "mixed-methods",
+      "qca"
+    ],
+    "ethnography": [
+      "case-study",
+      "autoethnography",
+      "phenomenology"
+    ],
+    "autoethnography": [
+      "ethnography",
+      "narrative-inquiry"
+    ],
+    "phenomenology": [
+      "narrative-inquiry",
+      "ethnography"
+    ],
+    "grounded-theory": [
+      "case-study",
+      "narrative-inquiry"
+    ],
+    "narrative-inquiry": [
+      "phenomenology",
+      "autoethnography",
+      "discourse-analysis"
+    ],
+    "discourse-analysis": [
+      "narrative-inquiry",
+      "historical"
+    ],
+    "action-research": [
+      "ethnography",
+      "design-science"
+    ],
+    "design-science": [
+      "action-research",
+      "mixed-methods"
+    ],
+    "mixed-methods": [
+      "case-study",
+      "design-science"
+    ],
+    "systematic-review": [
+      "historical"
+    ],
+    "computational": [
+      "survey",
+      "discourse-analysis"
+    ],
+    "historical": [
+      "discourse-analysis",
+      "case-study"
+    ],
+    "qca": [
+      "case-study",
+      "mixed-methods"
+    ],
+    "arts-based": [
+      "autoethnography",
+      "narrative-inquiry"
+    ]
+  },
+  "LAYERS_ORDER": [
+    "ontology",
+    "epistemology",
+    "paradigm",
+    "methodology",
+    "method",
+    "analysis"
+  ],
+  "LAYER_LABELS": {
+    "ontology": "Ontology",
+    "epistemology": "Epistemology",
+    "paradigm": "Paradigm",
+    "methodology": "Methodology",
+    "method": "Method",
+    "analysis": "Analysis"
+  }
+}

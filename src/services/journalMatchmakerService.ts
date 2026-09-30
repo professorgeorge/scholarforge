@@ -16,6 +16,8 @@ export interface JournalCandidate {
   matchScore: number;
   matchRationale: string;
   isDoaj: boolean;
+  tier?: 'Stretch (High Impact)' | 'Target (Core Fit)' | 'Fast-Track (Rapid OA)';
+  aimsScopeAlignment?: string;
 }
 
 export interface PreFlightCheckItem {

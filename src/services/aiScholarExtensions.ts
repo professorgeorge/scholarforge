@@ -3,6 +3,7 @@ import type { AcademicPaper } from '../types/citation';
 import type { PicoQueryState } from './picoQueryService';
 import type { ReviewerCandidate, EmailTemplate, SearchObjective } from '../types/expertSearch';
 import type { OutreachTone } from './outreachGenerator';
+import type { JournalCandidate } from './journalMatchmakerService';
 
 export interface ClaimConsensusAnalysis {
   verdict: 'strong_consensus' | 'emerging' | 'conflicting' | 'unsubstantiated';
@@ -230,3 +231,220 @@ CRITICAL RULES:
     return null;
   }
 }
+
+export interface AIDeskRejectionDimension {
+  name: string;
+  score: number;
+  status: 'pass' | 'warning' | 'fail';
+  critique: string;
+  actionableAdvice: string;
+}
+
+export interface AIDeskRejectionReport {
+  overallScore: number;
+  editorialVerdict: 'Low Desk-Rejection Risk (Strong Submission)' | 'Moderate Risk (Revisions Advised)' | 'High Desk-Rejection Risk';
+  editorTriageSummary: string;
+  fatalFlaws: string[];
+  dimensions: AIDeskRejectionDimension[];
+  suggestedAbstractRewrite: string;
+  editorCoverLetter: string;
+}
+
+/**
+ * 5. AI Editorial Desk-Rejection Pre-Flight Sentinel
+ * Simulates a Senior Editor-in-Chief triage evaluating novelty, methodological rigor,
+ * epistemic grounding, and fatal flaws that cause immediate desk-rejection.
+ */
+export async function aiDeskRejectionPreFlightAudit(
+  title: string,
+  abstract: string,
+  fullDraft: string = '',
+  targetJournalTitle?: string,
+  config: LLMConfig = DEFAULT_LLM_CONFIG
+): Promise<AIDeskRejectionReport | null> {
+  if (!isLlmConfigured(config)) return null;
+
+  const systemPrompt = `You are an elite academic journal Editor-in-Chief and Senior Editorial Board Member with 20+ years reviewing submissions for top-tier journals (e.g. Nature portfolio, Lancet, IEEE Transactions, Elsevier, Springer).
+Conduct a simulated "Desk-Rejection Pre-Flight Triage" of the provided manuscript draft.
+
+Evaluate 4 critical editorial dimensions:
+1. Novelty & Scholarly Significance (Is the research question timely? Does it state an authentic conceptual or empirical contribution vs existing literature, or will an editor reject it as derivative?)
+2. Methodological Rigor & Internal Validity (Are sample size, controls, potential confounders, data limitations, or sensitivity tests transparently addressed?)
+3. Narrative Hook & Abstract Structure (Does the opening sentence establish the problem? Are findings quantified? Is the conclusion grounded without overclaiming?)
+4. Ethical Compliance & Reproducibility (Are declarations for data availability, conflicts of interest, and ethical approval explicitly framed?)
+
+Return ONLY a valid JSON object with the following schema:
+{
+  "overallScore": number (0 to 100),
+  "editorialVerdict": one of ["Low Desk-Rejection Risk (Strong Submission)", "Moderate Risk (Revisions Advised)", "High Desk-Rejection Risk"],
+  "editorTriageSummary": "2-3 sentences providing the Editor-in-Chief's candid first-read impression of the paper's publishability",
+  "fatalFlaws": [
+    "Array of 1 to 3 specific vulnerabilities that could trigger an immediate desk rejection before sending to peer review"
+  ],
+  "dimensions": [
+    {
+      "name": "Novelty & Significance",
+      "score": number (0-100),
+      "status": one of ["pass", "warning", "fail"],
+      "critique": "Specific critique of the paper's contribution claim",
+      "actionableAdvice": "Exact guidance on how to strengthen the novelty claim"
+    },
+    {
+      "name": "Methodological Rigor & Limitations",
+      "score": number (0-100),
+      "status": one of ["pass", "warning", "fail"],
+      "critique": "Critique of data integrity, controls, or analytical depth",
+      "actionableAdvice": "Specific steps to shield against reviewer methodological pushback"
+    },
+    {
+      "name": "Abstract Narrative Hook & Clarity",
+      "score": number (0-100),
+      "status": one of ["pass", "warning", "fail"],
+      "critique": "Critique of abstract flow and opening hook",
+      "actionableAdvice": "Guidance on how to structure the abstract for maximum editorial retention"
+    },
+    {
+      "name": "Ethics, Data & Governance Declarations",
+      "score": number (0-100),
+      "status": one of ["pass", "warning", "fail"],
+      "critique": "Assessment of transparency disclosures (DAS, COI, IRB)",
+      "actionableAdvice": "Advice on compliance statements"
+    }
+  ],
+  "suggestedAbstractRewrite": "A publication-grade, punchy, structured rewrite of the abstract (<= 250 words) that fixes weaknesses and maximizes acceptance odds",
+  "editorCoverLetter": "A formal, high-impact submission cover letter addressed to the Editor-in-Chief highlighting the paper's core contribution, methodology, and compliance disclosures"
+}
+
+CRITICAL RULES:
+1. Do NOT use any em dashes or en dashes anywhere. Use standard hyphens, commas, or colons.
+2. Return ONLY the raw JSON object.`;
+
+  const draftExcerpt = fullDraft ? fullDraft.slice(0, 4000) : '';
+  const userPrompt = `Manuscript Title:
+"${title || 'Untitled Manuscript'}"
+
+Target Journal (if designated):
+"${targetJournalTitle || 'General Peer-Reviewed Academic Journal'}"
+
+Abstract:
+"${abstract || 'No abstract provided'}"
+
+Manuscript Excerpt / Outline:
+${draftExcerpt || 'None provided; evaluate based on Title and Abstract.'}
+
+Conduct the Editorial Desk-Rejection Triage and produce the JSON report:`;
+
+  try {
+    const raw = await callRawLLM(systemPrompt, userPrompt, config);
+    const cleaned = raw.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      overallScore: typeof parsed.overallScore === 'number' ? parsed.overallScore : 78,
+      editorialVerdict: parsed.editorialVerdict || 'Moderate Risk (Revisions Advised)',
+      editorTriageSummary: parsed.editorTriageSummary || 'Manuscript demonstrates solid potential but requires clear novelty articulation to avert editorial desk-rejection.',
+      fatalFlaws: Array.isArray(parsed.fatalFlaws) && parsed.fatalFlaws.length > 0
+        ? parsed.fatalFlaws
+        : ['Ensure explicit differentiation from recent literature to avoid desk rejection for limited novelty.'],
+      dimensions: Array.isArray(parsed.dimensions) ? parsed.dimensions : [],
+      suggestedAbstractRewrite: parsed.suggestedAbstractRewrite || abstract,
+      editorCoverLetter: parsed.editorCoverLetter || '',
+    };
+  } catch (err) {
+    console.error('AI Desk Rejection Audit error:', err);
+    return null;
+  }
+}
+
+/**
+ * 6. AI Deep Semantic Journal Matchmaker
+ * Evaluates the manuscript's nuanced subfield, methodology, and target audience
+ * to recommend 6 to 9 real, tailored peer-reviewed journals categorized across 3 tiers.
+ */
+export async function aiMatchJournalsForManuscript(
+  title: string,
+  abstract: string,
+  fullDraft: string = '',
+  config: LLMConfig = DEFAULT_LLM_CONFIG
+): Promise<JournalCandidate[] | null> {
+  if (!isLlmConfigured(config)) return null;
+
+  const systemPrompt = `You are a world-class academic bibliometrics director and research dissemination strategist.
+Analyze the manuscript's title, abstract, methodology, and scholarly domain.
+Recommend 6 to 9 genuine, high-quality peer-reviewed journals precisely fitting this paper's methodology and target audience.
+
+Organize your recommendations across 3 tiers:
+- "Stretch (High Impact)": 2-3 premier flagship journals where this paper has a viable shot if framed with high significance.
+- "Target (Core Fit)": 3-4 top specialized field journals with optimal thematic alignment, ideal reviewer pools, and high acceptance odds.
+- "Fast-Track (Rapid OA)": 2-3 respected open-access or rapid-communication venues with transparent peer-review and swift turnaround.
+
+Return ONLY a valid JSON array of journal candidate objects, each with:
+- "title": Exact journal name
+- "issn": Standard ISSN or ISSN-L format (e.g. "2041-1723")
+- "publisher": Publisher name (e.g. Elsevier, Springer Nature, Wiley, Oxford University Press, IEEE, etc.)
+- "tier": one of ["Stretch (High Impact)", "Target (Core Fit)", "Fast-Track (Rapid OA)"]
+- "isOa": boolean
+- "oaType": one of ["Diamond OA ($0 APC)", "Gold OA", "Hybrid", "Subscription"]
+- "apcUsd": estimated APC in USD, or 0 if Diamond/Subscription, or null
+- "citeScore": estimated CiteScore / Impact Factor number (e.g. 5.8)
+- "hIndex": estimated h-index integer (e.g. 110)
+- "scopusQuartile": one of ["Q1", "Q2", "Q3", "Q4"]
+- "reviewSpeedWeeks": estimated turnaround string (e.g. "4 to 6 weeks")
+- "acceptanceRateEstimated": estimated percentage string (e.g. "18% to 24%")
+- "matchScore": integer (82 to 98) reflecting semantic alignment
+- "matchRationale": 2 sentences explaining specifically why this manuscript's methodology and focus align with this journal's editorial scope
+- "aimsScopeAlignment": 1 sentence of strategic editorial advice on how the author should frame the cover letter or title for this journal
+- "topics": array of 3-4 specific topic tags
+- "homepageUrl": official journal URL or DOI resolver
+
+CRITICAL RULES:
+1. Do NOT invent fake journals. Use real, active, indexed scholarly journals.
+2. Do NOT use any em dashes or en dashes anywhere. Use standard hyphens.
+3. Return ONLY the raw JSON array.`;
+
+  const draftExcerpt = fullDraft ? fullDraft.slice(0, 3000) : '';
+  const userPrompt = `Manuscript Title:
+"${title || 'Untitled Academic Paper'}"
+
+Abstract:
+"${abstract || 'No abstract provided'}"
+
+Manuscript Excerpt:
+${draftExcerpt || 'None provided; evaluate based on Title and Abstract.'}
+
+Recommend the top 6-9 tailored academic journals in JSON format:`;
+
+  try {
+    const raw = await callRawLLM(systemPrompt, userPrompt, config);
+    const cleaned = raw.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+
+    return parsed.map((item: any, idx: number) => ({
+      id: `ai-journal-${idx}-${item.title.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      title: item.title || 'Scholarly Journal',
+      issn: item.issn || 'N/A',
+      publisher: item.publisher || 'Academic Publisher',
+      tier: item.tier || 'Target (Core Fit)',
+      isOa: Boolean(item.isOa),
+      oaType: item.oaType || (item.isOa ? 'Gold OA' : 'Hybrid'),
+      apcUsd: typeof item.apcUsd === 'number' ? item.apcUsd : null,
+      citeScore: typeof item.citeScore === 'number' ? item.citeScore : 5.0,
+      hIndex: typeof item.hIndex === 'number' ? item.hIndex : 65,
+      scopusQuartile: item.scopusQuartile || 'Q1',
+      reviewSpeedWeeks: item.reviewSpeedWeeks || '5 to 7 weeks',
+      acceptanceRateEstimated: item.acceptanceRateEstimated || '25% to 35%',
+      matchScore: typeof item.matchScore === 'number' ? item.matchScore : 88,
+      matchRationale: item.matchRationale || 'Thematic and methodological scope matches manuscript objectives.',
+      aimsScopeAlignment: item.aimsScopeAlignment || 'Emphasize methodological rigor and reproducibility in the cover letter.',
+      topics: Array.isArray(item.topics) ? item.topics : ['Academic Research'],
+      homepageUrl: item.homepageUrl || `https://www.google.com/search?q=${encodeURIComponent(item.title + ' journal')}`,
+      isDoaj: item.oaType === 'Diamond OA ($0 APC)' || item.oaType === 'Gold OA',
+    }));
+  } catch (err) {
+    console.error('AI Journal Matchmaker error:', err);
+    return null;
+  }
+}
+

@@ -12,6 +12,8 @@ import { LiteratureFirstPane } from './components/LiteratureFirstPane';
 import { ClaimsWorkbenchPane } from './components/ClaimsWorkbenchPane';
 import { ScholarSearchPane } from './components/ScholarSearchPane';
 import { JournalSentinelPane } from './components/JournalSentinelPane';
+import { MethodologyCompassPane } from './components/MethodologyCompassPane';
+import { SyntheticDataForgePane } from './components/SyntheticDataForgePane';
 import { 
   EXEMPLAR_MANUSCRIPT_TEXT, 
   getExemplarClaims 
@@ -32,7 +34,8 @@ import {
   ShieldAlert,
   Lock,
   Users,
-  Compass
+  Compass,
+  Database
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { addMultiplePapersToCart } from './services/cartService';
@@ -479,6 +482,26 @@ export const App: React.FC = () => {
           </div>
         )}
 
+        {/* Pillar 7: Methodology & Analysis Compass */}
+        {activePillar === 'methodology' && (
+          <div className="py-2 animate-in fade-in duration-200">
+            <MethodologyCompassPane onNavigateToSynthetic={() => setActivePillar('synthetic')} />
+          </div>
+        )}
+
+        {/* Pillar 8: Synthetic Data Forge & Applied Simulation */}
+        {activePillar === 'synthetic' && (
+          <div className="py-2 animate-in fade-in duration-200">
+            <SyntheticDataForgePane
+              llmConfig={llmConfig}
+              onNavigateToStudio={(seedText) => {
+                setInputText(prev => prev ? `${prev}\n\n${seedText}` : seedText);
+                setActivePillar('studio');
+              }}
+            />
+          </div>
+        )}
+
         {/* Pillar 2: Manuscript Studio */}
         {activePillar === 'studio' && (
           <>
@@ -539,6 +562,22 @@ export const App: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setActivePillar('methodology')}
+                      className="px-3.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/60 dark:hover:bg-red-900/60 text-red-900 dark:text-red-300 text-xs font-semibold flex items-center gap-1.5 border border-red-200 dark:border-red-800 cursor-pointer transition"
+                      title="Architect statistical/qualitative methods & verify epistemic coherence"
+                    >
+                      <Compass className="w-3.5 h-3.5 text-red-700 dark:text-red-400" />
+                      <span>Methodology Compass</span>
+                    </button>
+                    <button
+                      onClick={() => setActivePillar('synthetic')}
+                      className="px-3.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 text-xs font-semibold flex items-center gap-1.5 border border-blue-200 dark:border-blue-800 cursor-pointer transition"
+                      title="Generate synthetic empirical data with moderation, mediation, or interview discourse"
+                    >
+                      <Database className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                      <span>Synthetic Data Forge</span>
+                    </button>
                     <button
                       onClick={() => setActivePillar('journal')}
                       className="px-3.5 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 dark:hover:bg-teal-900/60 text-teal-900 dark:text-teal-300 text-xs font-semibold flex items-center gap-1.5 border border-teal-200 dark:border-teal-800 cursor-pointer transition"
@@ -681,7 +720,7 @@ export const App: React.FC = () => {
                 <span className="font-medium text-slate-700 dark:text-slate-300">Unified Scholarly Intelligence Suite</span>
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-sans">
-                Manuscript Grounding • DOI Verifier • PICO Matrix • Scientometrics ($g$-index, $e$-index, $m$-quotient)
+                Manuscript Grounding • Synthetic Data Forge • DOI Verifier • PICO Matrix • Scientometrics ($g$-index, $e$-index, $m$-quotient)
               </p>
             </div>
 

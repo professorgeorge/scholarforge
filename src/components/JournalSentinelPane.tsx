@@ -16,9 +16,13 @@ import {
   Clock,
   TrendingUp,
   RefreshCw,
-  ArrowRight,
   Sliders,
-  CheckCheck
+  CheckCheck,
+  Bot,
+  Zap,
+  Mail,
+  Flame,
+  X
 } from 'lucide-react';
 import {
   matchJournalsForManuscript,
@@ -29,6 +33,12 @@ import {
   BASELINE_JOURNALS_REGISTRY
 } from '../services/journalMatchmakerService';
 import type { LLMConfig } from '../services/llmService';
+import {
+  isLlmConfigured,
+  aiDeskRejectionPreFlightAudit,
+  aiMatchJournalsForManuscript,
+  type AIDeskRejectionReport
+} from '../services/aiScholarExtensions';
 
 interface JournalSentinelPaneProps {
   initialTitle?: string;
@@ -105,9 +115,9 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   initialAbstract = '',
   initialFullDraft = '',
   initialReferences = [],
-  llmConfig: _llmConfig,
+  llmConfig,
   onAppendToDraft,
-  onNavigateToStudio
+  onNavigateToStudio: _onNavigateToStudio
 }) => {
   // Input States
   const [title, setTitle] = useState<string>(initialTitle);
@@ -115,8 +125,9 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   const [fullDraft, setFullDraft] = useState<string>(initialFullDraft);
   const [isInputExpanded, setIsInputExpanded] = useState<boolean>(!initialTitle && !initialAbstract);
 
-  // Active Sub-Tab
+  // Active Sub-Tab & View
   const [activeSubTab, setActiveSubTab] = useState<'matchmaker' | 'sentinel'>('matchmaker');
+  const [activeSentinelTab, setActiveSentinelTab] = useState<'editorial' | 'structural'>('editorial');
 
   // Filter States for Matchmaker
   const [filters, setFilters] = useState<JournalFilterCriteria>({
@@ -136,6 +147,13 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [appendedDeclaration, setAppendedDeclaration] = useState<string | null>(null);
 
+  // AI Editorial Triage & Semantic Matching States
+  const hasLlm = isLlmConfigured(llmConfig);
+  const [aiReport, setAiReport] = useState<AIDeskRejectionReport | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
+  const [isCoverLetterModalOpen, setIsCoverLetterModalOpen] = useState<boolean>(false);
+  const [appliedAbstractSuccess, setAppliedAbstractSuccess] = useState<boolean>(false);
+
   // Run initial match if title or abstract provided
   useEffect(() => {
     if (initialTitle || initialAbstract) {
@@ -145,6 +163,41 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
       runDiscoveryAndAudit(initialTitle, initialAbstract, initialFullDraft, initialReferences);
     }
   }, [initialTitle, initialAbstract]);
+
+  // AI Deep Editorial & Semantic Analysis Routine
+  const runAiDeepAnalysis = async (
+    targetTitle: string = title,
+    targetAbstract: string = abstract,
+    targetDraft: string = fullDraft
+  ) => {
+    if (!targetTitle.trim() && !targetAbstract.trim()) return;
+    if (!hasLlm) return;
+    setIsAiLoading(true);
+
+    try {
+      const [aiRep, aiJourn] = await Promise.all([
+        aiDeskRejectionPreFlightAudit(targetTitle, targetAbstract, targetDraft, undefined, llmConfig),
+        aiMatchJournalsForManuscript(targetTitle, targetAbstract, targetDraft, llmConfig)
+      ]);
+
+      if (aiRep) {
+        setAiReport(aiRep);
+        setActiveSentinelTab('editorial');
+      }
+
+      if (aiJourn && aiJourn.length > 0) {
+        setJournals(prev => {
+          const aiNames = new Set(aiJourn.map(j => j.title.toLowerCase()));
+          const existingUnique = prev.filter(j => !aiNames.has(j.title.toLowerCase()));
+          return [...aiJourn, ...existingUnique];
+        });
+      }
+    } catch (err) {
+      console.error('Error during AI Deep Analysis:', err);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   // Main Discovery & Sentinel Audit Routine
   const runDiscoveryAndAudit = async (
@@ -167,6 +220,11 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
       // 2. Run pre-flight desk-rejection audit
       const report = auditManuscriptPreFlight(targetTitle, targetAbstract, targetDraft, targetRefs);
       setAuditReport(report);
+
+      // 3. If LLM is configured, automatically launch deep editorial analysis in background
+      if (hasLlm) {
+        runAiDeepAnalysis(targetTitle, targetAbstract, targetDraft);
+      }
     } catch (err) {
       console.error('Error during journal matching and pre-flight audit:', err);
     } finally {
@@ -210,6 +268,12 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
     }
   };
 
+  const handleApplySharpenedAbstract = (rewritten: string) => {
+    setAbstract(rewritten);
+    setAppliedAbstractSuccess(true);
+    setTimeout(() => setAppliedAbstractSuccess(false), 3000);
+  };
+
   // Filtered Count Stats
   const diamondCount = useMemo(() => {
     return journals.filter((j) => j.oaType === 'Diamond OA ($0 APC)').length;
@@ -223,34 +287,34 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
     <div className="space-y-6">
       
       {/* Hero Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 border border-slate-800 text-white p-6 sm:p-8 shadow-xl">
-        <div className="relative z-10 max-w-4xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-semibold border border-blue-400/30 backdrop-blur-md">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 border border-slate-800 text-white p-5 sm:p-6 shadow-md">
+        <div className="relative z-10 max-w-4xl space-y-2">
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-semibold border border-blue-400/30 backdrop-blur-md">
             <Compass className="w-3.5 h-3.5 text-blue-400" />
             <span>Pillar 6 : Strategic Publishing Intelligence</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white tracking-tight">
+          <h2 className="text-lg sm:text-xl font-serif font-bold text-white tracking-tight">
             The Journal Fit &amp; Desk-Rejection Pre-Flight Sentinel
-          </h1>
+          </h2>
 
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-3xl">
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
             Match your manuscript against Scopus Q1-Q4 journals, filter by APC budgets (including $0 Diamond OA),
             and audit 7 mission-critical integrity signals before submission to prevent instantaneous desk rejections.
           </p>
 
           {/* Quick Stats Banner */}
-          <div className="pt-2 flex flex-wrap items-center gap-4 text-xs text-slate-300">
-            <div className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-              <Award className="w-4 h-4 text-emerald-400" />
+          <div className="pt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-300">
+            <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
+              <Award className="w-3.5 h-3.5 text-emerald-400" />
               <span>Scopus Q1-Q4 Quartile Indexing</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-              <DollarSign className="w-4 h-4 text-teal-400" />
+            <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
+              <DollarSign className="w-3.5 h-3.5 text-teal-400" />
               <span>Diamond Open Access ($0 APC) Discovery</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-              <ShieldCheck className="w-4 h-4 text-blue-400" />
+            <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
               <span>7-Point Desk-Rejection Pre-Flight Triage</span>
             </div>
           </div>
@@ -344,24 +408,60 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => runDiscoveryAndAudit()}
-                disabled={isLoading || (!title.trim() && !abstract.trim())}
-                className="px-5 py-2.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-bold text-sm shadow-md flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Searching Journals &amp; Auditing...</span>
-                  </>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <div className="flex items-center gap-2">
+                {hasLlm ? (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-300 dark:border-purple-800 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>LLM Active ({llmConfig.provider.toUpperCase()})</span>
+                  </span>
                 ) : (
-                  <>
-                    <Target className="w-4 h-4 text-blue-300" />
-                    <span>Analyze Fit &amp; Run Sentinel Audit</span>
-                  </>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <span>Heuristic Mode</span>
+                    <span className="text-[11px] text-slate-400">(Configure LLM in Settings for deep editorial triage)</span>
+                  </span>
                 )}
-              </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                {hasLlm && (
+                  <button
+                    onClick={() => runAiDeepAnalysis()}
+                    disabled={isAiLoading || (!title.trim() && !abstract.trim())}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-700 via-indigo-700 to-blue-700 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-sm shadow-md flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isAiLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-purple-200" />
+                        <span>AI Editor Analyzing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 text-purple-200" />
+                        <span>Run AI Editorial Deep Triage</span>
+                      </>
+                    )}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => runDiscoveryAndAudit()}
+                  disabled={isLoading || (!title.trim() && !abstract.trim())}
+                  className="px-5 py-2.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-bold text-sm shadow-md flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Searching Journals &amp; Auditing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Target className="w-4 h-4 text-blue-300" />
+                      <span>Analyze Fit &amp; Run Sentinel Audit</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -408,16 +508,6 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
             )}
           </button>
         </div>
-
-        {onNavigateToStudio && (
-          <button
-            onClick={onNavigateToStudio}
-            className="text-xs font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 flex items-center gap-1 cursor-pointer"
-          >
-            <span>Manuscript Studio</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        )}
       </div>
 
       {/* ========================================================================= */}
@@ -519,6 +609,20 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
             </div>
           </div>
 
+          {/* AI Synthesis Loading Banner */}
+          {isAiLoading && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-900/40 via-indigo-900/40 to-blue-900/40 border border-purple-500/30 text-white flex items-center justify-between gap-4 animate-pulse">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-purple-400 animate-spin" />
+                <div>
+                  <h4 className="text-xs font-bold text-white">AI Bibliometrics Engine Active</h4>
+                  <p className="text-[11px] text-purple-200">Synthesizing semantic subfield match, calculating acceptance probabilities, and ranking journals into Stretch, Target, and Fast-Track tiers...</p>
+                </div>
+              </div>
+              <span className="text-xs font-mono text-purple-300">Evaluating...</span>
+            </div>
+          )}
+
           {/* Journal Match Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {journals.map((journal) => {
@@ -540,6 +644,21 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
+                          {journal.tier && (
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 ${
+                              journal.tier === 'Stretch (High Impact)'
+                                ? 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/80 dark:text-purple-300 dark:border-purple-800'
+                                : journal.tier === 'Target (Core Fit)'
+                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800'
+                                  : 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800'
+                            }`}>
+                              {journal.tier === 'Stretch (High Impact)' && <Flame className="w-3 h-3 text-purple-600 dark:text-purple-400" />}
+                              {journal.tier === 'Target (Core Fit)' && <Target className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />}
+                              {journal.tier === 'Fast-Track (Rapid OA)' && <Zap className="w-3 h-3 text-amber-600 dark:text-amber-400" />}
+                              <span>{journal.tier}</span>
+                            </span>
+                          )}
+
                           <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${quartileColors[journal.scopusQuartile]}`}>
                             Scopus {journal.scopusQuartile}
                           </span>
@@ -621,6 +740,13 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
                         {journal.matchRationale}
                       </p>
 
+                      {journal.aimsScopeAlignment && (
+                        <div className="p-2 rounded-lg bg-indigo-50/80 dark:bg-indigo-950/50 border border-indigo-200/80 dark:border-indigo-900/60 text-[11px] text-indigo-950 dark:text-indigo-200 flex items-start gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5 text-indigo-600 dark:text-indigo-400" />
+                          <span><strong>Submission Strategy:</strong> {journal.aimsScopeAlignment}</span>
+                        </div>
+                      )}
+
                       <div className="flex flex-wrap gap-1">
                         {journal.topics.map((t, idx) => (
                           <span
@@ -675,239 +801,696 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
       {/* ========================================================================= */}
       {activeSubTab === 'sentinel' && (
         <div className="space-y-6">
-          
-          {/* Pre-Flight Health Score Card */}
-          {auditReport && (
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-              
-              <div className="flex items-center gap-5">
-                <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-serif font-extrabold text-2xl border shadow-inner ${
-                  auditReport.overallScore >= 80
-                    ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                    : auditReport.overallScore >= 60
-                      ? 'bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
-                      : 'bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800'
-                }`}>
-                  <span>{auditReport.overallScore}</span>
-                  <span className="text-[10px] font-sans font-bold uppercase tracking-wider -mt-1">/ 100</span>
-                </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                      auditReport.overallScore >= 80
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                        : auditReport.overallScore >= 60
-                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                          : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                    }`}>
-                      {auditReport.status}
-                    </span>
-                    <span className="text-xs text-slate-500 font-sans">
-                      Automated Pre-Flight Sentinel Audit
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white">
-                    Submission Readiness Assessment
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
-                    Leading journals (e.g. Elsevier, Nature, IEEE, PLOS) reject up to 45% of incoming manuscripts at desk triage due to technical non-compliance.
-                  </p>
-                </div>
-              </div>
+          {/* Sentinel Sub-View Selector */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-2 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveSentinelTab('editorial')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                  activeSentinelTab === 'editorial'
+                    ? 'bg-purple-900 text-white shadow-xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <Bot className="w-3.5 h-3.5 text-purple-300" />
+                <span>AI Senior Editor Triage</span>
+                {aiReport && (
+                  <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-purple-950 text-purple-200 border border-purple-700">
+                    {aiReport.overallScore}/100
+                  </span>
+                )}
+              </button>
 
-              {/* Triage Metrics Summary */}
-              <div className="flex flex-wrap items-center gap-3 text-center w-full md:w-auto">
-                <div className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex-1 md:flex-initial">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase">Abstract Size</div>
-                  <div className="text-sm font-bold text-slate-900 dark:text-white">
-                    {auditReport.abstractWordCount} / {auditReport.abstractMaxRecommended}w
-                  </div>
-                </div>
-                <div className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex-1 md:flex-initial">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase">References</div>
-                  <div className="text-sm font-bold text-slate-900 dark:text-white">
-                    {auditReport.referencesCount} cited
-                  </div>
-                </div>
-                <div className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex-1 md:flex-initial">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase">Recent (5yr)</div>
-                  <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                    {auditReport.recentReferencesPercent}%
-                  </div>
-                </div>
-              </div>
-
+              <button
+                onClick={() => setActiveSentinelTab('structural')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                  activeSentinelTab === 'structural'
+                    ? 'bg-blue-900 text-white shadow-xs'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-300" />
+                <span>Structural &amp; Compliance Checklist</span>
+                {auditReport && (
+                  <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-950 text-blue-200 border border-blue-700">
+                    7 Checks
+                  </span>
+                )}
+              </button>
             </div>
-          )}
 
-          {/* 7-Point Audit Checklist */}
-          {auditReport && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Pre-Flight Checklist &amp; Integrity Diagnostics
-                </h3>
-                <span className="text-xs text-slate-500">
-                  7 Critical Checks Evaluated
-                </span>
-              </div>
+            {hasLlm && (
+              <button
+                onClick={() => runAiDeepAnalysis()}
+                disabled={isAiLoading || (!title.trim() && !abstract.trim())}
+                className="px-3 py-1.5 text-xs font-bold rounded-xl bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/80 dark:hover:bg-purple-900 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+              >
+                {isAiLoading ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Re-Evaluating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>Re-Run AI Triage</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
 
-              <div className="space-y-3">
-                {auditReport.checks.map((check) => {
-                  const statusConfig = {
-                    pass: {
-                      icon: CheckCircle2,
-                      iconColor: 'text-emerald-600 dark:text-emerald-400',
-                      badgeBg: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-                      badgeText: 'Pass'
-                    },
-                    warning: {
-                      icon: AlertTriangle,
-                      iconColor: 'text-amber-500 dark:text-amber-400',
-                      badgeBg: 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-                      badgeText: 'Review Needed'
-                    },
-                    fail: {
-                      icon: XCircle,
-                      iconColor: 'text-rose-600 dark:text-rose-400',
-                      badgeBg: 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800',
-                      badgeText: 'High Desk-Rejection Risk'
-                    }
-                  }[check.status];
+          {/* ===================================================================== */}
+          {/* VIEW A: AI SENIOR EDITOR TRIAGE */}
+          {/* ===================================================================== */}
+          {activeSentinelTab === 'editorial' && (
+            <div className="space-y-6">
 
-                  const IconComponent = statusConfig.icon;
+              {/* AI Loading State */}
+              {isAiLoading && (
+                <div className="p-8 rounded-2xl bg-gradient-to-br from-purple-950/50 via-slate-900 to-indigo-950/50 border border-purple-500/40 text-center space-y-4 shadow-lg animate-pulse">
+                  <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 animate-spin" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-white font-serif">
+                      Simulated Editor-in-Chief First-Read in Progress...
+                    </h3>
+                    <p className="text-xs text-purple-200 max-w-lg mx-auto leading-relaxed">
+                      Evaluating manuscript novelty vs. contemporary literature, scanning for methodological vulnerabilities, assessing abstract narrative hook, and cataloging potential desk-rejection fatal flaws.
+                    </p>
+                  </div>
+                </div>
+              )}
 
-                  return (
-                    <div
-                      key={check.id}
-                      className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-start justify-between gap-4"
-                    >
-                      <div className="flex items-start gap-3">
-                        <IconComponent className={`w-5 h-5 shrink-0 mt-0.5 ${statusConfig.iconColor}`} />
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-bold text-slate-900 dark:text-white font-serif">
-                              {check.title}
-                            </span>
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                              {check.category}
-                            </span>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${statusConfig.badgeBg}`}>
-                              {statusConfig.badgeText}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-300">
-                            {check.message}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 font-sans italic">
-                            Action: {check.fixAdvice}
-                          </p>
-
-                          {check.autoFixContent && (
-                            <div className="mt-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200">
-                              {check.autoFixContent}
-                            </div>
-                          )}
-                        </div>
+              {/* AI Report Card */}
+              {aiReport && !isAiLoading && (
+                <>
+                  {/* Verdict Banner */}
+                  <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div className="flex items-start gap-4">
+                      <div className={`w-20 h-20 rounded-2xl shrink-0 flex flex-col items-center justify-center font-serif font-extrabold text-2xl border shadow-inner ${
+                        aiReport.overallScore >= 80
+                          ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                          : aiReport.overallScore >= 65
+                            ? 'bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                            : 'bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                      }`}>
+                        <span>{aiReport.overallScore}</span>
+                        <span className="text-[10px] font-sans font-bold uppercase tracking-wider -mt-1">/ 100</span>
                       </div>
 
-                      {/* 1-Click Fix Button */}
-                      {check.autoFixContent && (
-                        <div className="shrink-0 self-end sm:self-center">
-                          <button
-                            onClick={() => handleAppendDeclarationToDraft(check.autoFixContent!, check.id)}
-                            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-900 hover:bg-blue-800 text-white flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                            aiReport.overallScore >= 80
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                              : aiReport.overallScore >= 65
+                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                          }`}>
+                            {aiReport.editorialVerdict}
+                          </span>
+                          <span className="text-xs text-purple-700 dark:text-purple-400 font-semibold flex items-center gap-1">
+                            <Sparkles className="w-3 h-3" />
+                            <span>Simulated Editor-in-Chief Triage</span>
+                          </span>
+                        </div>
+
+                        <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white">
+                          First-Read Editorial Impression
+                        </h3>
+
+                        <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 italic border-l-2 border-purple-500 pl-3 py-0.5">
+                          "{aiReport.editorTriageSummary}"
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
+                      {aiReport.editorCoverLetter && (
+                        <button
+                          onClick={() => setIsCoverLetterModalOpen(true)}
+                          className="px-3.5 py-2 text-xs font-bold rounded-xl bg-purple-900 hover:bg-purple-800 text-white flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                        >
+                          <Mail className="w-3.5 h-3.5 text-purple-300" />
+                          <span>View Editor Cover Letter</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Fatal Flaws & Immediate Triage Hazards */}
+                  {aiReport.fatalFlaws.length > 0 && (
+                    <div className="p-4 sm:p-5 rounded-2xl bg-rose-50/70 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-rose-900 dark:text-rose-200">
+                          Immediate Desk-Rejection Hazards (48-Hour Editorial Screening)
+                        </h4>
+                      </div>
+                      <div className="space-y-2">
+                        {aiReport.fatalFlaws.map((flaw, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-rose-200/80 dark:border-rose-900/50 flex items-start gap-2.5 text-xs text-rose-950 dark:text-rose-200"
                           >
-                            {appendedDeclaration === check.id || copiedId === check.id ? (
+                            <span className="font-bold text-rose-600 dark:text-rose-400 shrink-0">#{idx + 1}</span>
+                            <span className="leading-relaxed">{flaw}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4 Core Editorial Dimensions */}
+                  {aiReport.dimensions.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                          Deep Editorial Assessment Dimensions
+                        </h3>
+                        <span className="text-xs text-slate-500">
+                          {aiReport.dimensions.length} Critical Pillars
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {aiReport.dimensions.map((dim, idx) => {
+                          const statusConfig = {
+                            pass: {
+                              badgeBg: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
+                              badgeText: 'Pass'
+                            },
+                            warning: {
+                              badgeBg: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+                              badgeText: 'Revisions Advised'
+                            },
+                            fail: {
+                              badgeBg: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-300 dark:border-rose-800',
+                              badgeText: 'High Desk-Rejection Risk'
+                            }
+                          }[dim.status];
+
+                          return (
+                            <div
+                              key={idx}
+                              className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
+                            >
+                              <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                                <span className="text-xs font-bold text-slate-900 dark:text-white font-serif">
+                                  {dim.name}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">
+                                    {dim.score}%
+                                  </span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${statusConfig.badgeBg}`}>
+                                    {statusConfig.badgeText}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    dim.score >= 80 ? 'bg-emerald-500' : dim.score >= 60 ? 'bg-amber-500' : 'bg-rose-500'
+                                  }`}
+                                  style={{ width: `${Math.max(5, dim.score)}%` }}
+                                />
+                              </div>
+
+                              <div className="space-y-1.5 text-xs">
+                                <div>
+                                  <span className="font-bold text-slate-700 dark:text-slate-300">Critique: </span>
+                                  <span className="text-slate-600 dark:text-slate-400">{dim.critique}</span>
+                                </div>
+                                <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 italic">
+                                  <span className="font-semibold text-blue-700 dark:text-blue-400 not-italic">Action: </span>
+                                  {dim.actionableAdvice}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Abstract Sharpening Studio */}
+                  {aiReport.suggestedAbstractRewrite && (
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-50/60 to-purple-50/60 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200 dark:border-indigo-900/60 shadow-sm space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-indigo-700 dark:text-indigo-400" />
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
+                            Editorial-Grade Sharpened Abstract
+                          </h4>
+                          <span className="text-xs text-slate-500">
+                            ({aiReport.suggestedAbstractRewrite.trim().split(/\s+/).length} words)
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleCopyText(aiReport.suggestedAbstractRewrite, 'sharpened-abstract')}
+                            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition cursor-pointer"
+                          >
+                            {copiedId === 'sharpened-abstract' ? (
                               <>
-                                <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>{onAppendToDraft ? 'Appended to Draft!' : 'Copied!'}</span>
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Copied!</span>
                               </>
                             ) : (
                               <>
-                                <Sparkles className="w-3.5 h-3.5 text-blue-300" />
-                                <span>{onAppendToDraft ? 'Append to Draft' : 'Copy Declaration'}</span>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Copy Abstract</span>
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => handleApplySharpenedAbstract(aiReport.suggestedAbstractRewrite)}
+                            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-900 hover:bg-indigo-800 text-white flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                          >
+                            {appliedAbstractSuccess ? (
+                              <>
+                                <CheckCheck className="w-3.5 h-3.5 text-emerald-300" />
+                                <span>Applied to Input!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+                                <span>Apply to Abstract Input</span>
                               </>
                             )}
                           </button>
                         </div>
-                      )}
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
+                        {aiReport.suggestedAbstractRewrite}
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
+                  )}
+
+                  {/* Submission Cover Letter Preview */}
+                  {aiReport.editorCoverLetter && (
+                    <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-purple-700 dark:text-purple-400" />
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
+                            Formal Author Submission Cover Letter
+                          </h4>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleCopyText(aiReport.editorCoverLetter, 'cover-letter')}
+                            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition cursor-pointer"
+                          >
+                            {copiedId === 'cover-letter' ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Copy Full Letter</span>
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => setIsCoverLetterModalOpen(true)}
+                            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-purple-100 dark:bg-purple-950/80 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800 transition cursor-pointer"
+                          >
+                            <span>Open Full Screen</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                        {aiReport.editorCoverLetter}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Not Yet Run State */}
+              {!aiReport && !isAiLoading && (
+                <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm text-center space-y-4">
+                  <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 flex items-center justify-center">
+                    <Bot className="w-6 h-6" />
+                  </div>
+
+                  <div className="space-y-1.5 max-w-md mx-auto">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white font-serif">
+                      Activate Simulated Editor-in-Chief Triage
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {hasLlm
+                        ? 'Simulate a real journal editor triage to evaluate novelty claims, pinpoint fatal flaws, sharpen your abstract, and compose a publication-grade cover letter.'
+                        : 'Connect an LLM engine (Ollama, Gemini, WebGPU, or OpenAI) in Settings to activate deep epistemic triage, abstract sharpening, and cover letter generation.'}
+                    </p>
+                  </div>
+
+                  {hasLlm ? (
+                    <button
+                      onClick={() => runAiDeepAnalysis()}
+                      disabled={!title.trim() && !abstract.trim()}
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-bold text-xs shadow-md transition cursor-pointer disabled:opacity-50"
+                    >
+                      Run AI Editorial Deep Triage Now
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setActiveSentinelTab('structural')}
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition cursor-pointer"
+                    >
+                      View Structural Compliance Checklist
+                    </button>
+                  )}
+                </div>
+              )}
+
             </div>
           )}
 
-          {/* Standard Publisher Declarations Generator Box */}
-          {auditReport && (
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-blue-950/20 border border-blue-200 dark:border-blue-900/60 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
-                    Publisher-Ready Declarations Package
-                  </h3>
+          {/* ===================================================================== */}
+          {/* VIEW B: STRUCTURAL COMPLIANCE CHECKLIST */}
+          {/* ===================================================================== */}
+          {activeSentinelTab === 'structural' && (
+            <div className="space-y-6">
+              
+              {/* Pre-Flight Health Score Card */}
+              {auditReport && (
+                <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+                  
+                  <div className="flex items-center gap-5">
+                    <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center font-serif font-extrabold text-2xl border shadow-inner ${
+                      auditReport.overallScore >= 80
+                        ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                        : auditReport.overallScore >= 60
+                          ? 'bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                          : 'bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800'
+                    }`}>
+                      <span>{auditReport.overallScore}</span>
+                      <span className="text-[10px] font-sans font-bold uppercase tracking-wider -mt-1">/ 100</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                          auditReport.overallScore >= 80
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                            : auditReport.overallScore >= 60
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                              : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                        }`}>
+                          {auditReport.status}
+                        </span>
+                        <span className="text-xs text-slate-500 font-sans">
+                          Structural Compliance Audit
+                        </span>
+                      </div>
+                      <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white">
+                        Technical Submission Readiness
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+                        Standard publisher policies require strict conformance with abstract length constraints and transparency declarations.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Triage Metrics Summary */}
+                  <div className="flex flex-wrap items-center gap-3 text-center w-full md:w-auto">
+                    <div className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex-1 md:flex-initial">
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">Abstract Size</div>
+                      <div className="text-sm font-bold text-slate-900 dark:text-white">
+                        {auditReport.abstractWordCount} / {auditReport.abstractMaxRecommended}w
+                      </div>
+                    </div>
+                    <div className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex-1 md:flex-initial">
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">References</div>
+                      <div className="text-sm font-bold text-slate-900 dark:text-white">
+                        {auditReport.referencesCount} cited
+                      </div>
+                    </div>
+                    <div className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex-1 md:flex-initial">
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">Recent (5yr)</div>
+                      <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                        {auditReport.recentReferencesPercent}%
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
+              )}
+
+              {/* 7-Point Audit Checklist */}
+              {auditReport && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                      Pre-Flight Checklist &amp; Integrity Diagnostics
+                    </h3>
+                    <span className="text-xs text-slate-500">
+                      7 Critical Checks Evaluated
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {auditReport.checks.map((check) => {
+                      const statusConfig = {
+                        pass: {
+                          icon: CheckCircle2,
+                          iconColor: 'text-emerald-600 dark:text-emerald-400',
+                          badgeBg: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+                          badgeText: 'Pass'
+                        },
+                        warning: {
+                          icon: AlertTriangle,
+                          iconColor: 'text-amber-500 dark:text-amber-400',
+                          badgeBg: 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+                          badgeText: 'Review Needed'
+                        },
+                        fail: {
+                          icon: XCircle,
+                          iconColor: 'text-rose-600 dark:text-rose-400',
+                          badgeBg: 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+                          badgeText: 'High Desk-Rejection Risk'
+                        }
+                      }[check.status];
+
+                      const IconComponent = statusConfig.icon;
+
+                      return (
+                        <div
+                          key={check.id}
+                          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-start justify-between gap-4"
+                        >
+                          <div className="flex items-start gap-3">
+                            <IconComponent className={`w-5 h-5 shrink-0 mt-0.5 ${statusConfig.iconColor}`} />
+                            <div className="space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm font-bold text-slate-900 dark:text-white font-serif">
+                                  {check.title}
+                                </span>
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                  {check.category}
+                                </span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${statusConfig.badgeBg}`}>
+                                  {statusConfig.badgeText}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-300">
+                                {check.message}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-sans italic">
+                                Action: {check.fixAdvice}
+                              </p>
+
+                              {check.autoFixContent && (
+                                <div className="mt-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200">
+                                  {check.autoFixContent}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 1-Click Fix Button */}
+                          {check.autoFixContent && (
+                            <div className="shrink-0 self-end sm:self-center">
+                              <button
+                                onClick={() => handleAppendDeclarationToDraft(check.autoFixContent!, check.id)}
+                                className="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-900 hover:bg-blue-800 text-white flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                              >
+                                {appendedDeclaration === check.id || copiedId === check.id ? (
+                                  <>
+                                    <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span>{onAppendToDraft ? 'Appended to Draft!' : 'Copied!'}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-3.5 h-3.5 text-blue-300" />
+                                    <span>{onAppendToDraft ? 'Append to Draft' : 'Copy Declaration'}</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Standard Publisher Declarations Generator Box */}
+              {auditReport && (
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-blue-950/20 border border-blue-200 dark:border-blue-900/60 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
+                        Publisher-Ready Declarations Package
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const combined = `${auditReport.generatedDeclarations.dataAvailability}\n\n${auditReport.generatedDeclarations.conflictOfInterest}\n\n${auditReport.generatedDeclarations.ethicalApproval}`;
+                        if (onAppendToDraft) {
+                          onAppendToDraft(combined);
+                          setAppendedDeclaration('all');
+                          setTimeout(() => setAppendedDeclaration(null), 3000);
+                        } else {
+                          handleCopyText(combined, 'all');
+                        }
+                      }}
+                      className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-blue-900 hover:bg-blue-800 text-white flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      {appendedDeclaration === 'all' || copiedId === 'all' ? (
+                        <>
+                          <CheckCheck className="w-3.5 h-3.5 text-emerald-300" />
+                          <span>{onAppendToDraft ? 'Appended All to Draft!' : 'Copied All!'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>{onAppendToDraft ? 'Append All to Manuscript Draft' : 'Copy All Declarations'}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                      <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase">
+                        Data Availability Statement
+                      </div>
+                      <p className="text-xs text-slate-800 dark:text-slate-200 font-mono">
+                        {auditReport.generatedDeclarations.dataAvailability}
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                      <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase">
+                        Conflict of Interest Disclosure
+                      </div>
+                      <p className="text-xs text-slate-800 dark:text-slate-200 font-mono">
+                        {auditReport.generatedDeclarations.conflictOfInterest}
+                      </p>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                      <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase">
+                        Ethical Approval &amp; Consent Statement
+                      </div>
+                      <p className="text-xs text-slate-800 dark:text-slate-200 font-mono">
+                        {auditReport.generatedDeclarations.ethicalApproval}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* FULL COVER LETTER MODAL */}
+      {/* ========================================================================= */}
+      {isCoverLetterModalOpen && aiReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 flex items-center justify-center">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white">
+                    Submission Cover Letter
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Addressed to the Editor-in-Chief highlighting paper novelty &amp; compliance
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsCoverLetterModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto font-mono text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-all">
+              {aiReport.editorCoverLetter}
+            </div>
+
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex items-center justify-between">
+              <span className="text-xs text-slate-500">
+                Ready for submission portal attachment
+              </span>
+
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    const combined = `${auditReport.generatedDeclarations.dataAvailability}\n\n${auditReport.generatedDeclarations.conflictOfInterest}\n\n${auditReport.generatedDeclarations.ethicalApproval}`;
-                    if (onAppendToDraft) {
-                      onAppendToDraft(combined);
-                      setAppendedDeclaration('all');
-                      setTimeout(() => setAppendedDeclaration(null), 3000);
-                    } else {
-                      handleCopyText(combined, 'all');
-                    }
-                  }}
-                  className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-blue-900 hover:bg-blue-800 text-white flex items-center gap-1.5 transition cursor-pointer"
+                  onClick={() => handleCopyText(aiReport.editorCoverLetter, 'modal-cover-letter')}
+                  className="px-4 py-2 rounded-xl bg-purple-900 hover:bg-purple-800 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 transition cursor-pointer"
                 >
-                  {appendedDeclaration === 'all' || copiedId === 'all' ? (
+                  {copiedId === 'modal-cover-letter' ? (
                     <>
-                      <CheckCheck className="w-3.5 h-3.5 text-emerald-300" />
-                      <span>{onAppendToDraft ? 'Appended All to Draft!' : 'Copied All!'}</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-300" />
+                      <span>Copied to Clipboard!</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-3.5 h-3.5" />
-                      <span>{onAppendToDraft ? 'Append All to Manuscript Draft' : 'Copy All Declarations'}</span>
+                      <span>Copy Cover Letter</span>
                     </>
                   )}
                 </button>
-              </div>
 
-              <div className="space-y-3">
-                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-                  <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase">
-                    Data Availability Statement
-                  </div>
-                  <p className="text-xs text-slate-800 dark:text-slate-200 font-mono">
-                    {auditReport.generatedDeclarations.dataAvailability}
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-                  <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase">
-                    Conflict of Interest Disclosure
-                  </div>
-                  <p className="text-xs text-slate-800 dark:text-slate-200 font-mono">
-                    {auditReport.generatedDeclarations.conflictOfInterest}
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-                  <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase">
-                    Ethical Approval &amp; Consent Statement
-                  </div>
-                  <p className="text-xs text-slate-800 dark:text-slate-200 font-mono">
-                    {auditReport.generatedDeclarations.ethicalApproval}
-                  </p>
-                </div>
+                <button
+                  onClick={() => setIsCoverLetterModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition cursor-pointer"
+                >
+                  Close
+                </button>
               </div>
             </div>
-          )}
-
+          </div>
         </div>
       )}
 
