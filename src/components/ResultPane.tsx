@@ -44,6 +44,7 @@ import { calculateDatasetMetrics } from '../services/datasetScientometrics';
 import { addMultiplePapersToCart } from '../services/cartService';
 import { downloadWordDocument } from '../services/wordExportService';
 import { AcademicPromptsModal } from './AcademicPromptsModal';
+import { LiteratureExportModal } from './LiteratureExportModal';
 
 interface ResultPaneProps {
   originalText: string;
@@ -84,6 +85,7 @@ export const ResultPane: React.FC<ResultPaneProps> = ({
   const [revisionError, setRevisionError] = useState<string>('');
   const [versionHistory, setVersionHistory] = useState<string[]>([]);
   const [isPromptsOpen, setIsPromptsOpen] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
   const { annotatedText, bibliography, bibliographyHtml, uniquePapers } = buildAnnotatedDocument(
     originalText,
@@ -855,17 +857,28 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
               );
             })()}
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-xs text-slate-500">
                 {uniquePapers.length} unique peer-reviewed sources in {currentStyleInfo.name}
               </span>
-              <button
-                onClick={() => handleCopyPlain(bibliography.join('\n\n'), 'bib-tab')}
-                className="text-xs text-blue-800 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
-              >
-                {copiedKey === 'bib-tab' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>Copy References</span>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="text-xs text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                  title="Download literature records as Word, JSON, Markdown, CSV, RIS, or BibTeX"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download Records (Word, JSON, MD, CSV)</span>
+                </button>
+                <button
+                  onClick={() => handleCopyPlain(bibliography.join('\n\n'), 'bib-tab')}
+                  className="text-xs text-blue-800 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                >
+                  {copiedKey === 'bib-tab' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>Copy References</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3 font-serif text-sm">
@@ -949,6 +962,15 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
         {/* Download file buttons */}
         <div className="flex flex-wrap items-center gap-2">
           <button
+            onClick={() => setIsExportModalOpen(true)}
+            className="px-3.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950 dark:hover:bg-emerald-900 text-emerald-900 dark:text-emerald-200 text-xs font-bold flex items-center gap-1.5 transition border border-emerald-300 dark:border-emerald-800 cursor-pointer shadow-xs"
+            title="Download full literature records containing Title, Abstract, DOI, Authors, and Citations in Word, JSON, Markdown, CSV, RIS, BibTeX"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>Literature Records ({uniquePapers.length})</span>
+          </button>
+
+          <button
             onClick={handleDownloadWord}
             className="px-3.5 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-200 text-xs font-semibold flex items-center gap-1.5 transition border border-blue-200 dark:border-blue-800 cursor-pointer shadow-xs"
             title="Download formatted academic document for Microsoft Word (.doc) with italics and hanging indents"
@@ -1010,6 +1032,15 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
         papers={uniquePapers}
         topic="Grounded Manuscript References"
         style={options.style}
+      />
+
+      {/* Literature Records Export Modal */}
+      <LiteratureExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        papers={uniquePapers}
+        topic="Grounded Manuscript References"
+        activeStyle={options.style}
       />
     </div>
   );

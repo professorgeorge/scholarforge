@@ -17,7 +17,8 @@ import {
   ShieldAlert,
   ShieldCheck,
   FileSpreadsheet,
-  Compass
+  Compass,
+  Download
 } from 'lucide-react';
 import type { AcademicPaper, CitationOptions, Claim } from '../types/citation';
 import { huntAcademicPapers } from '../services/academicApi';
@@ -35,6 +36,13 @@ import { generateCOinS } from '../services/coinsGenerator';
 import { addPaperToCart, addMultiplePapersToCart, isPaperInCart } from '../services/cartService';
 import { AcademicPromptsModal } from './AcademicPromptsModal';
 import { PrismaFlowModal } from './PrismaFlowModal';
+import { LiteratureExportModal } from './LiteratureExportModal';
+import {
+  downloadLiteratureWord,
+  downloadLiteratureJson,
+  downloadLiteratureMarkdown,
+  downloadLiteratureCsv
+} from '../services/literatureExportService';
 
 interface LiteratureFirstPaneProps {
   onManuscriptSynthesized: (manuscript: string, claims: Claim[]) => void;
@@ -58,6 +66,8 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   const [isPrismaOpen, setIsPrismaOpen] = useState(false);
   const [prismaStats, setPrismaStats] = useState<PrismaFlowStats | null>(null);
   const [cartFeedback, setCartFeedback] = useState<string | null>(null);
+  const [downloadFeedback, setDownloadFeedback] = useState<string | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [discoveredPapers, setDiscoveredPapers] = useState<AcademicPaper[]>([]);
   const [selectedPaperIds, setSelectedPaperIds] = useState<Set<string>>(new Set());
   const [expandedAbstractId, setExpandedAbstractId] = useState<string | null>(null);
@@ -72,6 +82,14 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     semanticscholar: true,
     arxiv: false,
   });
+
+  const handleSelectAll = () => {
+    setSelectedPaperIds(new Set(discoveredPapers.map((p) => p.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedPaperIds(new Set());
+  };
 
   const handleSearchLiterature = async () => {
     if (!topic.trim()) {
@@ -471,17 +489,34 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4 animate-in fade-in duration-200">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white font-serif flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                <span>Verified Scholarly Corpus ({discoveredPapers.length} Peer-Reviewed Works)</span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Select the genuine papers to synthesize into the literature review ({selectedPaperIds.size} selected).
-              </p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white font-serif flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Verified Scholarly Corpus ({discoveredPapers.length} Peer-Reviewed Works)</span>
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                <span>{selectedPaperIds.size} of {discoveredPapers.length} selected.</span>
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-semibold cursor-pointer"
+                >
+                  Select All
+                </button>
+                <span>&bull;</span>
+                <button
+                  type="button"
+                  onClick={handleDeselectAll}
+                  className="text-slate-500 hover:underline cursor-pointer"
+                >
+                  Clear Selection
+                </button>
+              </div>
             </div>
 
-            {/* Quick add custom search keyword */}
-            <div className="flex items-center gap-2">
+            {/* Quick Actions & Search Keyword */}
+            <div className="flex items-center gap-2 flex-wrap">
               <input
                 type="text"
                 value={customKeyword}
@@ -506,9 +541,20 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                   title="View PRISMA 2020 flow metrics & copy publication statement"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>PRISMA 2020 Flow</span>
+                  <span>PRISMA 2020</span>
                 </button>
               )}
+
+              {/* Top Export Button */}
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(true)}
+                className="px-3 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                title="Download identified literature records as Word, JSON, Markdown, CSV, RIS, or BibTeX"
+              >
+                <Download className="w-3.5 h-3.5 text-blue-200" />
+                <span>Download Records ({selectedPaperIds.size > 0 ? selectedPaperIds.size : discoveredPapers.length})</span>
+              </button>
             </div>
           </div>
 
@@ -676,6 +722,19 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                         </button>
                       )}
 
+                      <button
+                        type="button"
+                        onClick={() => {
+                          downloadLiteratureWord([paper], { topic: paper.title, style: options.style });
+                          setDownloadFeedback(`Exported "${paper.title.slice(0, 35)}..."!`);
+                          setTimeout(() => setDownloadFeedback(null), 2500);
+                        }}
+                        className="text-xs text-slate-500 hover:text-blue-700 dark:hover:text-blue-400 flex items-center gap-0.5 cursor-pointer font-medium p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                        title="Download record with abstract (.doc)"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+
                       {paper.url && (
                         <a
                           href={paper.url}
@@ -698,6 +757,75 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
           {/* Action Step 3: Trigger Synthesis & Prompt Tools */}
           <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2 flex-wrap">
+              {/* PRIMARY DOWNLOAD LITERATURE BUTTON */}
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(true)}
+                disabled={discoveredPapers.length === 0}
+                className="px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+                title="Download identified literature records containing Title, Abstract, DOI, Authors, and Citations"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Download Literature Records ({selectedPaperIds.size > 0 ? `${selectedPaperIds.size} Selected` : `All ${discoveredPapers.length}`})</span>
+              </button>
+
+              {/* Quick Format Shortcuts */}
+              <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded-lg bg-slate-50/50 dark:bg-slate-950/50">
+                <span className="text-[10px] uppercase font-bold text-slate-400">Quick:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const papersToDownload = selectedPaperIds.size > 0 ? discoveredPapers.filter((p) => selectedPaperIds.has(p.id)) : discoveredPapers;
+                    downloadLiteratureWord(papersToDownload, { topic, style: options.style });
+                    setDownloadFeedback('Word (.doc) downloaded!');
+                    setTimeout(() => setDownloadFeedback(null), 2500);
+                  }}
+                  className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-mono text-[10px] text-slate-700 dark:text-slate-300 transition cursor-pointer border border-slate-200 dark:border-slate-700"
+                  title="Download as Word Document (.doc)"
+                >
+                  .doc
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const papersToDownload = selectedPaperIds.size > 0 ? discoveredPapers.filter((p) => selectedPaperIds.has(p.id)) : discoveredPapers;
+                    downloadLiteratureJson(papersToDownload, { topic });
+                    setDownloadFeedback('JSON (.json) downloaded!');
+                    setTimeout(() => setDownloadFeedback(null), 2500);
+                  }}
+                  className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-mono text-[10px] text-slate-700 dark:text-slate-300 transition cursor-pointer border border-slate-200 dark:border-slate-700"
+                  title="Download as JSON (.json)"
+                >
+                  .json
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const papersToDownload = selectedPaperIds.size > 0 ? discoveredPapers.filter((p) => selectedPaperIds.has(p.id)) : discoveredPapers;
+                    downloadLiteratureMarkdown(papersToDownload, { topic });
+                    setDownloadFeedback('Markdown (.md) downloaded!');
+                    setTimeout(() => setDownloadFeedback(null), 2500);
+                  }}
+                  className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-mono text-[10px] text-slate-700 dark:text-slate-300 transition cursor-pointer border border-slate-200 dark:border-slate-700"
+                  title="Download as Markdown (.md)"
+                >
+                  .md
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const papersToDownload = selectedPaperIds.size > 0 ? discoveredPapers.filter((p) => selectedPaperIds.has(p.id)) : discoveredPapers;
+                    downloadLiteratureCsv(papersToDownload, { topic });
+                    setDownloadFeedback('CSV (.csv) downloaded!');
+                    setTimeout(() => setDownloadFeedback(null), 2500);
+                  }}
+                  className="px-1.5 py-0.5 rounded bg-white hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-mono text-[10px] text-slate-700 dark:text-slate-300 transition cursor-pointer border border-slate-200 dark:border-slate-700"
+                  title="Download as CSV spreadsheet (.csv)"
+                >
+                  .csv
+                </button>
+              </div>
+
               <button
                 onClick={() => {
                   const selectedPapers = discoveredPapers.filter((p) => selectedPaperIds.has(p.id));
@@ -718,12 +846,18 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                 className="px-3 py-2 text-xs font-semibold rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Crown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                <span>7 LLM Prompts Suite</span>
+                <span>7 LLM Prompts</span>
               </button>
 
               {cartFeedback && (
                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <Check className="w-3.5 h-3.5" /> {cartFeedback}
+                </span>
+              )}
+
+              {downloadFeedback && (
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5" /> {downloadFeedback}
                 </span>
               )}
             </div>
@@ -769,6 +903,16 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
           query={topic}
         />
       )}
+
+      {/* Literature Export Modal */}
+      <LiteratureExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        papers={discoveredPapers}
+        selectedPaperIds={selectedPaperIds}
+        topic={topic}
+        activeStyle={options.style}
+      />
 
     </div>
   );

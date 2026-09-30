@@ -8,7 +8,8 @@ import {
   ChevronUp, 
   BookOpen, 
   Crown,
-  Check
+  Check,
+  Download
 } from 'lucide-react';
 import type { AcademicPaper, CitationStyle } from '../types/citation';
 import { 
@@ -22,6 +23,7 @@ import { generateCOinS } from '../services/coinsGenerator';
 import { downloadRISFile } from '../services/risExporter';
 import { downloadWordDocument } from '../services/wordExportService';
 import { AcademicPromptsModal } from './AcademicPromptsModal';
+import { LiteratureExportModal } from './LiteratureExportModal';
 
 interface ResearchCartDrawerProps {
   isOpen: boolean;
@@ -39,6 +41,7 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
   const [papers, setPapers] = useState<AcademicPaper[]>([]);
   const [expandedAbstractId, setExpandedAbstractId] = useState<string | null>(null);
   const [isPromptsOpen, setIsPromptsOpen] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
 
   const refreshCart = () => {
@@ -207,31 +210,39 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
                 </button>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={() => setIsExportModalOpen(true)}
+                  className="px-2.5 py-1 text-xs font-bold rounded-md bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 transition-colors shadow-xs cursor-pointer"
+                  title="Export Cart Records in Word, JSON, Markdown, CSV, RIS, or BibTeX"
+                >
+                  <Download className="w-3 h-3" />
+                  <span>Export ({papers.length})</span>
+                </button>
                 <button
                   onClick={() => handleExportWord(false)}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  className="px-2 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   title="Export Word References"
                 >
-                  Word .docx
+                  .docx
                 </button>
                 <button
                   onClick={() => handleExportWord(true)}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  className="px-2 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   title="Export Annotated Bibliography with abstracts"
                 >
-                  Annotated Bib
+                  Annotated
                 </button>
                 <button
                   onClick={handleExportRIS}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  className="px-2 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   title="Export RIS for Zotero / EndNote"
                 >
                   RIS
                 </button>
                 <button
                   onClick={handleExportBibTeX}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  className="px-2 py-1 text-xs font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   title="Export BibTeX"
                 >
                   BibTeX
@@ -382,6 +393,15 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
         papers={papers}
         topic="Research Cart Selection"
         style={activeStyle}
+      />
+
+      {/* Literature Export Modal */}
+      <LiteratureExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        papers={papers}
+        topic="Research Cart Selection"
+        activeStyle={activeStyle}
       />
     </>
   );

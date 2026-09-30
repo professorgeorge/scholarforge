@@ -19,9 +19,10 @@ import {
   MessageSquarePlus,
   Wand2,
   ShieldCheck,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Download
 } from 'lucide-react';
-import type { CitationOptions, Claim } from '../types/citation';
+import type { AcademicPaper, CitationOptions, Claim } from '../types/citation';
 import { extractTextFromManuscriptFile } from '../services/fileImportService';
 import { queryPublicSecondaryData } from '../services/secondaryDataService';
 import { 
@@ -33,6 +34,7 @@ import {
 import { huntLiteratureCorpus } from '../services/academicApi';
 import { extractClaimsFromText } from '../services/claimExtractor';
 import { SAMPLE_ESSAYS } from '../data/sampleEssays';
+import { LiteratureExportModal } from './LiteratureExportModal';
 
 interface ScholarLaunchpadProps {
   onManuscriptReady: (manuscript: string, claims: Claim[]) => void;
@@ -88,6 +90,11 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
   const [primaryDataFilename, setPrimaryDataFilename] = useState<string | null>(null);
   const [includeSecondaryData, setIncludeSecondaryData] = useState(true);
   const primaryDataInputRef = useRef<HTMLInputElement>(null);
+
+  // Literature Discovery & Export State
+  const [discoveredPapersForExport, setDiscoveredPapersForExport] = useState<AcademicPaper[]>([]);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isSearchingLiteratureOnly, setIsSearchingLiteratureOnly] = useState(false);
 
   // Loading & Error States
   const [statusMessage, setStatusMessage] = useState<string>('');
@@ -244,6 +251,32 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
     }
   };
 
+  // Execution: Identify & Download Literature Records without Synthesizing
+  const handleIdentifyLiteratureOnly = async () => {
+    if (!topic.trim()) {
+      setErrorMsg('Please enter a research topic, thesis statement, or inquiry.');
+      return;
+    }
+
+    setErrorMsg('');
+    setIsSearchingLiteratureOnly(true);
+    setStatusMessage('Querying OpenAlex & Crossref for verified peer-reviewed literature...');
+
+    try {
+      const papers = await huntLiteratureCorpus(topic, focus, searchScope, options.excludePreprints);
+      if (papers.length === 0) {
+        throw new Error('No peer-reviewed papers with DOIs found for this exact inquiry. Try broader search terms.');
+      }
+      setDiscoveredPapersForExport(papers);
+      setIsExportModalOpen(true);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Literature discovery failed.');
+    } finally {
+      setIsSearchingLiteratureOnly(false);
+      setStatusMessage('');
+    }
+  };
+
   // Execution: Peer-Review Rebuttal & Comprehensive Overhaul (Tab 2)
   const handleExecutePeerReviewOverhaul = async () => {
     if (!draftText.trim()) {
@@ -368,9 +401,9 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs font-bold font-serif">1. Research Inquiry & Full Paper Synthesis</div>
+            <div className="text-xs font-bold font-serif">1. Research Inquiry, Literature Discovery & Synthesis</div>
             <div className="text-[11px] text-slate-500 mt-0.5">
-              Enter a thesis or research question → AI queries literature & synthesizes complete grounded paper with real DOIs.
+              Enter a thesis or inquiry → Query literature to download records (Word, JSON, MD, CSV) or synthesize a full grounded paper.
             </div>
           </div>
         </button>
@@ -844,25 +877,47 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
       {/* Primary Action Button */}
       <div className="pt-2 flex items-center justify-end">
         {activeTab === 'synthesize' ? (
-          <button
-            type="button"
-            onClick={handleExecuteSynthesis}
-            disabled={isBusy || !topic.trim()}
-            className="btn-academic-primary px-8 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2.5 cursor-pointer shadow-md disabled:opacity-50"
-          >
-            {isBusy ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>Synthesizing Full Grounded Paper...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 text-amber-300" />
-                <span>Synthesize Full Grounded Paper</span>
-                <ArrowRight className="w-4 h-4 ml-0.5" />
-              </>
-            )}
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={handleIdentifyLiteratureOnly}
+              disabled={isBusy || isSearchingLiteratureOnly || !topic.trim()}
+              className="px-6 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition shadow-xs disabled:opacity-50"
+              title="Identify genuine peer-reviewed literature and download as Word, JSON, Markdown, CSV, RIS, or BibTeX without synthesizing"
+            >
+              {isSearchingLiteratureOnly ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-600 dark:text-emerald-400" />
+                  <span>Discovering Literature...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Identify & Download Literature Records</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExecuteSynthesis}
+              disabled={isBusy || isSearchingLiteratureOnly || !topic.trim()}
+              className="btn-academic-primary px-8 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2.5 cursor-pointer shadow-md disabled:opacity-50"
+            >
+              {isBusy ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Synthesizing Full Grounded Paper...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Synthesize Full Grounded Paper</span>
+                  <ArrowRight className="w-4 h-4 ml-0.5" />
+                </>
+              )}
+            </button>
+          </div>
         ) : reviewerCommentsText.trim() ? (
           <button
             type="button"
@@ -905,6 +960,15 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
           </button>
         )}
       </div>
+
+      {/* Literature Export Modal */}
+      <LiteratureExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        papers={discoveredPapersForExport}
+        topic={topic}
+        activeStyle={options.style}
+      />
 
     </div>
   );
