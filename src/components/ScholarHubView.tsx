@@ -536,7 +536,7 @@ interface ScholarHubViewProps {
   onOpenSettings?: () => void;
   onOpenCart?: () => void;
   onOpenBinder?: () => void;
-  onInjectDraftText?: (text: string, destination: AcademicPillar) => void;
+  onInjectDraftText?: (text: string, destination: AcademicPillar, filename?: string) => void;
   currentManuscriptWordCount?: number;
   groundedClaimsCount?: number;
   totalClaimsCount?: number;
@@ -617,7 +617,7 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
   // Execute detected intent
   const handleExecuteIntent = (targetPillar: AcademicPillar) => {
     if (onInjectDraftText && omniboxInput.trim()) {
-      onInjectDraftText(omniboxInput.trim(), targetPillar);
+      onInjectDraftText(omniboxInput.trim(), targetPillar, importedFilename || undefined);
     } else {
       onSelectPillar(targetPillar);
     }
@@ -625,7 +625,11 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
   };
 
   const handleTileClick = (pillar: AcademicPillar) => {
-    onSelectPillar(pillar);
+    if (onInjectDraftText && omniboxInput.trim()) {
+      onInjectDraftText(omniboxInput.trim(), pillar, importedFilename || undefined);
+    } else {
+      onSelectPillar(pillar);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

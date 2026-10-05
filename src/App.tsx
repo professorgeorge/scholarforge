@@ -50,6 +50,7 @@ import { addMultiplePapersToCart } from './services/cartService';
 
 export const App: React.FC = () => {
   const [inputText, setInputText] = useState<string>('');
+  const [uploadedDocName, setUploadedDocName] = useState<string | null>(null);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
@@ -571,8 +572,11 @@ export const App: React.FC = () => {
               onOpenSettings={() => setIsSettingsOpen(true)}
               onOpenCart={() => setIsCartOpen(true)}
               onOpenBinder={() => setIsBinderOpen(true)}
-              onInjectDraftText={(text, destination) => {
+              onInjectDraftText={(text, destination, filename) => {
                 setInputText(text);
+                if (filename) {
+                  setUploadedDocName(filename);
+                }
                 setActivePillar(destination);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
@@ -836,7 +840,11 @@ export const App: React.FC = () => {
         {/* Tool 4A: Evidence & DOI Audit Mode */}
         {activePillar === 'verify' && (
           <div className="py-2 animate-in fade-in duration-200">
-            <VerifierPane llmConfig={llmConfig} />
+            <VerifierPane
+              llmConfig={llmConfig}
+              initialBibliography={inputText}
+              sourceFilename={uploadedDocName || undefined}
+            />
           </div>
         )}
 
@@ -913,6 +921,8 @@ export const App: React.FC = () => {
                   llmConfig={llmConfig}
                   onOpenSettings={() => setIsSettingsOpen(true)}
                   isProcessing={isProcessing}
+                  initialDraftText={inputText}
+                  initialFilename={uploadedDocName || undefined}
                 />
               </div>
             ) : (

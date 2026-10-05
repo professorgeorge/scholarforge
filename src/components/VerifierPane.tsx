@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -22,6 +22,7 @@ import {
   verifyReferenceBatch,
   SAMPLE_VERIFICATION_REFERENCES,
   downloadVerificationWordDocument,
+  extractBibliographyFromManuscript,
   type BatchVerificationReport
 } from '../services/referenceVerifierService';
 import { CITATION_STYLES } from '../services/citationFormatter';
@@ -36,13 +37,42 @@ import { Wand2 } from 'lucide-react';
 interface VerifierPaneProps {
   onAddPaperToCart?: (paper: any) => void;
   llmConfig?: LLMConfig;
+  initialBibliography?: string;
+  sourceFilename?: string;
 }
 
 export const VerifierPane: React.FC<VerifierPaneProps> = ({
-  llmConfig = DEFAULT_LLM_CONFIG
+  llmConfig = DEFAULT_LLM_CONFIG,
+  initialBibliography = '',
+  sourceFilename
 }) => {
   const [subTab, setSubTab] = useState<'batch' | 'single'>('batch');
-  const [rawBibliography, setRawBibliography] = useState<string>('');
+  const [rawBibliography, setRawBibliography] = useState<string>(() => {
+    if (initialBibliography.trim()) {
+      return extractBibliographyFromManuscript(initialBibliography).bibliography;
+    }
+    return '';
+  });
+  const [fullTransmittedText, setFullTransmittedText] = useState<string | null>(() => {
+    if (initialBibliography.trim()) {
+      return extractBibliographyFromManuscript(initialBibliography).fullText;
+    }
+    return null;
+  });
+  const [wasExtracted, setWasExtracted] = useState<boolean>(() => {
+    if (initialBibliography.trim()) {
+      return extractBibliographyFromManuscript(initialBibliography).wasExtracted;
+    }
+    return false;
+  });
+  const [detectedReferenceCount, setDetectedReferenceCount] = useState<number>(() => {
+    if (initialBibliography.trim()) {
+      return extractBibliographyFromManuscript(initialBibliography).referenceCount;
+    }
+    return 0;
+  });
+  const [transmittedDocName, setTransmittedDocName] = useState<string | null>(sourceFilename || null);
+  const [isViewingFullManuscript, setIsViewingFullManuscript] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verifyProgress, setVerifyProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const [report, setReport] = useState<BatchVerificationReport | null>(null);
@@ -54,6 +84,35 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
   const [analyzingForensicId, setAnalyzingForensicId] = useState<string | null>(null);
   const [forensicNotice, setForensicNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Synchronize incoming bibliography/manuscript text when transmitted from hub or other panes
+  useEffect(() => {
+    if (initialBibliography && initialBibliography.trim()) {
+      const res = extractBibliographyFromManuscript(initialBibliography);
+      setRawBibliography(res.bibliography);
+      setFullTransmittedText(res.fullText);
+      setWasExtracted(res.wasExtracted);
+      setDetectedReferenceCount(res.referenceCount);
+      setIsViewingFullManuscript(false);
+    }
+    if (sourceFilename) {
+      setTransmittedDocName(sourceFilename);
+    }
+  }, [initialBibliography, sourceFilename]);
+
+  const handleToggleManuscriptView = () => {
+    if (!fullTransmittedText) return;
+    if (isViewingFullManuscript) {
+      if (initialBibliography) {
+        const res = extractBibliographyFromManuscript(initialBibliography);
+        setRawBibliography(res.bibliography);
+      }
+      setIsViewingFullManuscript(false);
+    } else {
+      setRawBibliography(fullTransmittedText);
+      setIsViewingFullManuscript(true);
+    }
+  };
 
   const handleRunForensicAudit = async (item: any) => {
     if (!isLlmConfigured(llmConfig)) {
@@ -106,6 +165,11 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
   const handleClear = () => {
     setRawBibliography('');
     setReport(null);
+    setTransmittedDocName(null);
+    setFullTransmittedText(null);
+    setWasExtracted(false);
+    setDetectedReferenceCount(0);
+    setIsViewingFullManuscript(false);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,7 +179,13 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
     reader.onload = (evt) => {
       const content = evt.target?.result;
       if (typeof content === 'string') {
-        setRawBibliography(content);
+        const res = extractBibliographyFromManuscript(content);
+        setRawBibliography(res.bibliography);
+        setFullTransmittedText(res.fullText);
+        setWasExtracted(res.wasExtracted);
+        setDetectedReferenceCount(res.referenceCount);
+        setTransmittedDocName(file.name);
+        setIsViewingFullManuscript(false);
       }
     };
     reader.readAsText(file);
@@ -131,7 +201,13 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
       reader.onload = (evt) => {
         const content = evt.target?.result;
         if (typeof content === 'string') {
-          setRawBibliography(content);
+          const res = extractBibliographyFromManuscript(content);
+          setRawBibliography(res.bibliography);
+          setFullTransmittedText(res.fullText);
+          setWasExtracted(res.wasExtracted);
+          setDetectedReferenceCount(res.referenceCount);
+          setTransmittedDocName(file.name);
+          setIsViewingFullManuscript(false);
         }
       };
       reader.readAsText(file);
@@ -266,6 +342,44 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
         
         {/* Left Column: Input Dropzone */}
         <div className="lg:col-span-5 space-y-4">
+          
+          {/* Transmitted File / Source Notification Banner */}
+          {(transmittedDocName || wasExtracted || (initialBibliography && rawBibliography.length > 0)) && (
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50/60 dark:from-blue-950/40 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 space-y-2 shadow-2xs animate-in fade-in duration-150">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 truncate">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                  <span className="text-xs font-bold text-slate-900 dark:text-white font-serif truncate">
+                    {transmittedDocName ? `Transmitted: ${transmittedDocName}` : 'Transmitted from Scholar Hub'}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-bold shrink-0">
+                  {detectedReferenceCount} {detectedReferenceCount === 1 ? 'Reference' : 'References'} Ready
+                </span>
+              </div>
+
+              <div className="text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  {wasExtracted
+                    ? (isViewingFullManuscript 
+                        ? 'Showing full manuscript text in editor below.' 
+                        : 'Intelligently parsed bibliography section from your manuscript.')
+                    : 'Transmitted references ready for cross-registry audit.'}
+                </span>
+
+                {wasExtracted && fullTransmittedText && (
+                  <button
+                    type="button"
+                    onClick={handleToggleManuscriptView}
+                    className="text-xs font-semibold text-blue-800 dark:text-blue-300 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    {isViewingFullManuscript ? '↩ Show References Only' : '📄 View Full Manuscript'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
               Paste Bibliography to Audit:

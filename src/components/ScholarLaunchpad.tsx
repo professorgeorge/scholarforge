@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Sparkles, 
   Search, 
@@ -49,6 +49,8 @@ interface ScholarLaunchpadProps {
   llmConfig: LLMConfig;
   onOpenSettings: () => void;
   isProcessing: boolean;
+  initialDraftText?: string;
+  initialFilename?: string;
 }
 
 export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
@@ -64,18 +66,32 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
   llmConfig,
   onOpenSettings,
   isProcessing,
+  initialDraftText = '',
+  initialFilename
 }) => {
-  const [activeTab, setActiveTab] = useState<'synthesize' | 'ground_draft'>('synthesize');
+  const [activeTab, setActiveTab] = useState<'synthesize' | 'ground_draft'>(() => {
+    return initialDraftText && initialDraftText.trim() ? 'ground_draft' : 'synthesize';
+  });
 
   // Tab 1: Synthesis Inputs
   const [topic, setTopic] = useState('');
   const [searchScope, setSearchScope] = useState<number>(25);
 
   // Tab 2: Ground Existing Draft Inputs
-  const [draftText, setDraftText] = useState('');
-  const [importedFilename, setImportedFilename] = useState<string | null>(null);
+  const [draftText, setDraftText] = useState(() => initialDraftText || '');
+  const [importedFilename, setImportedFilename] = useState<string | null>(initialFilename || null);
   const [isImportingDocx, setIsImportingDocx] = useState(false);
   const docxInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialDraftText && initialDraftText.trim()) {
+      setDraftText(initialDraftText);
+      setActiveTab('ground_draft');
+    }
+    if (initialFilename) {
+      setImportedFilename(initialFilename);
+    }
+  }, [initialDraftText, initialFilename]);
 
   // Tab 2: Peer-Review Comments & Critique Inputs
   const [reviewerCommentsText, setReviewerCommentsText] = useState('');

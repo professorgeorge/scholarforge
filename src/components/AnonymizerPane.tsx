@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ShieldCheck,
   Check,
@@ -22,6 +22,12 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
 }) => {
   const [inputText, setInputText] = useState<string>(initialText);
   const [copied, setCopied] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (initialText && initialText.trim()) {
+      setInputText(initialText);
+    }
+  }, [initialText]);
 
   const anonymizationResult = useMemo(() => {
     if (!inputText.trim()) {

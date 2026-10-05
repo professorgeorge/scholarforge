@@ -55,7 +55,56 @@ export interface BatchVerificationReport {
   results: VerifiedReferenceResult[];
 }
 
+export interface ExtractedBibliography {
+  bibliography: string;
+  fullText: string;
+  wasExtracted: boolean;
+  referenceCount: number;
+}
+
 const POLITE_EMAIL = 'scholarforge-app@gmail.com';
+
+/**
+ * Intelligently extracts the bibliography/references section from a full academic manuscript or document.
+ * If no section header is detected, returns the full text.
+ */
+export function extractBibliographyFromManuscript(fullText: string): ExtractedBibliography {
+  if (!fullText || !fullText.trim()) {
+    return { bibliography: '', fullText: '', wasExtracted: false, referenceCount: 0 };
+  }
+
+  const trimmed = fullText.trim();
+
+  // Look for section headers representing references/bibliography
+  // Matches line starting with optional markdown header (#), optional numbering (e.g. 7., VII.),
+  // followed by References, Bibliography, Works Cited, Literature Cited, etc.
+  const headerRegex = /(?:^|\n)\s*(?:#{1,6}\s*)?(?:(?:\d+|[IVXLCDM]+)\.?\s*)?(?:references(?:\s+and\s+notes)?|bibliography|works\s+cited|literature\s+cited|reference\s+list)\s*(?::|\n|\r\n)/i;
+
+  const match = trimmed.match(headerRegex);
+  if (match && match.index !== undefined) {
+    const headerEndIndex = match.index + match[0].length;
+    const afterHeader = trimmed.slice(headerEndIndex).trim();
+
+    if (afterHeader.length > 20) {
+      const items = splitBibliography(afterHeader);
+      return {
+        bibliography: afterHeader,
+        fullText: trimmed,
+        wasExtracted: true,
+        referenceCount: items.length > 0 ? items.length : 1
+      };
+    }
+  }
+
+  // If no explicit references header, count split items across whole text
+  const items = splitBibliography(trimmed);
+  return {
+    bibliography: trimmed,
+    fullText: trimmed,
+    wasExtracted: false,
+    referenceCount: items.length
+  };
+}
 
 /**
  * Splits raw bibliography text into individual reference items.
