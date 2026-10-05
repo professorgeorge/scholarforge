@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   FileText,
   CheckCircle2,
@@ -10,11 +10,14 @@ import {
   RefreshCw,
   Eye,
   FileCheck,
-  Layers
+  Layers,
+  Award
 } from 'lucide-react';
 import type { ActiveManuscriptContext } from '../services/manuscriptParserService';
 import type { AcademicPillar } from './Navbar';
 import { extractTextFromManuscriptFile } from '../services/fileImportService';
+import { evaluateEditorialReadiness } from '../services/editorialReadinessService';
+import { EditorialReadinessModal } from './EditorialReadinessModal';
 
 interface ActiveManuscriptBarProps {
   manuscript: ActiveManuscriptContext | null;
@@ -31,10 +34,15 @@ export const ActiveManuscriptBar: React.FC<ActiveManuscriptBarProps> = ({
 }) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [isScorecardOpen, setIsScorecardOpen] = useState(false);
   const [pasteDraftInput, setPasteDraftInput] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const readinessReport = useMemo(() => {
+    return evaluateEditorialReadiness(manuscript);
+  }, [manuscript]);
 
   const handleFileDrop = async (e: React.DragEvent) => {
     e.preventDefault();
@@ -126,6 +134,16 @@ export const ActiveManuscriptBar: React.FC<ActiveManuscriptBarProps> = ({
                 <FileText className="w-3.5 h-3.5" />
                 <span>Paste Text</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setIsScorecardOpen(true)}
+                className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900 font-semibold flex items-center gap-1 transition cursor-pointer"
+                title="View Pre-Submission Editorial Readiness criteria"
+              >
+                <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span className="hidden md:inline">Readiness Standards</span>
+              </button>
             </div>
           </div>
         </div>
@@ -191,6 +209,14 @@ export const ActiveManuscriptBar: React.FC<ActiveManuscriptBarProps> = ({
             </div>
           </div>
         )}
+
+        {/* Editorial Readiness Scorecard Modal in Empty State */}
+        <EditorialReadinessModal
+          isOpen={isScorecardOpen}
+          onClose={() => setIsScorecardOpen(false)}
+          manuscript={manuscript}
+          onNavigateToPillar={onNavigateToPillar}
+        />
       </>
     );
   }
@@ -246,6 +272,23 @@ export const ActiveManuscriptBar: React.FC<ActiveManuscriptBarProps> = ({
             {/* Right: Quick Handoff Shortcuts */}
             <div className="flex items-center gap-1.5 shrink-0">
               
+              {/* 0. Pre-Submission Editorial Readiness Scorecard */}
+              <button
+                type="button"
+                onClick={() => setIsScorecardOpen(true)}
+                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1.5 transition cursor-pointer shadow-2xs border ${
+                  readinessReport.overallScore >= 88
+                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                    : readinessReport.overallScore >= 72
+                    ? 'bg-blue-50 hover:bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border-blue-300 dark:border-blue-800'
+                    : 'bg-amber-50 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                }`}
+                title="Open Pre-Submission Editorial Readiness Scorecard & Remediation Checklist"
+              >
+                <Award className="w-3.5 h-3.5 text-amber-500" />
+                <span>Readiness: {readinessReport.overallScore}%</span>
+              </button>
+
               {/* 1. Audit Bibliography */}
               {manuscript.detectedReferencesCount > 0 && (
                 <button
@@ -372,6 +415,14 @@ export const ActiveManuscriptBar: React.FC<ActiveManuscriptBarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Editorial Readiness Scorecard Modal */}
+      <EditorialReadinessModal
+        isOpen={isScorecardOpen}
+        onClose={() => setIsScorecardOpen(false)}
+        manuscript={manuscript}
+        onNavigateToPillar={onNavigateToPillar}
+      />
     </>
   );
 };
