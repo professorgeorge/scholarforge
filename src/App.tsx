@@ -569,6 +569,17 @@ export const App: React.FC = () => {
                 setIsToolbeltOpen(true);
               }}
               onOpenSettings={() => setIsSettingsOpen(true)}
+              onOpenCart={() => setIsCartOpen(true)}
+              onOpenBinder={() => setIsBinderOpen(true)}
+              onInjectDraftText={(text, destination) => {
+                setInputText(text);
+                setActivePillar(destination);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              currentManuscriptWordCount={inputText ? inputText.split(/\s+/).filter(Boolean).length : 0}
+              groundedClaimsCount={groundedClaimsCount}
+              totalClaimsCount={claims.length}
+              uniquePapersCount={uniquePapers.length}
             />
           </div>
         )}

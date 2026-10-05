@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Search,
   ShieldCheck,
@@ -18,9 +18,17 @@ import {
   Layers,
   LayoutGrid,
   Zap,
-  Check
+  UploadCloud,
+  Activity,
+  ShoppingCart,
+  FolderKanban,
+  Target,
+  RefreshCw
 } from 'lucide-react';
 import type { AcademicPillar, ResearchStage } from './Navbar';
+import { extractTextFromManuscriptFile } from '../services/fileImportService';
+import { getCartPapers } from '../services/cartService';
+import { getBinderItems } from '../services/binderService';
 
 export interface UtilityTileDef {
   id: AcademicPillar;
@@ -403,6 +411,121 @@ export const UTILITY_TILES: UtilityTileDef[] = [
   }
 ];
 
+export interface IntentDetectionResult {
+  type: 'doi' | 'bibliography' | 'manuscript' | 'statistical_model' | 'pico' | 'research_query';
+  confidence: 'high' | 'medium';
+  title: string;
+  description: string;
+  badgeLabel: string;
+  badgeColor: string;
+  targetPillar: AcademicPillar;
+  primaryActionLabel: string;
+  secondaryActions?: { label: string; pillar: AcademicPillar }[];
+}
+
+export function detectResearchIntent(rawText: string): IntentDetectionResult | null {
+  const text = rawText.trim();
+  if (!text) return null;
+
+  // 1. Detect DOI or DOI URL
+  const doiRegex = /(10\.\d{4,9}\/[-._;()/:A-Za-z0-9]+)/i;
+  const doiMatch = text.match(doiRegex);
+  if (doiMatch && text.length < 300) {
+    return {
+      type: 'doi',
+      confidence: 'high',
+      title: 'DOI Identifier Detected',
+      description: `Target DOI: "${doiMatch[1]}". Verify publication health, DOI registration, and Retraction Watch alerts.`,
+      badgeLabel: 'DOI Reference',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+      targetPillar: 'verify',
+      primaryActionLabel: 'Audit DOI & Check Retractions'
+    };
+  }
+
+  // 2. Detect Bibliography / Reference List (multiple citations)
+  const citationMarkers = (text.match(/(\(\d{4}\)|\[\d+\]|doi:|https?:\/\/doi\.org|et al\.)/gi) || []).length;
+  const hasMultipleLines = text.split('\n').filter(l => l.trim().length > 15).length >= 2;
+  if ((citationMarkers >= 2 && hasMultipleLines) || (text.toLowerCase().includes('references') && citationMarkers >= 1)) {
+    return {
+      type: 'bibliography',
+      confidence: 'high',
+      title: 'Bibliography / Reference List Detected',
+      description: `Detected formatted citations (${citationMarkers}+ citation markers). Audit for broken DOIs, Retraction Watch flags, and AI hallucinations.`,
+      badgeLabel: 'Reference List',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+      targetPillar: 'verify',
+      primaryActionLabel: 'Audit Entire Bibliography'
+    };
+  }
+
+  // 3. Detect Full Manuscript / Draft Document
+  const words = text.split(/\s+/).filter(Boolean);
+  const wordCount = words.length;
+  const hasAcademicStructure = /abstract|introduction|methodology|participants|results|discussion|conclusion/i.test(text);
+
+  if (wordCount >= 120 || (wordCount >= 60 && hasAcademicStructure)) {
+    return {
+      type: 'manuscript',
+      confidence: 'high',
+      title: `Draft Manuscript Detected (${wordCount} words)`,
+      description: 'Your text looks like an academic draft or section. You can ground it with verified citations, extract empirical claims, audit journal fit, or anonymize it for blind review.',
+      badgeLabel: 'Manuscript Draft',
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+      targetPillar: 'studio',
+      primaryActionLabel: 'Ground & Draft in Studio',
+      secondaryActions: [
+        { label: 'Extract Claims', pillar: 'claims' },
+        { label: 'Check Journal Fit', pillar: 'journal' },
+        { label: 'Double-Blind Anonymize', pillar: 'anonymizer' }
+      ]
+    };
+  }
+
+  // 4. Detect Statistical / Empirical Hypothesis
+  const statisticalTerms = /moderation|mediation|hayes|process model|likert|cronbach|anova|ancova|regression|factor loading|sem|sample size|cohen's d/i;
+  if (statisticalTerms.test(text)) {
+    return {
+      type: 'statistical_model',
+      confidence: 'high',
+      title: 'Statistical / Empirical Design Detected',
+      description: 'Detected moderation, mediation, Likert scale, or ANOVA modeling keywords. Simulate realistic Monte Carlo datasets or generate R/Python/SPSS code.',
+      badgeLabel: 'Statistical Model',
+      badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
+      targetPillar: 'synthetic',
+      primaryActionLabel: 'Generate Synthetic Dataset'
+    };
+  }
+
+  // 5. Detect PICO or Systematic Review Boolean
+  const picoTerms = /pico|prisma|mesh|systematic review|(and\s+.*\s+or)/i;
+  if (picoTerms.test(text)) {
+    return {
+      type: 'pico',
+      confidence: 'medium',
+      title: 'Systematic Review / PICO Strategy Detected',
+      description: 'Formulate PRISMA 2020-compliant queries across PubMed, Scopus, Web of Science, and IEEE.',
+      badgeLabel: 'PICO Query',
+      badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+      targetPillar: 'pico',
+      primaryActionLabel: 'Formulate PICO Strategy'
+    };
+  }
+
+  // 6. Default to Research Query / Literature Search
+  return {
+    type: 'research_query',
+    confidence: 'medium',
+    title: 'Research Topic / Query',
+    description: `Execute federated multi-source search for "${text.slice(0, 70)}${text.length > 70 ? '...' : ''}" across OpenAlex, PubMed, Crossref, and arXiv.`,
+    badgeLabel: 'Federated Search',
+    badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
+    targetPillar: 'literature',
+    primaryActionLabel: 'Search Across 5 Registries'
+  };
+}
+
+export type HubViewMode = 'hubs' | 'tiles' | 'comprehensive';
 type CategoryFilter = 'all' | 'popular' | 'discover' | 'design' | 'draft' | 'publish';
 
 interface ScholarHubViewProps {
@@ -411,192 +534,739 @@ interface ScholarHubViewProps {
   onOpenSpotlight?: () => void;
   onOpenToolbelt?: () => void;
   onOpenSettings?: () => void;
+  onOpenCart?: () => void;
+  onOpenBinder?: () => void;
+  onInjectDraftText?: (text: string, destination: AcademicPillar) => void;
+  currentManuscriptWordCount?: number;
+  groundedClaimsCount?: number;
+  totalClaimsCount?: number;
+  uniquePapersCount?: number;
 }
 
 export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
   onSelectPillar,
   onLoadSample,
   onOpenSpotlight,
-  onOpenToolbelt
+  onOpenToolbelt,
+  onOpenCart,
+  onOpenBinder,
+  onInjectDraftText,
+  currentManuscriptWordCount = 0,
+  groundedClaimsCount = 0,
+  totalClaimsCount = 0,
+  uniquePapersCount = 0
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [omniboxInput, setOmniboxInput] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [viewMode, setViewMode] = useState<HubViewMode>('hubs');
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('all');
-  const [viewMode, setViewMode] = useState<'tiles' | 'comprehensive'>('tiles');
-  const [quickDoi, setQuickDoi] = useState('');
-  const [doiCopied, setDoiCopied] = useState(false);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  const [importedFilename, setImportedFilename] = useState<string | null>(null);
 
-  // Filter tiles based on search query and category
-  const filteredTiles = useMemo(() => {
-    return UTILITY_TILES.filter((tile) => {
-      // Category filter
-      if (selectedCategory === 'popular' && !tile.popular) return false;
-      if (selectedCategory === 'discover' && tile.stageId !== 'discover') return false;
-      if (selectedCategory === 'design' && tile.stageId !== 'design') return false;
-      if (selectedCategory === 'draft' && tile.stageId !== 'draft') return false;
-      if (selectedCategory === 'publish' && tile.stageId !== 'publish') return false;
+  // Live Dossier counts
+  const [cartCount, setCartCount] = useState<number>(() => getCartPapers().length);
+  const [binderCount, setBinderCount] = useState<number>(() => getBinderItems().length);
 
-      // Search query filter
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
-        tile.simpleTitle.toLowerCase().includes(q) ||
-        tile.subTitle.toLowerCase().includes(q) ||
-        tile.description.toLowerCase().includes(q) ||
-        tile.tags.some((t) => t.toLowerCase().includes(q))
-      );
-    });
-  }, [searchQuery, selectedCategory]);
+  useEffect(() => {
+    const handleCart = () => setCartCount(getCartPapers().length);
+    const handleBinder = () => setBinderCount(getBinderItems().length);
+    window.addEventListener('scholarforge_cart_updated', handleCart);
+    window.addEventListener('scholarforge_binder_updated', handleBinder);
+    return () => {
+      window.removeEventListener('scholarforge_cart_updated', handleCart);
+      window.removeEventListener('scholarforge_binder_updated', handleBinder);
+    };
+  }, []);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Real-time intent detection
+  const detectedIntent = useMemo(() => {
+    return detectResearchIntent(omniboxInput);
+  }, [omniboxInput]);
+
+  // Handle file drop / file import
+  const handleProcessFile = async (file: File) => {
+    try {
+      setIsProcessingFile(true);
+      const { text, filename } = await extractTextFromManuscriptFile(file);
+      setOmniboxInput(text);
+      setImportedFilename(filename);
+      setIsProcessingFile(false);
+    } catch (err) {
+      console.error('Failed to import file', err);
+      setIsProcessingFile(false);
+      alert('Could not read file. Please ensure it is a valid .docx, .txt, or .md file.');
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await handleProcessFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      await handleProcessFile(e.target.files[0]);
+    }
+  };
+
+  // Execute detected intent
+  const handleExecuteIntent = (targetPillar: AcademicPillar) => {
+    if (onInjectDraftText && omniboxInput.trim()) {
+      onInjectDraftText(omniboxInput.trim(), targetPillar);
+    } else {
+      onSelectPillar(targetPillar);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleTileClick = (pillar: AcademicPillar) => {
     onSelectPillar(pillar);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleQuickDoiSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickDoi.trim()) return;
-    // Save to clipboard for easy pasting into verifier, then navigate to verify
-    navigator.clipboard.writeText(quickDoi.trim());
-    setDoiCopied(true);
-    setTimeout(() => {
-      onSelectPillar('verify');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 400);
-  };
+  // Filter tiles based on search query in omnibox (if in tiles view) or category
+  const filteredTiles = useMemo(() => {
+    return UTILITY_TILES.filter((tile) => {
+      if (selectedCategory === 'popular' && !tile.popular) return false;
+      if (selectedCategory === 'discover' && tile.stageId !== 'discover') return false;
+      if (selectedCategory === 'design' && tile.stageId !== 'design') return false;
+      if (selectedCategory === 'draft' && tile.stageId !== 'draft') return false;
+      if (selectedCategory === 'publish' && tile.stageId !== 'publish') return false;
+
+      // Filter by omnibox search only if user is actively searching
+      if (omniboxInput.trim() && omniboxInput.length < 50 && !omniboxInput.includes('\n')) {
+        const q = omniboxInput.toLowerCase();
+        return (
+          tile.simpleTitle.toLowerCase().includes(q) ||
+          tile.subTitle.toLowerCase().includes(q) ||
+          tile.description.toLowerCase().includes(q) ||
+          tile.tags.some((t) => t.toLowerCase().includes(q))
+        );
+      }
+      return true;
+    });
+  }, [omniboxInput, selectedCategory]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-200 pb-12">
+    <div className="space-y-8 animate-in fade-in duration-200 pb-16">
       
-      {/* HERO SECTION */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900 via-indigo-950 to-slate-950 text-white p-6 sm:p-8 lg:p-10 shadow-xl border border-blue-800/40">
+      {/* 1. GOOGLE-GRADE UNIFIED OMNIBOX & HERO SECTION */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-6 sm:p-8 lg:p-10 shadow-2xl border border-blue-800/40">
         
-        {/* Subtle decorative background glow */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+        {/* Ambient atmospheric glows */}
+        <div className="absolute top-0 right-0 -mr-24 -mt-24 w-96 h-96 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 -mb-24 w-96 h-96 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 max-w-4xl space-y-4">
+        <div className="relative z-10 max-w-4xl mx-auto space-y-6">
           
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-800/60 text-blue-200 border border-blue-700/60 text-xs font-semibold tracking-wide uppercase font-mono">
-              <Library className="w-3.5 h-3.5 text-blue-300" />
-              Unified Research Suite
-            </span>
-            <span className="text-xs text-blue-300 font-serif hidden sm:inline">•</span>
-            <span className="text-xs text-blue-200 font-sans hidden sm:inline">
-              By Professor Babu George
-            </span>
-          </div>
-
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold font-serif tracking-tight leading-tight text-white">
-            What would you like to research today?
-          </h1>
-
-          <p className="text-sm sm:text-base text-blue-100/90 font-sans leading-relaxed max-w-2xl">
-            Choose any specialized research utility below for quick focused work, or explore the comprehensive 4-stage academic lifecycle.
-          </p>
-
-          {/* Quick Search & Filter Controls */}
-          <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search utilities (e.g., audit references, synthetic data, reviewers, ANOVA, PICO)..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-blue-200/60 border border-white/15 focus:border-blue-400 text-xs sm:text-sm outline-none transition"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-blue-200 hover:text-white"
-                >
-                  Clear
-                </button>
-              )}
+          {/* Top Pill & Brand Tagline */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-800/70 text-blue-200 border border-blue-700/60 text-xs font-semibold tracking-wide uppercase font-mono">
+                <Library className="w-3.5 h-3.5 text-blue-300" />
+                ScholarForge Suite
+              </span>
+              <span className="text-xs text-blue-300/80 font-sans hidden sm:inline">
+                By Professor Babu George
+              </span>
             </div>
 
-            {/* View Mode Toggle: Simple Tiles vs Comprehensive Lifecycle View */}
-            <div className="flex items-center rounded-xl bg-black/30 p-1 border border-white/15 shrink-0 self-start sm:self-auto">
+            {/* View Mode Switcher */}
+            <div className="flex items-center rounded-xl bg-black/40 p-1 border border-white/15">
+              <button
+                type="button"
+                onClick={() => setViewMode('hubs')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                  viewMode === 'hubs' ? 'bg-blue-600 text-white shadow-xs' : 'text-blue-200 hover:text-white'
+                }`}
+                title="Google-style 3 outcome intent hubs"
+              >
+                <Target className="w-3.5 h-3.5" />
+                <span>3 Outcome Hubs</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setViewMode('tiles')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                  viewMode === 'tiles'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-blue-200 hover:text-white'
+                  viewMode === 'tiles' ? 'bg-blue-600 text-white shadow-xs' : 'text-blue-200 hover:text-white'
                 }`}
+                title="View all 12 individual utility tiles"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Utility Tiles</span>
+                <span>All 12 Utilities</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('comprehensive')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                  viewMode === 'comprehensive'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-blue-200 hover:text-white'
+                  viewMode === 'comprehensive' ? 'bg-blue-600 text-white shadow-xs' : 'text-blue-200 hover:text-white'
                 }`}
-                title="View the comprehensive 4-stage research lifecycle roadmap"
+                title="View 4-stage sequential research lifecycle map"
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>Comprehensive View</span>
+                <span>Lifecycle Roadmap</span>
               </button>
             </div>
+          </div>
+
+          {/* Inspiring Headline */}
+          <div className="space-y-2">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold font-serif tracking-tight leading-tight text-white">
+              Intelligent Scholarly Workbench
+            </h1>
+            <p className="text-sm sm:text-base text-blue-100/90 font-sans max-w-2xl leading-relaxed">
+              Drop any manuscript, paste a DOI or bibliography, type a research question, or jump directly into any of the 12 specialized research utilities.
+            </p>
+          </div>
+
+          {/* THE UNIFIED INTELLIGENT RESEARCH OMNIBOX & DROPZONE */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={handleDrop}
+            className={`relative rounded-2xl bg-white/10 dark:bg-slate-900/80 backdrop-blur-md border transition-all duration-200 p-2 sm:p-3 shadow-lg ${
+              isDragOver
+                ? 'border-blue-400 bg-blue-900/40 ring-4 ring-blue-500/20 scale-[1.01]'
+                : 'border-white/20 hover:border-white/30'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className="pt-2 pl-2 text-blue-300 shrink-0">
+                <Sparkles className="w-5 h-5 text-blue-400 animate-pulse" />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <textarea
+                  value={omniboxInput}
+                  onChange={(e) => {
+                    setOmniboxInput(e.target.value);
+                    if (importedFilename) setImportedFilename(null);
+                  }}
+                  rows={omniboxInput.includes('\n') || omniboxInput.length > 80 ? 3 : 1}
+                  placeholder="Drop a .docx file, paste any DOI (e.g. 10.1038/...), bibliography, draft snippet, or research question..."
+                  className="w-full bg-transparent text-white placeholder-blue-200/60 text-sm sm:text-base outline-none resize-none py-1.5 leading-relaxed font-sans"
+                />
+
+                {importedFilename && (
+                  <div className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-blue-500/20 border border-blue-400/40 text-xs text-blue-200 font-mono">
+                    <FileText className="w-3 h-3 text-blue-300" />
+                    <span>Loaded: {importedFilename}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons inside Omnibox */}
+              <div className="flex items-center gap-1.5 shrink-0 pt-1">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".docx,.txt,.md,.rtf,.tex"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessingFile}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white border border-white/15 transition cursor-pointer"
+                  title="Upload .docx, .txt, or .md manuscript file"
+                >
+                  {isProcessingFile ? <RefreshCw className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+                </button>
+
+                {omniboxInput && (
+                  <button
+                    type="button"
+                    onClick={() => { setOmniboxInput(''); setImportedFilename(null); }}
+                    className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs text-blue-200 hover:text-white transition cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* REAL-TIME INTENT DETECTION FLOATING BANNER */}
+            {detectedIntent && (
+              <div className="mt-3 pt-3 border-t border-white/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-150">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border ${detectedIntent.badgeColor}`}>
+                    {detectedIntent.badgeLabel}
+                  </span>
+                  <div className="text-xs text-blue-100 font-sans truncate">
+                    <strong className="text-white">{detectedIntent.title}</strong>
+                    <span className="hidden md:inline text-blue-200/80"> — {detectedIntent.description}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                  {detectedIntent.secondaryActions?.map((sec) => (
+                    <button
+                      key={sec.pillar}
+                      type="button"
+                      onClick={() => handleExecuteIntent(sec.pillar)}
+                      className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white text-xs font-semibold transition cursor-pointer"
+                    >
+                      {sec.label}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteIntent(detectedIntent.targetPillar)}
+                    className="px-3.5 py-1.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95"
+                  >
+                    <span>{detectedIntent.primaryActionLabel}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
 
           </div>
 
-          {/* Quick Action Badges */}
-          <div className="pt-1 flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-blue-300 font-semibold text-[11px] uppercase tracking-wider mr-1">
-              Quick launch:
-            </span>
-            {onLoadSample && (
-              <button
-                type="button"
-                onClick={onLoadSample}
-                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white border border-white/15 transition flex items-center gap-1 cursor-pointer"
-                title="Load full exemplar study in Studio with pre-grounded citations"
-              >
-                <FileText className="w-3 h-3 text-amber-300" />
-                <span>Load Exemplar Manuscript</span>
-              </button>
-            )}
-            {onOpenSpotlight && (
-              <button
-                type="button"
-                onClick={onOpenSpotlight}
-                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white border border-white/15 transition flex items-center gap-1 cursor-pointer"
-                title="Open Spotlight Command Palette (Ctrl+K)"
-              >
-                <Zap className="w-3 h-3 text-cyan-300" />
-                <span>Spotlight Palette <kbd className="text-[10px] font-mono opacity-70">Ctrl+K</kbd></span>
-              </button>
-            )}
-            {onOpenToolbelt && (
-              <button
-                type="button"
-                onClick={onOpenToolbelt}
-                className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white border border-white/15 transition flex items-center gap-1 cursor-pointer"
-                title="Quick Academic Toolbelt Modal"
-              >
-                <Wrench className="w-3 h-3 text-purple-300" />
-                <span>Quick Toolbelt</span>
-              </button>
-            )}
+          {/* Quick Shortcuts Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-blue-300 font-semibold text-[11px] uppercase tracking-wider">
+                Quick Start:
+              </span>
+              {onLoadSample && (
+                <button
+                  type="button"
+                  onClick={onLoadSample}
+                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white border border-white/15 transition flex items-center gap-1 cursor-pointer"
+                  title="Load full exemplar study in Studio with pre-grounded citations"
+                >
+                  <FileText className="w-3 h-3 text-amber-300" />
+                  <span>Load Exemplar Manuscript</span>
+                </button>
+              )}
+              {onOpenSpotlight && (
+                <button
+                  type="button"
+                  onClick={onOpenSpotlight}
+                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white border border-white/15 transition flex items-center gap-1 cursor-pointer"
+                  title="Open Spotlight Command Palette (Ctrl+K)"
+                >
+                  <Zap className="w-3 h-3 text-cyan-300" />
+                  <span>Spotlight Palette <kbd className="text-[10px] font-mono opacity-70">Ctrl+K</kbd></span>
+                </button>
+              )}
+              {onOpenToolbelt && (
+                <button
+                  type="button"
+                  onClick={onOpenToolbelt}
+                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white border border-white/15 transition flex items-center gap-1 cursor-pointer"
+                >
+                  <Wrench className="w-3 h-3 text-purple-300" />
+                  <span>Quick Toolbelt</span>
+                </button>
+              )}
+            </div>
+
+            <div className="text-[11px] text-blue-200/70 font-sans hidden md:block">
+              Tip: Paste any DOI or drop a .docx anywhere to auto-route
+            </div>
           </div>
 
         </div>
       </section>
 
-      {/* VIEW MODE 1: UTILITY TILES GRID */}
-      {viewMode === 'tiles' && (
-        <div className="space-y-6">
+      {/* 2. AMBIENT RESEARCH DOSSIER HEALTH WIDGET */}
+      {(cartCount > 0 || binderCount > 0 || currentManuscriptWordCount > 0) && (
+        <section className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-wrap items-center justify-between gap-4 animate-in fade-in duration-200">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center border border-blue-200 dark:border-blue-800 shrink-0">
+              <Activity className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900 dark:text-white font-serif flex items-center gap-2">
+                <span>Active Study Dossier</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  In Progress
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <span><strong>{cartCount}</strong> papers in cart</span>
+                <span>•</span>
+                <span><strong>{binderCount}</strong> binder notes</span>
+                {currentManuscriptWordCount > 0 && (
+                  <>
+                    <span>•</span>
+                    <span><strong>{currentManuscriptWordCount}</strong> words in manuscript</span>
+                    <span>•</span>
+                    <span><strong>{groundedClaimsCount} / {totalClaimsCount}</strong> claims grounded</span>
+                    {uniquePapersCount > 0 && (
+                      <>
+                        <span>•</span>
+                        <span><strong>{uniquePapersCount}</strong> verified papers</span>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {onOpenCart && cartCount > 0 && (
+              <button
+                type="button"
+                onClick={onOpenCart}
+                className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <ShoppingCart className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                <span>View Cart ({cartCount})</span>
+              </button>
+            )}
+
+            {onOpenBinder && binderCount > 0 && (
+              <button
+                type="button"
+                onClick={onOpenBinder}
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <FolderKanban className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                <span>Open Binder</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => handleTileClick('studio')}
+              className="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Resume in Studio</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* 3. VIEW MODE 1: THE 3 PRIMARY OUTCOME HUBS (GOOGLE WORKSPACE STYLE) */}
+      {viewMode === 'hubs' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
           
-          {/* Category Filter Pills */}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white font-serif">
+                3 Outcome Intent Hubs
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Choose the high-level phase of your study to reveal its tailored research capabilities.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setViewMode('tiles')}
+              className="text-xs font-semibold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>View all 12 individual tools</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* HUB 1: DISCOVER & DESIGN */}
+            <div className="flex flex-col justify-between p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-blue-500/30 hover:border-blue-500 shadow-md transition-all duration-200 space-y-5">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 flex items-center justify-center shadow-xs">
+                    <Search className="w-6 h-6" />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    Phase 1: Discover &amp; Design
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
+                    Discover, Design &amp; Data
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Build your empirical foundations. Search 5 registries concurrently, formulate PRISMA PICO search strings, simulate statistical datasets, and triage IRB ethics protocols.
+                  </p>
+                </div>
+
+                {/* Sub-utilities list */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                    Specialized Tools:
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('literature')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Literature Search</div>
+                        <div className="text-[11px] text-slate-500">OpenAlex, PubMed, Crossref, arXiv</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('synthetic')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Database className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Synthetic Data Generator</div>
+                        <div className="text-[11px] text-slate-500">Monte Carlo, Hayes Model 4, Likert SEM</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('methodology')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Compass className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Methodology Compass</div>
+                        <div className="text-[11px] text-slate-500">6-layer epistemics &amp; R/SPSS code</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('irb')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldAlert className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">IRB Ethics Protocol</div>
+                        <div className="text-[11px] text-slate-500">Exemption determination &amp; consent</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleTileClick('literature')}
+                className="w-full py-2.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+              >
+                <span>Enter Discover &amp; Design</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* HUB 2: DRAFT & GROUND */}
+            <div className="flex flex-col justify-between p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-amber-500/30 hover:border-amber-500 shadow-md transition-all duration-200 space-y-5">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 flex items-center justify-center shadow-xs">
+                    <BookOpen className="w-6 h-6" />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                    Phase 2: Draft &amp; Ground
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
+                    Manuscript &amp; Claims Synthesis
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Write with live verified peer-reviewed citations. Ground factual claims against the literature, manage revisions with the R&amp;R overhaul engine, and polish academic titles.
+                  </p>
+                </div>
+
+                {/* Sub-utilities list */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                    Specialized Tools:
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('studio')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Manuscript Studio</div>
+                        <div className="text-[11px] text-slate-500">Split-screen writing, R&amp;R rebuttal package</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('claims')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Claims &amp; Evidence Workbench</div>
+                        <div className="text-[11px] text-slate-500">Sentence claim extraction &amp; consensus</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('writing')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Academic Writing Utilities</div>
+                        <div className="text-[11px] text-slate-500">Title polisher, 50-char running head</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleTileClick('studio')}
+                className="w-full py-2.5 rounded-xl bg-amber-900 hover:bg-amber-950 text-white text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+              >
+                <span>Enter Manuscript Studio</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* HUB 3: PRE-FLIGHT, AUDIT & PUBLISH */}
+            <div className="flex flex-col justify-between p-6 rounded-3xl bg-white dark:bg-slate-900 border-2 border-emerald-500/30 hover:border-emerald-500 shadow-md transition-all duration-200 space-y-5">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shadow-xs">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    Phase 3: Audit &amp; Publish
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white font-serif">
+                    Integrity, Journals &amp; Reviewers
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Protect your manuscript before submission. Audit bibliographies for AI hallucinations and broken DOIs, match indexed journals, recruit peer reviewers, and redact self-citations.
+                  </p>
+                </div>
+
+                {/* Sub-utilities list */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                    Specialized Tools:
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('verify')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Reference &amp; DOI Audits</div>
+                        <div className="text-[11px] text-slate-500">Hallucination detector &amp; Retraction Watch</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('journal')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileCheck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Journal Fit Sentinel</div>
+                        <div className="text-[11px] text-slate-500">Scopus CiteScore, $0 OA &amp; desk rejection</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('scholars')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Users className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Scholar &amp; Reviewer Finder</div>
+                        <div className="text-[11px] text-slate-500">OpenAlex experts, COI &amp; h-index</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTileClick('anonymizer')}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-left flex items-center justify-between group transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Wrench className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">Double-Blind Anonymizer</div>
+                        <div className="text-[11px] text-slate-500">Regex self-citation &amp; affiliation masking</div>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleTileClick('verify')}
+                className="w-full py-2.5 rounded-xl bg-emerald-900 hover:bg-emerald-950 text-white text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+              >
+                <span>Enter Pre-Flight &amp; Audit</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* 4. VIEW MODE 2: THE 12 INDIVIDUAL UTILITY TILES GRID */}
+      {viewMode === 'tiles' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          
+          {/* Functional Domain Category Filter Buttons */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 text-xs">
               <button
@@ -668,7 +1338,6 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
               </button>
             </div>
 
-            {/* Quick status count */}
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Showing <strong>{filteredTiles.length}</strong> of {UTILITY_TILES.length} utilities
             </div>
@@ -749,54 +1418,19 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
             })}
           </div>
 
-          {/* Quick DOI Audit Bar */}
-          <div className="mt-8 p-5 rounded-2xl bg-gradient-to-r from-emerald-50/80 via-teal-50/40 to-slate-50 dark:from-emerald-950/30 dark:via-teal-950/20 dark:to-slate-900 border border-emerald-200 dark:border-emerald-800/60 shadow-xs">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
-                    Quick Reference &amp; DOI Health Audit
-                  </h4>
-                </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Have a single DOI you want to quickly check? Paste it here to verify with Crossref &amp; Retraction Watch:
-                </p>
-              </div>
-
-              <form onSubmit={handleQuickDoiSubmit} className="flex items-center gap-2 w-full md:w-auto">
-                <input
-                  type="text"
-                  value={quickDoi}
-                  onChange={(e) => setQuickDoi(e.target.value)}
-                  placeholder="e.g., 10.1038/s41586-020-2649-2"
-                  className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs w-full sm:w-72 outline-none focus:border-emerald-500 dark:text-white font-mono"
-                />
-                <button
-                  type="submit"
-                  disabled={!quickDoi.trim()}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
-                >
-                  {doiCopied ? <Check className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                  <span>{doiCopied ? 'Auditing...' : 'Audit DOI'}</span>
-                </button>
-              </form>
-            </div>
-          </div>
-
         </div>
       )}
 
-      {/* VIEW MODE 2: COMPREHENSIVE 4-STAGE LIFECYCLE ROADMAP */}
+      {/* 5. VIEW MODE 3: COMPREHENSIVE 4-STAGE LIFECYCLE ROADMAP */}
       {viewMode === 'comprehensive' && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in duration-200">
           
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
             <h2 className="text-base font-bold text-slate-900 dark:text-white font-serif">
               Comprehensive 4-Stage Research Lifecycle Architecture
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              ScholarForge is designed around the authentic scholarly journey. Follow this linear pipeline from initial query discovery to empirical simulation, grounded manuscript drafting, and pre-submission audit.
+              Follow this linear pipeline from initial query discovery to empirical simulation, grounded manuscript drafting, and pre-submission audit.
             </p>
           </div>
 
