@@ -22,7 +22,8 @@ import {
   FileCheck,
   Target,
   Wrench,
-  ShieldAlert
+  ShieldAlert,
+  LayoutGrid
 } from 'lucide-react';
 import type { AcademicPillar } from './Navbar';
 import { CITATION_STYLES } from '../services/citationFormatter';
@@ -142,6 +143,15 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
   // Master command registry
   const commands: CommandItem[] = useMemo(() => {
     return [
+      {
+        id: 'pillar-hub',
+        title: 'Home: Utilities Hub',
+        description: 'Directory of all 12 ScholarForge research utilities & comprehensive lifecycle view',
+        category: 'Tools & Features',
+        icon: <LayoutGrid className="w-4 h-4 text-blue-600" />,
+        keywords: ['hub', 'home', 'overview', 'dashboard', 'tiles', 'utilities', 'start'],
+        action: () => onSelectPillar('hub')
+      },
       // --- STAGE 1: DISCOVER ---
       {
         id: 'pillar-literature',

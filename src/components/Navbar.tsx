@@ -18,7 +18,8 @@ import {
   Wrench,
   FolderKanban,
   ShieldAlert,
-  ArrowRight
+  ArrowRight,
+  LayoutGrid
 } from 'lucide-react';
 import { CITATION_STYLES } from '../services/citationFormatter';
 import type { CitationOptions } from '../types/citation';
@@ -26,6 +27,7 @@ import { getCartPapers } from '../services/cartService';
 import { getBinderItems } from '../services/binderService';
 
 export type AcademicPillar = 
+  | 'hub'
   | 'literature' 
   | 'pico' 
   | 'studio' 
@@ -122,6 +124,7 @@ export function getStageForPillar(pillar: AcademicPillar): ResearchStage {
   if (pillar === 'literature' || pillar === 'pico') return 'discover';
   if (pillar === 'methodology' || pillar === 'synthetic' || pillar === 'irb') return 'design';
   if (pillar === 'studio' || pillar === 'claims' || pillar === 'writing') return 'draft';
+  if (pillar === 'hub') return 'discover';
   return 'publish';
 }
 
@@ -210,8 +213,13 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 lg:px-8 py-2.5">
         
         {/* Brand Logo & Academic Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-900 dark:bg-blue-800 flex items-center justify-center text-white shadow-xs shrink-0">
+        <button
+          type="button"
+          onClick={() => onSelectPillar && onSelectPillar('hub')}
+          className="flex items-center gap-3 text-left cursor-pointer group transition"
+          title="Return to ScholarForge Utilities Hub"
+        >
+          <div className="w-9 h-9 rounded-xl bg-blue-900 dark:bg-blue-800 flex items-center justify-center text-white shadow-xs shrink-0 group-hover:scale-105 transition-transform">
             <Library className="w-5 h-5" />
           </div>
           <div>
@@ -228,7 +236,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               Empirical Research Lifecycle &amp; Manuscript Synthesis Suite
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Right-Hand Controls & Selectors */}
         <div className="flex items-center gap-1.5 sm:gap-2">
@@ -414,10 +422,45 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="w-full border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/95 dark:bg-slate-950/90 backdrop-blur-sm px-3 sm:px-4 lg:px-8 py-2">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
             
-            {/* 4 Stage Steppers */}
+            {/* Steppers: Utilities Hub + 4 Stages */}
             <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
+              
+              {/* Home Hub Button */}
+              <button
+                type="button"
+                onClick={() => onSelectPillar('hub')}
+                className={`px-3 py-1.5 rounded-xl flex items-center gap-2 transition-all duration-200 cursor-pointer text-left shrink-0 ${
+                  activePillar === 'hub'
+                    ? 'bg-blue-900 text-white shadow-xs font-bold ring-2 ring-blue-500/20'
+                    : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 font-semibold'
+                }`}
+                title="ScholarForge Home & Utilities Hub"
+              >
+                <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold shrink-0 ${
+                  activePillar === 'hub'
+                    ? 'bg-blue-800 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                }`}>
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                </span>
+                <div className="leading-tight">
+                  <div className="text-xs font-serif flex items-center gap-1">
+                    <span>Utilities Hub</span>
+                  </div>
+                  <div className={`text-[10px] hidden lg:block ${
+                    activePillar === 'hub' ? 'text-blue-200' : 'text-slate-400'
+                  }`}>
+                    12 Tools
+                  </div>
+                </div>
+              </button>
+
+              <span className="hidden sm:inline text-slate-300 dark:text-slate-700 text-xs font-mono shrink-0 select-none">
+                |
+              </span>
+
               {RESEARCH_STAGES.map((stage, idx) => {
-                const isCurrentStage = activeStageId === stage.id;
+                const isCurrentStage = activePillar !== 'hub' && activeStageId === stage.id;
                 return (
                   <React.Fragment key={stage.id}>
                     <button
@@ -461,8 +504,17 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Stage Summary / Orientation Tag */}
             <div className="hidden xl:flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-sans shrink-0">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Phase {activeStage.stepNumber} of 4:</span>
-              <span>{activeStage.tagline}</span>
+              {activePillar === 'hub' ? (
+                <>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Utilities Hub:</span>
+                  <span>Select any research utility below or enter a stage</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">Phase {activeStage.stepNumber} of 4:</span>
+                  <span>{activeStage.tagline}</span>
+                </>
+              )}
             </div>
 
           </div>
@@ -474,53 +526,115 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="w-full border-t border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 px-3 sm:px-4 lg:px-8 py-1.5 overflow-hidden shadow-2xs">
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
             
-            {/* Clustered Tools in Active Stage */}
-            <nav className="flex items-center gap-1.5 text-xs font-semibold py-0.5 overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap max-w-full">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mr-1 hidden sm:inline">
-                {activeStage.label} Tools:
-              </span>
-
-              {activeStage.tools.map((tool) => {
-                const isSelected = activePillar === tool.id;
-                const IconComponent = tool.icon;
-                return (
-                  <button
-                    key={tool.id}
-                    type="button"
-                    onClick={() => onSelectPillar(tool.id)}
-                    className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
-                      isSelected
-                        ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800 font-bold shadow-2xs ring-1 ring-blue-500/20'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80'
-                    }`}
-                    title={tool.description}
-                  >
-                    <IconComponent className={`w-3.5 h-3.5 ${
-                      isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-slate-400'
-                    }`} />
-                    <span>{tool.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Quick jump to Next Stage */}
-            {activeStage.id !== 'publish' && (
-              <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-slate-500 shrink-0">
+            {/* Clustered Tools in Active Stage or Hub Featured Links */}
+            {activePillar === 'hub' ? (
+              <nav className="flex items-center gap-1.5 text-xs font-semibold py-0.5 overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap max-w-full">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mr-1 hidden sm:inline">
+                  Featured Utilities:
+                </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    const nextStageIdx = RESEARCH_STAGES.findIndex((s) => s.id === activeStage.id) + 1;
-                    if (nextStageIdx < RESEARCH_STAGES.length) {
-                      handleStageClick(RESEARCH_STAGES[nextStageIdx]);
-                    }
-                  }}
-                  className="flex items-center gap-1 text-blue-700 dark:text-blue-400 hover:underline font-semibold cursor-pointer"
+                  onClick={() => onSelectPillar('literature')}
+                  className="px-2.5 py-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-center gap-1.5 transition cursor-pointer shrink-0"
                 >
-                  <span>Next: {RESEARCH_STAGES[RESEARCH_STAGES.findIndex((s) => s.id === activeStage.id) + 1].label}</span>
-                  <ArrowRight className="w-3 h-3" />
+                  <Search className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Literature Search</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectPillar('verify')}
+                  className="px-2.5 py-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Reference Audits</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectPillar('synthetic')}
+                  className="px-2.5 py-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                >
+                  <Database className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Synthetic Data</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectPillar('scholars')}
+                  className="px-2.5 py-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                >
+                  <Users className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Reviewer Finder</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectPillar('studio')}
+                  className="px-2.5 py-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Manuscript Studio</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSelectPillar('journal')}
+                  className="px-2.5 py-1 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                >
+                  <FileCheck className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Journal Matchmaker</span>
+                </button>
+              </nav>
+            ) : (
+              <nav className="flex items-center gap-1.5 text-xs font-semibold py-0.5 overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap max-w-full">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mr-1 hidden sm:inline">
+                  {activeStage.label} Tools:
+                </span>
+
+                {activeStage.tools.map((tool) => {
+                  const isSelected = activePillar === tool.id;
+                  const IconComponent = tool.icon;
+                  return (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      onClick={() => onSelectPillar(tool.id)}
+                      className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-150 cursor-pointer active:scale-95 shrink-0 ${
+                        isSelected
+                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800 font-bold shadow-2xs ring-1 ring-blue-500/20'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                      }`}
+                      title={tool.description}
+                    >
+                      <IconComponent className={`w-3.5 h-3.5 ${
+                        isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-slate-400'
+                      }`} />
+                      <span>{tool.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            )}
+
+            {/* Right Side Status / Next Stage */}
+            {activePillar === 'hub' ? (
+              <div className="hidden lg:flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
+                <span>Select any utility tile below to begin</span>
               </div>
+            ) : (
+              activeStage.id !== 'publish' && (
+                <div className="hidden lg:flex items-center gap-1.5 text-[11px] text-slate-500 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextStageIdx = RESEARCH_STAGES.findIndex((s) => s.id === activeStage.id) + 1;
+                      if (nextStageIdx < RESEARCH_STAGES.length) {
+                        handleStageClick(RESEARCH_STAGES[nextStageIdx]);
+                      }
+                    }}
+                    className="flex items-center gap-1 text-blue-700 dark:text-blue-400 hover:underline font-semibold cursor-pointer"
+                  >
+                    <span>Next: {RESEARCH_STAGES[RESEARCH_STAGES.findIndex((s) => s.id === activeStage.id) + 1].label}</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )
             )}
 
           </div>

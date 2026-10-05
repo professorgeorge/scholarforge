@@ -20,6 +20,7 @@ import { ResearchBinderDrawer } from './components/ResearchBinderDrawer';
 import { IrbTriagePane } from './components/IrbTriagePane';
 import { WritingToolbeltPane } from './components/WritingToolbeltPane';
 import { AnonymizerPane } from './components/AnonymizerPane';
+import { ScholarHubView } from './components/ScholarHubView';
 import { 
   EXEMPLAR_MANUSCRIPT_TEXT, 
   getExemplarClaims 
@@ -63,7 +64,16 @@ export const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-  const [activePillar, setActivePillar] = useState<AcademicPillar>('literature');
+  const [activePillar, setActivePillar] = useState<AcademicPillar>(() => {
+    const saved = localStorage.getItem('scholarforge_active_pillar');
+    if (saved) return saved as AcademicPillar;
+    return 'hub';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('scholarforge_active_pillar', activePillar);
+  }, [activePillar]);
+
   const [activeLens, setActiveLens] = useState<WorkflowLensId>('full');
   const [isSpotlightOpen, setIsSpotlightOpen] = useState<boolean>(false);
   const [isToolbeltOpen, setIsToolbeltOpen] = useState<boolean>(false);
@@ -541,6 +551,25 @@ export const App: React.FC = () => {
                 }}
               />
             </div>
+          </div>
+        )}
+
+        {/* HOME: SCHOLARFORGE UTILITIES HUB */}
+        {activePillar === 'hub' && (
+          <div className="py-2 animate-in fade-in duration-200">
+            <ScholarHubView
+              onSelectPillar={(pillar) => {
+                setActivePillar(pillar);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onLoadSample={handleLoadExemplarManuscript}
+              onOpenSpotlight={() => setIsSpotlightOpen(true)}
+              onOpenToolbelt={() => {
+                setActiveToolbeltId('anonymizer');
+                setIsToolbeltOpen(true);
+              }}
+              onOpenSettings={() => setIsSettingsOpen(true)}
+            />
           </div>
         )}
 
