@@ -120,12 +120,13 @@ export const RESEARCH_STAGES: StageDef[] = [
   }
 ];
 
-export function getStageForPillar(pillar: AcademicPillar): ResearchStage {
+export function getStageForPillar(pillar: AcademicPillar): ResearchStage | null {
+  if (pillar === 'hub') return null;
   if (pillar === 'literature' || pillar === 'pico') return 'discover';
   if (pillar === 'methodology' || pillar === 'synthetic' || pillar === 'irb') return 'design';
   if (pillar === 'studio' || pillar === 'claims' || pillar === 'writing') return 'draft';
-  if (pillar === 'hub') return 'discover';
-  return 'publish';
+  if (pillar === 'verify' || pillar === 'scholars' || pillar === 'journal' || pillar === 'anonymizer') return 'publish';
+  return null;
 }
 
 // Backwards compatibility alias for WorkflowLens
@@ -198,12 +199,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const handleStageClick = (stage: StageDef) => {
     if (!onSelectPillar) return;
-    // If current pillar is already in this stage, keep it
-    if (getStageForPillar(activePillar) === stage.id) {
-      return;
+    // If on the hub or currently in a different stage, navigate to the stage's default pillar
+    if (activePillar === 'hub' || getStageForPillar(activePillar) !== stage.id) {
+      onSelectPillar(stage.defaultPillar);
     }
-    // Otherwise select the stage's default tool
-    onSelectPillar(stage.defaultPillar);
   };
 
   return (
