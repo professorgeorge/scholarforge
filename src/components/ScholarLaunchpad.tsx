@@ -49,6 +49,7 @@ interface ScholarLaunchpadProps {
   isProcessing: boolean;
   initialDraftText?: string;
   initialFilename?: string;
+  onManuscriptLoaded?: (text: string, filename?: string) => void;
 }
 
 export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
@@ -64,7 +65,8 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
   onOpenSettings,
   isProcessing,
   initialDraftText = '',
-  initialFilename
+  initialFilename,
+  onManuscriptLoaded
 }) => {
   const [activeTab, setActiveTab] = useState<'synthesize' | 'ground_draft'>(() => {
     return initialDraftText && initialDraftText.trim() ? 'ground_draft' : 'synthesize';
@@ -124,6 +126,9 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
       const result = await extractTextFromManuscriptFile(file);
       setDraftText(result.text);
       setImportedFilename(result.filename);
+      if (onManuscriptLoaded) {
+        onManuscriptLoaded(result.text, result.filename);
+      }
     } catch (err: any) {
       setErrorMsg(`Failed to parse document: ${err.message}`);
     } finally {

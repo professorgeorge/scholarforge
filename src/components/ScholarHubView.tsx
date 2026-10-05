@@ -550,7 +550,6 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
     return detectResearchIntent(omniboxInput);
   }, [omniboxInput]);
 
-  // Handle file drop / file import
   const handleProcessFile = async (file: File) => {
     try {
       setIsProcessingFile(true);
@@ -558,6 +557,9 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
       setOmniboxInput(text);
       setImportedFilename(filename);
       setIsProcessingFile(false);
+      if (onInjectDraftText) {
+        onInjectDraftText(text, 'hub', filename);
+      }
     } catch (err) {
       console.error('Failed to import file', err);
       setIsProcessingFile(false);

@@ -14,27 +14,56 @@ import {
 interface WritingToolbeltPaneProps {
   onSendToStudio?: (text: string) => void;
   onNavigateToStudio?: () => void;
+  initialTitle?: string;
+  initialAbstract?: string;
+  initialBibtex?: string;
 }
 
 export const WritingToolbeltPane: React.FC<WritingToolbeltPaneProps> = ({
   onSendToStudio,
-  onNavigateToStudio
+  onNavigateToStudio,
+  initialTitle = '',
+  initialAbstract = '',
+  initialBibtex = '',
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'titlePolisher' | 'wordBudget' | 'bibtexCleaner'>('titlePolisher');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // 1. Title Polisher State
-  const [topicInput, setTopicInput] = useState<string>('');
+  const [topicInput, setTopicInput] = useState<string>(initialTitle);
 
   // 2. Word Budget State
-  const [budgetTitle, setBudgetTitle] = useState<string>('');
+  const [budgetTitle, setBudgetTitle] = useState<string>(initialTitle);
   const [budgetRunningHead, setBudgetRunningHead] = useState<string>('');
-  const [budgetAbstract, setBudgetAbstract] = useState<string>('');
+  const [budgetAbstract, setBudgetAbstract] = useState<string>(initialAbstract);
   const [budgetHighlights, setBudgetHighlights] = useState<string>('');
   const [selectedJournalTier, setSelectedJournalTier] = useState<'nature' | 'lancet' | 'plos' | 'apa' | 'custom'>('apa');
 
   // 3. BibTeX Cleaner State
-  const [bibtexInput, setBibtexInput] = useState<string>('');
+  const [bibtexInput, setBibtexInput] = useState<string>(initialBibtex);
+
+  // Sync props when active manuscript changes
+  React.useEffect(() => {
+    if (initialTitle) {
+      setTopicInput(initialTitle);
+      setBudgetTitle(initialTitle);
+      if (!budgetRunningHead) {
+        setBudgetRunningHead(initialTitle.slice(0, 50).toUpperCase());
+      }
+    }
+  }, [initialTitle]);
+
+  React.useEffect(() => {
+    if (initialAbstract) {
+      setBudgetAbstract(initialAbstract);
+    }
+  }, [initialAbstract]);
+
+  React.useEffect(() => {
+    if (initialBibtex) {
+      setBibtexInput(initialBibtex);
+    }
+  }, [initialBibtex]);
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);

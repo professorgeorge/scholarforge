@@ -21,6 +21,13 @@ import { IrbTriagePane } from './components/IrbTriagePane';
 import { WritingToolbeltPane } from './components/WritingToolbeltPane';
 import { AnonymizerPane } from './components/AnonymizerPane';
 import { ScholarHubView } from './components/ScholarHubView';
+import { ActiveManuscriptBar } from './components/ActiveManuscriptBar';
+import {
+  parseManuscript,
+  loadActiveManuscriptFromStorage,
+  saveActiveManuscriptToStorage,
+  type ActiveManuscriptContext
+} from './services/manuscriptParserService';
 
 import type { 
   AcademicPaper, 
@@ -46,8 +53,32 @@ import confetti from 'canvas-confetti';
 import { addMultiplePapersToCart } from './services/cartService';
 
 export const App: React.FC = () => {
-  const [inputText, setInputText] = useState<string>('');
-  const [uploadedDocName, setUploadedDocName] = useState<string | null>(null);
+  const [activeManuscript, setActiveManuscript] = useState<ActiveManuscriptContext | null>(() => loadActiveManuscriptFromStorage());
+  const [inputText, setInputText] = useState<string>(() => {
+    const saved = loadActiveManuscriptFromStorage();
+    return saved?.rawText || '';
+  });
+  const [uploadedDocName, setUploadedDocName] = useState<string | null>(() => {
+    const saved = loadActiveManuscriptFromStorage();
+    return saved?.filename || null;
+  });
+
+  const handleManuscriptUpdate = (text: string, filename?: string) => {
+    const parsed = parseManuscript(text, filename || uploadedDocName || undefined);
+    setActiveManuscript(parsed);
+    setInputText(parsed.rawText);
+    if (parsed.filename) {
+      setUploadedDocName(parsed.filename);
+    }
+    saveActiveManuscriptToStorage(parsed);
+  };
+
+  const handleClearManuscript = () => {
+    setActiveManuscript(null);
+    setInputText('');
+    setUploadedDocName(null);
+    saveActiveManuscriptToStorage(null);
+  };
   const [claims, setClaims] = useState<Claim[]>([]);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
@@ -328,7 +359,7 @@ export const App: React.FC = () => {
 
   // Called when AI synthesizes a new grounded manuscript
   const handleManuscriptReady = (manuscript: string, synthesizedClaims: Claim[]) => {
-    setInputText(manuscript);
+    handleManuscriptUpdate(manuscript, uploadedDocName || 'Synthesized_Grounded_Manuscript.docx');
     setRebuttalPackage(null);
     setOriginalPreRevisionText('');
     setClaims(synthesizedClaims);
@@ -349,7 +380,7 @@ export const App: React.FC = () => {
     originalDraft: string, 
     overhaulClaims: Claim[]
   ) => {
-    setInputText(result.revisedManuscript);
+    handleManuscriptUpdate(result.revisedManuscript, uploadedDocName || 'Rebuttal_Overhaul_Manuscript.docx');
     setRebuttalPackage(result);
     setOriginalPreRevisionText(originalDraft);
     setClaims(overhaulClaims);
@@ -364,11 +395,9 @@ export const App: React.FC = () => {
     });
   };
 
-
-
   // Called when user submits peer-review revisions
   const handleApplyRevision = (revisedManuscript: string) => {
-    setInputText(revisedManuscript);
+    handleManuscriptUpdate(revisedManuscript, uploadedDocName || 'Revised_Manuscript.docx');
     
     // Extract claims from revised text and map existing verified papers
     const extractedClaims = extractClaimsFromText(revisedManuscript, sensitivity);
@@ -511,6 +540,17 @@ export const App: React.FC = () => {
         onSelectLens={setActiveLens}
       />
 
+      {/* Active Manuscript Bar (Persistent Session Memory & 1-Click Handoffs) */}
+      <ActiveManuscriptBar
+        manuscript={activeManuscript}
+        onManuscriptLoaded={handleManuscriptUpdate}
+        onClearManuscript={handleClearManuscript}
+        onNavigateToPillar={(pillar) => {
+          setActivePillar(pillar);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-6">
         
@@ -554,14 +594,13 @@ export const App: React.FC = () => {
               onOpenCart={() => setIsCartOpen(true)}
               onOpenBinder={() => setIsBinderOpen(true)}
               onInjectDraftText={(text, destination, filename) => {
-                setInputText(text);
-                if (filename) {
-                  setUploadedDocName(filename);
+                handleManuscriptUpdate(text, filename);
+                if (destination && destination !== 'hub') {
+                  setActivePillar(destination);
                 }
-                setActivePillar(destination);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              currentManuscriptWordCount={inputText ? inputText.split(/\s+/).filter(Boolean).length : 0}
+              currentManuscriptWordCount={activeManuscript ? activeManuscript.wordCount : (inputText ? inputText.split(/\s+/).filter(Boolean).length : 0)}
               groundedClaimsCount={groundedClaimsCount}
               totalClaimsCount={claims.length}
               uniquePapersCount={uniquePapers.length}
@@ -786,9 +825,9 @@ export const App: React.FC = () => {
               setSensitivity={setSensitivity}
               options={options}
               setOptions={setOptions}
-              initialText={inputText}
+              initialText={activeManuscript?.body || activeManuscript?.rawText || inputText}
               onSendToStudio={(draft, newClaims) => {
-                setInputText(draft);
+                handleManuscriptUpdate(draft, activeManuscript?.filename);
                 setClaims(newClaims);
                 setSelectedClaimId(null);
                 setActivePillar('studio');
@@ -808,8 +847,11 @@ export const App: React.FC = () => {
         {activePillar === 'writing' && (
           <div className="py-2 animate-in fade-in duration-200 space-y-6">
             <WritingToolbeltPane
+              initialTitle={activeManuscript?.title || ''}
+              initialAbstract={activeManuscript?.abstract || ''}
+              initialBibtex={activeManuscript?.bibliography || ''}
               onSendToStudio={(text) => {
-                setInputText(prev => prev ? `${prev}\n\n${text}` : text);
+                handleManuscriptUpdate(inputText ? `${inputText}\n\n${text}` : text, activeManuscript?.filename);
                 setActivePillar('studio');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
@@ -824,8 +866,8 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200">
             <VerifierPane
               llmConfig={llmConfig}
-              initialBibliography={inputText}
-              sourceFilename={uploadedDocName || undefined}
+              initialBibliography={activeManuscript?.bibliography || activeManuscript?.rawText || inputText}
+              sourceFilename={activeManuscript?.filename || uploadedDocName || undefined}
             />
           </div>
         )}
@@ -835,12 +877,16 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200">
             <JournalSentinelPane
               llmConfig={llmConfig}
-              initialTitle={inputText ? inputText.slice(0, 160) : ''}
-              initialAbstract={inputText && inputText.length > 160 ? inputText.slice(160, 1500) : ''}
-              initialFullDraft={inputText}
-              initialReferences={uniquePapers.map(p => `${p.authors.map(a => a.name).join(', ')}. ${p.title}. ${p.venue}, ${p.year}.`)}
+              initialTitle={activeManuscript?.title || (inputText ? inputText.slice(0, 160) : '')}
+              initialAbstract={activeManuscript?.abstract || (inputText && inputText.length > 160 ? inputText.slice(160, 1500) : '')}
+              initialFullDraft={activeManuscript?.rawText || inputText}
+              initialReferences={
+                activeManuscript?.bibliography
+                  ? [activeManuscript.bibliography]
+                  : uniquePapers.map(p => `${p.authors.map(a => a.name).join(', ')}. ${p.title}. ${p.venue}, ${p.year}.`)
+              }
               onAppendToDraft={(declarationText) => {
-                setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
+                handleManuscriptUpdate(inputText ? `${inputText}\n\n${declarationText}` : declarationText, activeManuscript?.filename);
               }}
               onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
@@ -852,8 +898,8 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200">
             <ScholarSearchPane
               llmConfig={llmConfig}
-              initialTitle={inputText ? inputText.slice(0, 160) : ''}
-              initialAbstract={inputText && inputText.length > 160 ? inputText.slice(160, 1500) : ''}
+              initialTitle={activeManuscript?.title || (inputText ? inputText.slice(0, 160) : '')}
+              initialAbstract={activeManuscript?.abstract || (inputText && inputText.length > 160 ? inputText.slice(160, 1500) : '')}
             />
           </div>
         )}
@@ -862,9 +908,9 @@ export const App: React.FC = () => {
         {activePillar === 'anonymizer' && (
           <div className="py-2 animate-in fade-in duration-200">
             <AnonymizerPane
-              initialText={inputText}
+              initialText={activeManuscript?.body || activeManuscript?.rawText || inputText}
               onSendToStudio={(text) => {
-                setInputText(text);
+                handleManuscriptUpdate(text, activeManuscript?.filename);
                 setActivePillar('studio');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
@@ -902,8 +948,9 @@ export const App: React.FC = () => {
                   llmConfig={llmConfig}
                   onOpenSettings={() => setIsSettingsOpen(true)}
                   isProcessing={isProcessing}
-                  initialDraftText={inputText}
-                  initialFilename={uploadedDocName || undefined}
+                  initialDraftText={activeManuscript?.rawText || inputText}
+                  initialFilename={activeManuscript?.filename || uploadedDocName || undefined}
+                  onManuscriptLoaded={handleManuscriptUpdate}
                 />
               </div>
             ) : (
