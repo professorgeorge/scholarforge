@@ -805,6 +805,7 @@ export const App: React.FC = () => {
               setSensitivity={setSensitivity}
               options={options}
               setOptions={setOptions}
+              initialText={inputText}
               onSendToStudio={(draft, newClaims) => {
                 setInputText(draft);
                 setClaims(newClaims);

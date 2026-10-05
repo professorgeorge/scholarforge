@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, 
   Search, 
@@ -8,9 +8,17 @@ import {
   BookOpen, 
   BookmarkPlus, 
   Scale,
-  SlidersHorizontal 
+  SlidersHorizontal,
+  Sparkles, 
+  Wand2, 
+  AlertCircle, 
+  Copy, 
+  Check,
+  ShieldAlert,
+  ShieldCheck,
+  Flame
 } from 'lucide-react';
-import type { Claim } from '../types/citation';
+import type { Claim, AcademicPaper } from '../types/citation';
 import { extractClaimsFromText } from '../services/claimExtractor';
 import { executeFederatedSearch } from '../services/federatedSearchEngine';
 import { addPaperToCart } from '../services/cartService';
@@ -18,10 +26,10 @@ import type { LLMConfig } from '../services/llmService';
 import { DEFAULT_LLM_CONFIG } from '../services/llmService';
 import { 
   synthesizeClaimConsensus, 
+  generateCounterHypothesisQuery,
   isLlmConfigured, 
   type ClaimConsensusAnalysis 
 } from '../services/aiScholarExtensions';
-import { Sparkles, Wand2, AlertCircle, Copy, Check } from 'lucide-react';
 
 import type { CitationOptions } from '../types/citation';
 
@@ -32,6 +40,7 @@ interface ClaimsWorkbenchPaneProps {
   setSensitivity?: (s: 'all' | 'moderate' | 'high') => void;
   options?: CitationOptions;
   setOptions?: React.Dispatch<React.SetStateAction<CitationOptions>>;
+  initialText?: string;
 }
 
 export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
@@ -41,17 +50,31 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
   setSensitivity,
   options,
   setOptions,
+  initialText = ''
 }) => {
-  const [claimInput, setClaimInput] = useState('');
+  const [claimInput, setClaimInput] = useState(() => initialText || '');
   const [isVerifying, setIsVerifying] = useState(false);
   const [testedClaims, setTestedClaims] = useState<Claim[]>([]);
   const [selectedClaimIndex, setSelectedClaimIndex] = useState<number>(0);
-  const [evidenceMode, setEvidenceMode] = useState<'single_claim' | 'paragraph_extract'>('single_claim');
+  const [evidenceMode, setEvidenceMode] = useState<'single_claim' | 'paragraph_extract'>(() => {
+    return initialText && initialText.split(/[.?!]\s+/).length > 1 ? 'paragraph_extract' : 'single_claim';
+  });
   const [errorMsg, setErrorMsg] = useState('');
   const [consensusAnalysisMap, setConsensusAnalysisMap] = useState<Record<string, ClaimConsensusAnalysis>>({});
   const [isAnalyzingConsensus, setIsAnalyzingConsensus] = useState(false);
   const [consensusNotice, setConsensusNotice] = useState<string | null>(null);
   const [copiedConsensusId, setCopiedConsensusId] = useState<string | null>(null);
+  const [counterEvidenceMap, setCounterEvidenceMap] = useState<Record<string, { counterClaim: string; papers: AcademicPaper[] }>>({});
+  const [isTestingCounter, setIsTestingCounter] = useState(false);
+
+  useEffect(() => {
+    if (initialText && initialText.trim()) {
+      setClaimInput(initialText);
+      if (initialText.split(/[.?!]\s+/).length > 1) {
+        setEvidenceMode('paragraph_extract');
+      }
+    }
+  }, [initialText]);
 
   const sampleClaims = [
     'SGLT2 inhibitors significantly reduce all-cause mortality and heart failure hospitalizations in patients with preserved ejection fraction.',
@@ -135,11 +158,6 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
   const handleRunConsensusAnalysis = async () => {
     if (!activeClaim || !activeClaim.candidatePapers || activeClaim.candidatePapers.length === 0) return;
 
-    if (!isLlmConfigured(llmConfig)) {
-      setConsensusNotice('Optional LLM is not configured. Configure an OpenAI, Gemini, Claude, or local Ollama engine in Master Settings (gear icon) for automated GRADE certainty evaluation and deep consensus synthesis.');
-      return;
-    }
-
     setIsAnalyzingConsensus(true);
     setConsensusNotice(null);
 
@@ -147,13 +165,41 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
       const res = await synthesizeClaimConsensus(activeClaim.text, activeClaim.candidatePapers, llmConfig);
       if (res) {
         setConsensusAnalysisMap(prev => ({ ...prev, [activeClaim.id]: res }));
+        if (!isLlmConfigured(llmConfig)) {
+          setConsensusNotice('Synthesized via Deterministic Registry Evidence. (Configure an AI model in Settings for deep neural GRADE reasoning).');
+        }
       } else {
-        setConsensusNotice('Consensus analysis could not be completed with the current LLM configuration.');
+        setConsensusNotice('Consensus analysis could not be completed.');
       }
     } catch (err: any) {
       setConsensusNotice(err.message || 'Consensus evaluation failed.');
     } finally {
       setIsAnalyzingConsensus(false);
+    }
+  };
+
+  const handleRunAdversarialStressTest = async () => {
+    if (!activeClaim) return;
+    setIsTestingCounter(true);
+
+    try {
+      const counter = await generateCounterHypothesisQuery(activeClaim.text, llmConfig);
+      const result = await executeFederatedSearch(counter.searchQuery, {
+        limitPerSource: 3,
+        excludePreprints: options?.excludePreprints
+      });
+
+      setCounterEvidenceMap(prev => ({
+        ...prev,
+        [activeClaim.id]: {
+          counterClaim: counter.counterClaim,
+          papers: result.papers
+        }
+      }));
+    } catch (err: any) {
+      console.error('Counter test error:', err);
+    } finally {
+      setIsTestingCounter(false);
     }
   };
 
@@ -543,6 +589,81 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
                                 <span>{cav}</span>
                               </div>
                             ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Popperian Adversarial Falsification & Stress-Test Panel */}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50/60 to-rose-50/50 dark:from-amber-950/30 dark:to-rose-950/20 border border-amber-200/80 dark:border-amber-900/50 space-y-3 shadow-2xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Flame className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        <div>
+                          <span className="text-xs font-bold text-amber-950 dark:text-amber-200 uppercase tracking-wider font-serif block">
+                            Popperian Falsification &amp; Adversarial Stress-Test
+                          </span>
+                          <span className="text-[10px] text-amber-800/80 dark:text-amber-300/80">
+                            Proactively hunts for negative trials, null results, and contradictory evidence
+                          </span>
+                        </div>
+                      </div>
+
+                      {counterEvidenceMap[activeClaim.id] ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                          {counterEvidenceMap[activeClaim.id].papers.length} Opposing/Null Records Found
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleRunAdversarialStressTest}
+                          disabled={isTestingCounter}
+                          className="px-3.5 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-2xs transition"
+                        >
+                          {isTestingCounter ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <ShieldAlert className="w-3.5 h-3.5 text-amber-200" />}
+                          <span>Stress-Test for Counter-Evidence</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {counterEvidenceMap[activeClaim.id] && (
+                      <div className="space-y-2 pt-1 text-xs animate-in fade-in duration-150">
+                        <div className="p-3 rounded-lg bg-white/90 dark:bg-slate-900/90 border border-amber-200 dark:border-amber-800 space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 font-sans">
+                            Falsification Query / Counter-Hypothesis:
+                          </span>
+                          <p className="text-xs text-slate-800 dark:text-slate-200 font-serif italic">
+                            "{counterEvidenceMap[activeClaim.id].counterClaim}"
+                          </p>
+                        </div>
+
+                        {counterEvidenceMap[activeClaim.id].papers.length > 0 ? (
+                          <div className="space-y-2">
+                            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
+                              Potentially Conflicting / Boundary Studies from Primary Registries:
+                            </span>
+                            {counterEvidenceMap[activeClaim.id].papers.map((p) => (
+                              <div key={p.id} className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-200/70 dark:border-amber-900/60 flex items-start justify-between gap-2">
+                                <div className="space-y-0.5">
+                                  <div className="font-semibold text-slate-900 dark:text-white line-clamp-1">{p.title}</div>
+                                  <div className="text-[10px] text-slate-500">{p.venue} ({p.year}) • {p.authors[0]?.name || 'Author'}</div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => addPaperToCart(p)}
+                                  className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-[10px] font-semibold text-slate-700 dark:text-slate-300 shrink-0 cursor-pointer"
+                                  title="Add counter-evidence to cart to cite in limitations"
+                                >
+                                  + Cart
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>No direct conflicting or null trials identified in registry scope. Claim exhibits robust empirical resilience.</span>
                           </div>
                         )}
                       </div>
