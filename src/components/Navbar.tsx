@@ -366,104 +366,84 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* ROW 2: TIER 1 - The 4 Research Lifecycle Stages */}
       {onSelectPillar && (
-        <div className="w-full border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/95 dark:bg-slate-950/90 backdrop-blur-sm px-3 sm:px-4 lg:px-8 py-2">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+        <div className="w-full border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/95 dark:bg-slate-950/90 backdrop-blur-sm px-3 sm:px-4 lg:px-8 py-2 overflow-x-auto no-scrollbar">
+          <div className="max-w-7xl mx-auto flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
             
-            {/* Steppers: Utilities Hub + 4 Stages */}
-            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
-              
-              {/* Home Hub Button */}
-              <button
-                type="button"
-                onClick={() => onSelectPillar('hub')}
-                className={`px-3 py-1.5 rounded-xl flex items-center gap-2 transition-all duration-200 cursor-pointer text-left shrink-0 ${
-                  activePillar === 'hub'
-                    ? 'bg-blue-900 text-white shadow-xs font-bold ring-2 ring-blue-500/20'
-                    : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 font-semibold'
-                }`}
-                title="ScholarForge Home & Utilities Hub"
-              >
-                <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold shrink-0 ${
-                  activePillar === 'hub'
-                    ? 'bg-blue-800 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                }`}>
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                </span>
-                <div className="leading-tight">
-                  <div className="text-xs font-serif flex items-center gap-1">
-                    <span>Utilities Hub</span>
-                  </div>
-                  <div className={`text-[10px] hidden lg:block ${
-                    activePillar === 'hub' ? 'text-blue-200' : 'text-slate-400'
-                  }`}>
-                    12 Tools
-                  </div>
-                </div>
-              </button>
-
-              <span className="hidden sm:inline text-slate-300 dark:text-slate-700 text-xs font-mono shrink-0 select-none">
-                |
+            {/* Home Hub Button */}
+            <button
+              type="button"
+              onClick={() => onSelectPillar('hub')}
+              className={`px-3 py-1.5 rounded-xl flex items-center gap-2 transition-all duration-200 cursor-pointer text-left shrink-0 ${
+                activePillar === 'hub'
+                  ? 'bg-blue-900 text-white shadow-xs font-bold ring-2 ring-blue-500/20'
+                  : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 font-semibold'
+              }`}
+              title="ScholarForge Home & Utilities Hub"
+            >
+              <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold shrink-0 ${
+                activePillar === 'hub'
+                  ? 'bg-blue-800 text-white'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}>
+                <LayoutGrid className="w-3.5 h-3.5" />
               </span>
+              <div className="leading-tight">
+                <div className="text-xs font-serif flex items-center gap-1">
+                  <span>Utilities Hub</span>
+                </div>
+                <div className={`text-[10px] hidden lg:block ${
+                  activePillar === 'hub' ? 'text-blue-200' : 'text-slate-400'
+                }`}>
+                  12 Tools
+                </div>
+              </div>
+            </button>
 
-              {RESEARCH_STAGES.map((stage, idx) => {
-                const isCurrentStage = activePillar !== 'hub' && activeStageId === stage.id;
-                return (
-                  <React.Fragment key={stage.id}>
-                    <button
-                      type="button"
-                      onClick={() => handleStageClick(stage)}
-                      className={`px-3 py-1.5 rounded-xl flex items-center gap-2 transition-all duration-200 cursor-pointer text-left shrink-0 ${
-                        isCurrentStage
-                          ? 'bg-blue-900 text-white shadow-xs font-bold ring-2 ring-blue-500/20'
-                          : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 font-semibold'
-                      }`}
-                      title={stage.tagline}
-                    >
-                      <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold shrink-0 ${
-                        isCurrentStage
-                          ? 'bg-blue-800 text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                      }`}>
-                        {stage.stepNumber}
-                      </span>
-                      <div className="leading-tight">
-                        <div className="text-xs font-serif flex items-center gap-1">
-                          <span>{stage.label}</span>
-                        </div>
-                        <div className={`text-[10px] hidden lg:block ${
-                          isCurrentStage ? 'text-blue-200' : 'text-slate-400'
-                        }`}>
-                          {stage.tagline}
-                        </div>
+            <span className="hidden sm:inline text-slate-300 dark:text-slate-700 text-xs font-mono shrink-0 select-none">
+              |
+            </span>
+
+            {RESEARCH_STAGES.map((stage, idx) => {
+              const isCurrentStage = activePillar !== 'hub' && activeStageId === stage.id;
+              return (
+                <React.Fragment key={stage.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleStageClick(stage)}
+                    className={`px-3 py-1.5 rounded-xl flex items-center gap-2 transition-all duration-200 cursor-pointer text-left shrink-0 ${
+                      isCurrentStage
+                        ? 'bg-blue-900 text-white shadow-xs font-bold ring-2 ring-blue-500/20'
+                        : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 font-semibold'
+                    }`}
+                    title={stage.tagline}
+                  >
+                    <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold shrink-0 ${
+                      isCurrentStage
+                        ? 'bg-blue-800 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}>
+                      {stage.stepNumber}
+                    </span>
+                    <div className="leading-tight">
+                      <div className="text-xs font-serif flex items-center gap-1">
+                        <span>{stage.label}</span>
                       </div>
-                    </button>
+                      <div className={`text-[10px] hidden lg:block ${
+                        isCurrentStage ? 'text-blue-200' : 'text-slate-400'
+                      }`}>
+                        {stage.tagline}
+                      </div>
+                    </div>
+                  </button>
 
-                    {idx < RESEARCH_STAGES.length - 1 && (
-                      <span className="hidden sm:inline text-slate-300 dark:text-slate-700 text-xs font-mono shrink-0 select-none">
-                        →
-                      </span>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-
-            {/* Stage Summary / Orientation Tag */}
-            <div className="hidden xl:flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-sans shrink-0">
-              {activePillar === 'hub' ? (
-                <>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Utilities Hub:</span>
-                  <span>Select any research utility below or enter a stage</span>
-                </>
-              ) : (
-                <>
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Phase {activeStage.stepNumber} of 4:</span>
-                  <span>{activeStage.tagline}</span>
-                </>
-              )}
-            </div>
-
+                  {idx < RESEARCH_STAGES.length - 1 && (
+                    <span className="hidden sm:inline text-slate-300 dark:text-slate-700 text-xs font-mono shrink-0 select-none">
+                      →
+                    </span>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
         </div>
       )}
