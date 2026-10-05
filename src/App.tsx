@@ -21,10 +21,7 @@ import { IrbTriagePane } from './components/IrbTriagePane';
 import { WritingToolbeltPane } from './components/WritingToolbeltPane';
 import { AnonymizerPane } from './components/AnonymizerPane';
 import { ScholarHubView } from './components/ScholarHubView';
-import { 
-  EXEMPLAR_MANUSCRIPT_TEXT, 
-  getExemplarClaims 
-} from './data/exemplarManuscript';
+
 import type { 
   AcademicPaper, 
   CitationOptions, 
@@ -367,22 +364,7 @@ export const App: React.FC = () => {
     });
   };
 
-  // Called to load pre-grounded exemplar research paper for instant live studio exploration
-  const handleLoadExemplarManuscript = () => {
-    setInputText(EXEMPLAR_MANUSCRIPT_TEXT);
-    setClaims(getExemplarClaims());
-    setSelectedClaimId(null);
-    setRebuttalPackage(null);
-    setOriginalPreRevisionText('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    confetti({
-      particleCount: 50,
-      spread: 70,
-      origin: { y: 0.8 },
-      colors: ['#0284c7', '#38bdf8', '#c084fc'],
-    });
-  };
 
   // Called when user submits peer-review revisions
   const handleApplyRevision = (revisedManuscript: string) => {
@@ -563,7 +545,6 @@ export const App: React.FC = () => {
                 setActivePillar(pillar);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              onLoadSample={handleLoadExemplarManuscript}
               onOpenSpotlight={() => setIsSpotlightOpen(true)}
               onOpenToolbelt={() => {
                 setActiveToolbeltId('anonymizer');
@@ -910,7 +891,6 @@ export const App: React.FC = () => {
                     handleRebuttalPackageReady(r, o, c);
                     setActivePillar('studio');
                   }}
-                  onLoadSample={handleLoadExemplarManuscript}
                   onNavigateToEthics={() => {
                     setActivePillar('methodology');
                     window.scrollTo({ top: 0, behavior: 'smooth' });

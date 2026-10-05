@@ -52,65 +52,7 @@ interface JournalSentinelPaneProps {
   onNavigateToStudio?: () => void;
 }
 
-const SAMPLE_MANUSCRIPTS = [
-  {
-    label: 'Health Economics & Oncology (Clinical)',
-    title: 'Cost-Effectiveness of First-Line Immunotherapy Regimens in Advanced Non-Small Cell Lung Cancer',
-    abstract: 'Background: Immune checkpoint inhibitors have transformed first-line therapeutic paradigms for advanced non-small cell lung cancer (NSCLC), yet their pharmacoeconomic sustainability remains contentious. Methods: We developed a partitioned survival Markov model across a 10-year horizon from a healthcare payer perspective, comparing pembrolizumab plus chemotherapy against platinum-doublet chemotherapy alone. Transition probabilities, utilities, and adverse event costs were calibrated from Phase III clinical trials. Results: Immunotherapy combination yielded an incremental gain of 1.42 quality-adjusted life years (QALYs) at an incremental cost of $98,400, resulting in an incremental cost-effectiveness ratio (ICER) of $69,295 per QALY. Sensitivity analyses indicated that biomarker stratification with PD-L1 TPS >= 50% substantially improved value metrics. Conclusion: Pembrolizumab plus platinum-doublet chemotherapy represents a cost-effective intervention within conventional willingness-to-pay thresholds for advanced NSCLC.',
-    draft: `Title: Cost-Effectiveness of First-Line Immunotherapy Regimens in Advanced Non-Small Cell Lung Cancer
 
-Introduction:
-Non-small cell lung cancer accounts for approximately 85% of all malignant pulmonary neoplasms worldwide. While targeted biological therapies and programmed death ligand-1 (PD-L1) checkpoint inhibitors have substantially prolonged progression-free survival, their budgetary impact poses significant resource allocation dilemmas for public health systems.
-
-Methods:
-We implemented a Markov cohort decision-analytic simulation modeled in monthly cycles over a lifetime horizon. Clinical efficacy parameters and hazard ratios were extracted from published randomized controlled trials (NCT02578680 and NCT02775435). Costs were evaluated in 2024 US Dollars. Probabilistic sensitivity analyses with 10,000 Monte Carlo iterations evaluated parameter uncertainty.
-
-Results:
-In base-case simulations, first-line combination therapy yielded an average survival of 3.86 life-years compared to 2.14 life-years in conventional chemotherapy. At a willingness-to-pay threshold of $100,000 per QALY, the probability of cost-effectiveness exceeded 82%.
-
-Discussion:
-Our empirical model demonstrates favorable economic value for immunotherapy in biomarker-enriched cohorts. Value-based pricing mechanisms remain paramount to preserve healthcare accessibility.
-
-Data Availability Statement:
-The datasets generated during and analyzed during the current study are available in the Harvard Dataverse repository (DOI: 10.7910/DVN/LUNG2025) or from the corresponding author upon reasonable academic request.
-
-Conflict of Interest:
-The authors declare no competing financial or non-financial conflicts of interest.
-
-Ethical Approval:
-This study analyzed secondary de-identified clinical trial data and was exempted from Institutional Review Board review by the University Health Research Ethics Committee (Exemption Ref: IRB-2024-HE-089).`,
-    references: [
-      'Gandhi L, et al. Pembrolizumab plus Chemotherapy in Metastatic Non-Small-Cell Lung Cancer. N Engl J Med. 2023;378(22):2078-2092.',
-      'Reck M, et al. Five-Year Outcomes With Pembrolizumab Versus Chemotherapy for Metastatic Non-Small-Cell Lung Cancer. J Clin Oncol. 2024;39(21):2339-2349.',
-      'Verma V, et al. Cost-effectiveness of checkpoint inhibition in oncology. Lancet Oncol. 2022;23(8):1011-1024.',
-      'Sanders GD, et al. Recommendations for Conduct, Methodological Practices, and Reporting of Cost-effectiveness Analyses. JAMA. 2023;316(10):1093-1103.',
-      'World Health Organization. Global Cancer Observatory: Lung Cancer Fact Sheet. Geneva: WHO; 2024.'
-    ]
-  },
-  {
-    label: 'Computer Science & AI (Machine Learning)',
-    title: 'Hierarchical Multi-Agent Orchestration for Verifiable Fact-Checking in Dense Scientific Literature',
-    abstract: 'Automated claim verification across vast academic corpuses poses significant challenges due to domain vocabulary drift, nuanced evidential qualifications, and citation hallucinations. In this paper, we introduce a hierarchical multi-agent framework comprising specialized literature-mining, semantic-alignment, and counter-evidence retrieval subagents. We evaluate our architecture across 50,000 biomedical claims from PubMed Central. Our empirical benchmarks show a 14.8% increase in verifiable entailment accuracy over state-of-the-art retrieval-augmented generation baselines, with sub-second latency per claim. Our findings confirm that decoupling claim decomposition from evidential arbitration drastically minimizes speculative reasoning.',
-    draft: `Title: Hierarchical Multi-Agent Orchestration for Verifiable Fact-Checking in Dense Scientific Literature
-
-Abstract:
-Automated claim verification across vast academic corpuses poses significant challenges due to domain vocabulary drift, nuanced evidential qualifications, and citation hallucinations.
-
-1. Introduction
-Large language models demonstrate strong linguistic fluency but frequently hallucinate non-existent literature citations. In scientific research, rigorous factual verification is mandatory to prevent dissemination of ungrounded hypotheses.
-
-2. Architecture
-Our system decouples verification into three autonomous modules: (1) syntactic claim parsing, (2) hybrid lexical-vector literature hunting via OpenAlex and CrossRef APIs, and (3) natural language inference arbitration.
-
-3. Results
-Evaluation on the SciFact and BioCite benchmarks demonstrates 89.2% precision and 84.1% recall.`,
-    references: [
-      'Wadden D, et al. Fact or Fiction: Verifying Scientific Claims with SciFact. EMNLP 2022.',
-      'Lewis P, et al. Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. NeurIPS 2020.',
-      'Karpukhin V, et al. Dense Passage Retrieval for Open-Domain Question Answering. EMNLP 2020.'
-    ]
-  }
-];
 
 export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   initialTitle = '',
@@ -246,13 +188,6 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
     }
   };
 
-  const handleLoadSample = (sample: typeof SAMPLE_MANUSCRIPTS[0]) => {
-    setTitle(sample.title);
-    setAbstract(sample.abstract);
-    setFullDraft(sample.draft);
-    setIsInputExpanded(false);
-    runDiscoveryAndAudit(sample.title, sample.abstract, sample.draft, sample.references);
-  };
 
   const handleCopyText = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -349,19 +284,6 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Exemplar Sample Dropdown */}
-            <div className="hidden sm:flex items-center gap-1.5">
-              <span className="text-xs text-slate-500 dark:text-slate-400">Sample:</span>
-              {SAMPLE_MANUSCRIPTS.map((sample, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleLoadSample(sample)}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                >
-                  {sample.label.split(' ')[0]}
-                </button>
-              ))}
-            </div>
 
             <button
               onClick={() => setIsInputExpanded(!isInputExpanded)}

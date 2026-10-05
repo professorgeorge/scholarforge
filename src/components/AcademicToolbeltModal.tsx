@@ -21,18 +21,6 @@ export interface AcademicToolbeltProps {
 
 export type ToolbeltToolId = 'anonymizer' | 'wordBudget' | 'bibtexCleaner' | 'titlePolisher' | 'irbTriage';
 
-const SAMPLE_ANON_TEXT = `This research was conducted in the Department of Psychology at Harvard University under IRB Protocol #2023-891. As demonstrated in our earlier work (George & Smith, 2023), cognitive resilience buffers occupational distress. Funding was generously provided by the National Science Foundation (NSF Grant #SES-2049182). We thank Dr. Eleanor Vance at Stanford University for providing the preliminary sample data.`;
-
-const SAMPLE_BUDGET = {
-  title: 'Cognitive Resilience and Moral Distress in Emergency Medicine: A Multi-Center Empirical Investigation',
-  runningHead: 'RESILIENCE & DISTRESS IN EMERGENCY MEDICINE',
-  abstract: 'Background: Healthcare professionals face unprecedented levels of moral distress and burnout in acute clinical environments. While psychological resilience has been proposed as a mitigating buffer, empirical mechanisms linking institutional autonomy and team safety remain contested.\n\nMethods: We conducted a multi-center cross-sectional investigation across 1,200 emergency department practitioners, deploying structural equation modeling and moderated regression.\n\nResults: Psychological safety significantly moderated the inverse relationship between work overload and performance (beta = 0.28, p < .001). Furthermore, team autonomy explained 34% of variance in retention intention.\n\nConclusions: Strategic organizational interventions prioritizing psychological safety yield measurable improvements in clinician retention and patient outcome metrics.',
-  highlights: `1. Emergency practitioners experience significant moral distress under severe clinical constraints.\n2. Team psychological safety buffers the detrimental effect of high patient acuity.\n3. Institutional autonomy explains 34% of long-term clinician retention variance.`
-};
-
-const SAMPLE_BIBTEX = `@article{10.1038/s41586-021-03819-2,\n  author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki},\n  title = {Attention is all you need},\n  journal = {Advances in Neural Information Processing Systems},\n  year = {2017},\n  volume = {30}\n}`;
-
-const SAMPLE_TITLE_TOPIC = 'AI in higher education, student critical thinking, and automated feedback systems';
 
 export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
   isOpen,
@@ -320,13 +308,6 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                       Draft Text / Introduction
                     </label>
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setAnonInput(SAMPLE_ANON_TEXT)}
-                        className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
-                      >
-                        Insert Sample
-                      </button>
                       {anonInput && (
                         <button
                           type="button"
@@ -389,18 +370,6 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
               <div className="flex items-center justify-between pb-1">
                 <span className="text-xs text-slate-500 font-medium">Test limits against Elsevier, Springer, Nature, &amp; APA standards</span>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBudgetTitle(SAMPLE_BUDGET.title);
-                      setBudgetRunningHead(SAMPLE_BUDGET.runningHead);
-                      setBudgetAbstract(SAMPLE_BUDGET.abstract);
-                      setBudgetHighlights(SAMPLE_BUDGET.highlights);
-                    }}
-                    className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
-                  >
-                    Load Sample Budget
-                  </button>
                   {(budgetTitle || budgetRunningHead || budgetAbstract || budgetHighlights) && (
                     <button
                       type="button"
@@ -579,13 +548,6 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                   <div className="flex items-center justify-between">
                     <label className="font-bold text-slate-700 dark:text-slate-300">Raw BibTeX Entry</label>
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setBibtexInput(SAMPLE_BIBTEX)}
-                        className="text-[11px] font-semibold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer"
-                      >
-                        Insert Sample
-                      </button>
                       {bibtexInput && (
                         <button
                           type="button"
@@ -634,13 +596,6 @@ export const AcademicToolbeltModal: React.FC<AcademicToolbeltProps> = ({
                     Enter Research Topic or Draft Working Title
                   </label>
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setTopicInput(SAMPLE_TITLE_TOPIC)}
-                      className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
-                    >
-                      Insert Sample
-                    </button>
                     {topicInput && (
                       <button
                         type="button"

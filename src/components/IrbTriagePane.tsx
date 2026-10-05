@@ -11,7 +11,6 @@ import {
   Check,
   Send,
   ExternalLink,
-  Sparkles,
   Clock,
   RotateCcw,
   Quote
@@ -27,7 +26,6 @@ import {
   type IrbChangeRisk,
   IRB_COMMON_DEFICIENCIES,
   IRB_FOUNDATIONAL_DOCUMENTS,
-  IRB_WORKED_SCENARIOS,
   assessIrbTriage,
   computeSubmissionAudit,
   buildIrbDocuments,
@@ -63,9 +61,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
   const [institutionName, setInstitutionName] = useState<string>('');
   const [protocolId, setProtocolId] = useState<string>('');
   
-  // Deficiencies search
   const [defSearch, setDefSearch] = useState<string>('');
-  const [scenarioFilter, setScenarioFilter] = useState<string>('all');
   
   // Copy state
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -102,21 +98,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
     );
   }, [defSearch]);
 
-  // Filtered Scenarios
-  const filteredScenarios = useMemo(() => {
-    if (scenarioFilter === 'all') return IRB_WORKED_SCENARIOS;
-    return IRB_WORKED_SCENARIOS.filter(s => s.category === scenarioFilter);
-  }, [scenarioFilter]);
 
-  const loadScenario = (idx: number) => {
-    const sc = filteredScenarios[idx];
-    if (!sc) return;
-    setState(prev => ({
-      ...prev,
-      mode: sc.mode,
-      ...sc.data
-    }));
-  };
 
   const handleToggleActivity = (act: IrbActivity) => {
     setState(prev => {
@@ -311,43 +293,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
         {/* Left Column: Questionnaire (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
 
-          {/* Worked Scenarios Quick-Pick */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-blue-700" />
-                <span>Load Exemplar Worked Scenario:</span>
-              </span>
-              <div className="flex items-center gap-1 text-[11px]">
-                {['all', 'behavioural', 'healthcare', 'ai', 'global', 'post'].map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setScenarioFilter(cat)}
-                    className={`px-2 py-0.5 rounded-lg capitalize transition cursor-pointer ${
-                      scenarioFilter === cat
-                        ? 'bg-blue-900 text-white font-bold'
-                        : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {filteredScenarios.slice(0, 4).map((sc, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => loadScenario(idx)}
-                  className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 hover:bg-blue-50/60 dark:hover:bg-blue-950/40 text-left transition cursor-pointer"
-                >
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{sc.title}</div>
-                  <div className="text-[10px] text-slate-500 line-clamp-1">{sc.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Form Questions */}
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-6">

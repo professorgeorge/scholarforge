@@ -95,13 +95,6 @@ export const AIDrafterPane: React.FC<AIDrafterPaneProps> = ({
     }
   };
 
-  const quickTopics = [
-    { title: 'AI in Medical Imaging & Radiology', focus: 'Diagnostic sensitivity, pulmonary nodules, and false positives' },
-    { title: 'Microplastics in Marine Food Webs', focus: 'Trophic transfer, persistent organic pollutants, and aquatic toxicity' },
-    { title: 'Long-Duration Flow Battery Grid Storage', focus: 'Vanadium redox, grid frequency inertia, and solar intermittency' },
-    { title: 'Sleep Architecture & Memory Consolidation', focus: 'Slow-wave sleep, hippocampal-neocortical transfer, and synaptic scaling' },
-  ];
-
   return (
     <div className="academic-card rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 space-y-6 shadow-xs">
       
@@ -180,23 +173,6 @@ export const AIDrafterPane: React.FC<AIDrafterPaneProps> = ({
             placeholder="e.g. Clinical diagnostic accuracy of deep learning in early-stage oncology screening..."
             className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-base text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700 transition"
           />
-
-          {/* Quick Topic Pills */}
-          <div className="flex flex-wrap items-center gap-2 mt-2.5">
-            <span className="text-xs text-slate-500 font-medium">Sample Research Topics:</span>
-            {quickTopics.map((qt, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setTopic(qt.title);
-                  setFocus(qt.focus);
-                }}
-                className="text-xs px-2.5 py-1 rounded-md bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/60 text-slate-700 hover:text-blue-900 dark:text-slate-300 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-              >
-                {qt.title.split('&')[0].trim()}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Optional Focus Area */}

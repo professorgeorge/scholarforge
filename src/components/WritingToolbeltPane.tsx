@@ -205,13 +205,6 @@ export const WritingToolbeltPane: React.FC<WritingToolbeltPaneProps> = ({
               <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-serif">
                 Enter Research Topic, Core Finding, or Working Title:
               </label>
-              <button
-                type="button"
-                onClick={() => setTopicInput('AI in higher education, student critical thinking, and automated feedback systems')}
-                className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
-              >
-                Insert Sample Topic
-              </button>
             </div>
 
             <input
@@ -301,19 +294,6 @@ export const WritingToolbeltPane: React.FC<WritingToolbeltPaneProps> = ({
                 <option value="plos">PLOS ONE / Multidisciplinary (20 words, 250 abstract)</option>
               </select>
             </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setBudgetTitle('Cognitive Resilience and Moral Distress in Emergency Medicine: A Multi-Center Investigation');
-                setBudgetRunningHead('RESILIENCE & DISTRESS IN EMERGENCY MEDICINE');
-                setBudgetAbstract('Background: Healthcare professionals face unprecedented levels of moral distress in acute clinical environments.\n\nMethods: We conducted a multi-center cross-sectional investigation across 1,200 emergency department practitioners.\n\nResults: Psychological safety significantly buffered the inverse relationship between work overload and performance (beta = 0.28, p < .001).\n\nConclusions: Strategic organizational interventions prioritizing psychological safety yield measurable improvements in clinician retention.');
-                setBudgetHighlights('1. Emergency practitioners experience significant distress under acute constraints.\n2. Psychological safety buffers high patient acuity.\n3. Team autonomy explains 34% of long-term clinician retention.');
-              }}
-              className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
-            >
-              Insert Sample Manuscript Data
-            </button>
           </div>
 
           {/* 4 Fields Grid */}
@@ -419,13 +399,6 @@ export const WritingToolbeltPane: React.FC<WritingToolbeltPaneProps> = ({
                 <label className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-serif">
                   Raw BibTeX Entry or File Content:
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setBibtexInput(`@article{10.1038/s41586-021-03819-2,\n  author = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki},\n  title = {Attention is all you need},\n  journal = {Advances in Neural Information Processing Systems},\n  year = {2017},\n  volume = {30}\n}`)}
-                  className="text-[11px] font-semibold text-purple-700 dark:text-purple-400 hover:underline cursor-pointer"
-                >
-                  Insert Sample BibTeX
-                </button>
               </div>
 
               <textarea

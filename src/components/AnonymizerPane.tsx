@@ -13,7 +13,6 @@ interface AnonymizerPaneProps {
   initialText?: string;
 }
 
-const SAMPLE_TEXT = `This research was conducted in the Department of Psychology at Harvard University under IRB Protocol #2023-891. As demonstrated in our earlier work (George & Smith, 2023), cognitive resilience buffers occupational distress. Funding was generously provided by the National Science Foundation (NSF Grant #SES-2049182). We thank Dr. Eleanor Vance at Stanford University for providing the preliminary sample data.`;
 
 export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
   onSendToStudio,
@@ -118,13 +117,6 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
                 Original Manuscript Draft / Acknowledgments:
               </label>
               <div className="flex items-center gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setInputText(SAMPLE_TEXT)}
-                  className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
-                >
-                  Insert Sample Text
-                </button>
                 {inputText && (
                   <button
                     type="button"

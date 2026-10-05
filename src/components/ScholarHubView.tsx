@@ -522,7 +522,6 @@ type CategoryFilter = 'all' | 'popular' | 'discover' | 'design' | 'draft' | 'pub
 
 interface ScholarHubViewProps {
   onSelectPillar: (pillar: AcademicPillar) => void;
-  onLoadSample?: () => void;
   onOpenSpotlight?: () => void;
   onOpenToolbelt?: () => void;
   onOpenSettings?: () => void;
@@ -537,7 +536,6 @@ interface ScholarHubViewProps {
 
 export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
   onSelectPillar,
-  onLoadSample,
   onInjectDraftText,
 }) => {
   const [omniboxInput, setOmniboxInput] = useState('');
@@ -764,29 +762,9 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
 
           </div>
 
-          {/* Quick Shortcuts Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-blue-300 font-semibold text-[11px] uppercase tracking-wider">
-                Quick Start:
-              </span>
-              {onLoadSample && (
-                <button
-                  type="button"
-                  onClick={onLoadSample}
-                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-blue-100 hover:text-white border border-white/15 transition flex items-center gap-1 cursor-pointer"
-                  title="Load full exemplar study in Studio with pre-grounded citations"
-                >
-                  <FileText className="w-3 h-3 text-amber-300" />
-                  <span>Load Exemplar Manuscript</span>
-                </button>
-              )}
-
-            </div>
-
-            <div className="text-[11px] text-blue-200/70 font-sans hidden md:block">
-              Tip: Paste any DOI or drop a .docx anywhere to auto-route
-            </div>
+          {/* Clean Auto-Route Tip */}
+          <div className="text-[11px] text-blue-200/70 font-sans pt-1">
+            Tip: Paste any DOI, manuscript abstract, or drop a .docx/.txt anywhere above to auto-route
           </div>
 
         </div>

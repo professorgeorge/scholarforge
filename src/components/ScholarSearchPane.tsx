@@ -18,7 +18,6 @@ import { ReviewerCard } from './ReviewerCard';
 import { OutreachModal } from './OutreachModal';
 import { RosterDrawer } from './RosterDrawer';
 import { ScholarImpactTab } from './ScholarImpactTab';
-import { SAMPLE_SCENARIOS, type SampleScenario } from '../data/sampleScenarios';
 
 const REGION_COUNTRIES: Record<string, string[]> = {
   na: ['US', 'CA'],
@@ -107,12 +106,7 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
     }
   };
 
-  // Load a preset scenario
-  const handleLoadScenario = (scenario: SampleScenario) => {
-    setObjective(scenario.objective);
-    setQuery({ ...scenario.query });
-    setErrorMessage(null);
-  };
+
 
   // 1-Click DOI / PMID Ingest
   const handleAutoIngestDoi = async () => {
@@ -420,20 +414,7 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
         {/* Query Input Section */}
         <div className="space-y-4 pt-2">
           
-          {/* Quick Preset Scenarios */}
-          <div className="flex flex-wrap items-center gap-1.5 pt-1">
-            <span className="text-[11px] font-medium text-slate-500">Sample Scenarios:</span>
-            {SAMPLE_SCENARIOS.map(sc => (
-              <button
-                key={sc.id}
-                type="button"
-                onClick={() => handleLoadScenario(sc)}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-serif bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-slate-700 dark:text-slate-300 hover:text-blue-900 dark:hover:text-blue-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-              >
-                {sc.label}
-              </button>
-            ))}
-          </div>
+
 
           {/* 1-Click DOI / PMID Ingest Bar */}
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">

@@ -110,39 +110,6 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
   const [copiedAiCode, setCopiedAiCode] = useState(false);
   const [savedAiToBinder, setSavedAiToBinder] = useState(false);
 
-  const AI_EXEMPLAR_PRESETS = [
-    {
-      label: 'Moderated Regression',
-      objective: 'Investigate whether perceived organizational support moderates the negative impact of workplace stress on employee turnover intentions.',
-      data: 'Cross-sectional survey of 320 healthcare workers using validated 5-point Likert scales. Some missing values in demographics, outcome is slightly skewed.',
-      discipline: 'Business & Social Sciences'
-    },
-    {
-      label: 'Statistical Mediation',
-      objective: 'Determine whether psychological safety mediates the relationship between servant leadership and team innovative work behavior.',
-      data: 'Multi-source survey with 240 dyads (leaders and subordinates) across two measurement waves spaced 6 weeks apart.',
-      discipline: 'Psychology & Cognitive Sciences'
-    },
-    {
-      label: '2x2 Factorial Experiment',
-      objective: 'Evaluate the causal effect of generative AI feedback versus human tutor feedback on undergraduate essay revision quality across novice vs advanced students.',
-      data: 'Randomized 2x2 laboratory experiment with N=140 students randomly assigned to feedback conditions; baseline verbal SAT score recorded as covariate.',
-      discipline: 'Education & Pedagogy'
-    },
-    {
-      label: 'Qualitative Phenomenological Inquiry',
-      objective: 'Understand how mid-career academic clinicians experience and navigate existential burnout and administrative identity conflict during hospital restructuring.',
-      data: 'In-depth semi-structured interviews with 16 academic physicians with 10+ years tenure, average 65 minutes per interview, fully transcribed.',
-      discipline: 'Medicine & Healthcare'
-    },
-    {
-      label: 'Binary Logistic Churn Model',
-      objective: 'Identify predictive drivers of student dropout (persisted vs dropped out) based on LMS behavioral telemetry and socio-demographic indicators.',
-      data: 'Institutional registry of 1,800 first-year undergraduates with weekly LMS logins, assignment submission timeliness, GPA, and binary retention status (0/1).',
-      discipline: 'Computer Science & HCI'
-    }
-  ];
-
   const handleRunAIAnalysis = async () => {
     if (!aiObjective.trim()) return;
     setIsAnalyzingAI(true);
@@ -494,29 +461,6 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
                 <Bot className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span className="font-semibold capitalize">{llmConfig?.provider || 'Built-in'}</span>
                 <span className="text-[10px] text-slate-400 font-mono">({llmConfig?.model || 'Deterministic Rules'})</span>
-              </div>
-            </div>
-
-            {/* Quick Inspiration Exemplar Chips */}
-            <div>
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-                Quick Exemplar Presets (Click to load):
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {AI_EXEMPLAR_PRESETS.map((preset, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      setAiObjective(preset.objective);
-                      setAiDataDesc(preset.data);
-                      setAiDiscipline(preset.discipline);
-                    }}
-                    className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                  >
-                    💡 {preset.label}
-                  </button>
-                ))}
               </div>
             </div>
 

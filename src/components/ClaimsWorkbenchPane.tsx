@@ -76,13 +76,6 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
     }
   }, [initialText]);
 
-  const sampleClaims = [
-    'SGLT2 inhibitors significantly reduce all-cause mortality and heart failure hospitalizations in patients with preserved ejection fraction.',
-    'Epigenome editing using catalytically dead Cas9 yields stable transcriptional repression with reduced off-target genotoxicity.',
-    'Solid-state lithium metal batteries experience rapid interfacial capacity fade under high current densities due to void formation.',
-    'Microplastics bioaccumulate in marine pelagic food webs and cause oxidative stress across multiple trophic levels.'
-  ];
-
   const handleTestClaim = async () => {
     if (!claimInput.trim()) {
       setErrorMsg('Please enter a claim or thesis to verify.');
@@ -370,20 +363,6 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
             </button>
           </div>
         )}
-
-        {/* Quick sample claims */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="text-xs text-slate-500 font-medium">Sample Propositions:</span>
-          {sampleClaims.map((sc, i) => (
-            <button
-              key={i}
-              onClick={() => setClaimInput(sc)}
-              className="text-xs px-2.5 py-1 rounded-md bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/60 text-slate-700 hover:text-blue-900 dark:text-slate-300 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-            >
-              {sc.slice(0, 45)}...
-            </button>
-          ))}
-        </div>
 
         {errorMsg && (
           <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-300">

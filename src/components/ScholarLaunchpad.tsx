@@ -33,14 +33,12 @@ import {
 } from '../services/llmService';
 import { huntLiteratureCorpus } from '../services/academicApi';
 import { extractClaimsFromText } from '../services/claimExtractor';
-import { SAMPLE_ESSAYS } from '../data/sampleEssays';
 import { LiteratureExportModal } from './LiteratureExportModal';
 
 interface ScholarLaunchpadProps {
   onManuscriptReady: (manuscript: string, claims: Claim[]) => void;
   onStartGroundingDraft: (draftText: string) => void;
   onRebuttalPackageReady?: (result: PeerReviewOverhaulResult, originalDraft: string, claims: Claim[]) => void;
-  onLoadSample?: () => void;
   onNavigateToEthics?: () => void;
   options: CitationOptions;
   setOptions?: React.Dispatch<React.SetStateAction<CitationOptions>>;
@@ -57,7 +55,6 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
   onManuscriptReady,
   onStartGroundingDraft,
   onRebuttalPackageReady,
-  onLoadSample,
   onNavigateToEthics,
   options,
   setOptions,
@@ -377,17 +374,7 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
 
         {/* Action Controls & Master Settings Trigger */}
         <div className="flex items-center gap-2.5">
-          {onLoadSample && (
-            <button
-              type="button"
-              onClick={onLoadSample}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
-              title="Instantly explore the live split-screen Studio with an exemplar peer-reviewed manuscript"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>⚡ Explore Live Studio Demo</span>
-            </button>
-          )}
+
 
           <button
             onClick={onOpenSettings}
@@ -465,26 +452,6 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
                 placeholder="Enter your research topic, thesis statement, or inquiry..."
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700 font-serif leading-relaxed"
               />
-            </div>
-
-            {/* Quick Synthesis Topics */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-2">
-              <span className="text-[11px] font-medium text-slate-500">Sample Inquiries:</span>
-              {[
-                'Deep Learning in Clinical Radiodiagnostics',
-                'SGLT2 Inhibitors in Heart Failure with Preserved Ejection Fraction',
-                'CRISPR-Cas9 Epigenome Editing in Oncology',
-                'Microplastics Bioaccumulation in Marine Food Webs',
-              ].map((sTopic) => (
-                <button
-                  key={sTopic}
-                  type="button"
-                  onClick={() => setTopic(sTopic)}
-                  className="px-2.5 py-1 rounded-md text-[11px] font-serif bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-slate-700 dark:text-slate-300 hover:text-blue-900 dark:hover:text-blue-200 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-                >
-                  {sTopic}
-                </button>
-              ))}
             </div>
           </div>
 
@@ -567,15 +534,7 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
                 <span>{isImportingDocx ? 'Parsing Document...' : 'Upload Word Doc (.docx)'}</span>
               </label>
 
-              <button
-                type="button"
-                onClick={() => setDraftText(SAMPLE_ESSAYS[0].content)}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 cursor-pointer transition flex items-center gap-1"
-                title="Paste a sample manuscript draft to test citation infilling"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
-                <span>Insert Sample Draft</span>
-              </button>
+
 
               {draftText && (
                 <button

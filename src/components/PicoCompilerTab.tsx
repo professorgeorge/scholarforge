@@ -15,7 +15,6 @@ import {
 import { 
   compilePicoQueries, 
   buildPlatformUrls, 
-  SAMPLE_PICO_PRESETS, 
   type PicoQueryState 
 } from '../services/picoQueryService';
 import type { LLMConfig } from '../services/llmService';
@@ -74,15 +73,6 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
-  const handleApplyPicoPreset = (preset: typeof SAMPLE_PICO_PRESETS[0]) => {
-    setPicoState({
-      population: preset.population,
-      intervention: preset.intervention,
-      comparison: preset.comparison,
-      outcome: preset.outcome,
-    });
-  };
-
   const compiledPico = compilePicoQueries(picoState);
   const platformUrls = buildPlatformUrls(compiledPico);
   const hasPicoTerms = Boolean(
@@ -101,7 +91,7 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       
-      {/* Header & Presets Strip */}
+      {/* Header & Controls Strip */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/60 shadow-xs">
         <div>
           <h3 className="text-sm font-bold text-amber-950 dark:text-amber-200 font-serif flex items-center gap-2">
@@ -113,30 +103,19 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-slate-500 font-semibold text-[11px] mr-1">Load Preset:</span>
-          {SAMPLE_PICO_PRESETS.map((preset, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => handleApplyPicoPreset(preset)}
-              className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/80 hover:bg-amber-100/70 text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer shadow-2xs transition"
-            >
-              {preset.label.split(' ')[0]}
-            </button>
-          ))}
-          {hasPicoTerms && (
+        {hasPicoTerms && (
+          <div className="flex items-center text-xs">
             <button
               type="button"
               onClick={handleClearPico}
-              className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-xs font-bold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 cursor-pointer transition ml-1 flex items-center gap-1"
+              className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-xs font-bold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 cursor-pointer transition flex items-center gap-1"
               title="Clear all fields"
             >
               <X className="w-3 h-3" />
               <span>Clear All</span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* AI Assistant Question-to-PICO Box */}

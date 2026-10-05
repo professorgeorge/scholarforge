@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import {
   verifyReferenceBatch,
-  SAMPLE_VERIFICATION_REFERENCES,
   downloadVerificationWordDocument,
   extractBibliographyFromManuscript,
   type BatchVerificationReport
@@ -158,9 +157,6 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
     }
   };
 
-  const handleLoadSample = () => {
-    setRawBibliography(SAMPLE_VERIFICATION_REFERENCES);
-  };
 
   const handleClear = () => {
     setRawBibliography('');
@@ -385,21 +381,15 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
               Paste Bibliography to Audit:
             </label>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleLoadSample}
-                className="text-xs text-blue-900 dark:text-blue-400 font-semibold hover:underline cursor-pointer"
-              >
-                Load Sample
-              </button>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <button
-                type="button"
-                onClick={handleClear}
-                className="text-xs text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
-              >
-                Clear
-              </button>
+              {rawBibliography && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="text-xs text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
             </div>
           </div>
 
@@ -476,7 +466,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                 Ready to Audit Your Bibliography
               </h3>
               <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4 leading-relaxed font-sans">
-                Paste your manuscript references on the left or click <strong>Load Sample</strong> to test citation authenticity, identify year typos, and detect AI hallucinations.
+                Paste your manuscript references on the left or drop a bibliography file to test citation authenticity, identify year typos, and detect AI hallucinations.
               </p>
               <div className="flex flex-wrap justify-center gap-2">
                 <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">

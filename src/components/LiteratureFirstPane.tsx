@@ -209,13 +209,6 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     }
   };
 
-  const quickTopics = [
-    { title: 'SGLT2 inhibitors in heart failure with preserved ejection fraction', focus: 'Cardiovascular mortality, hospitalizations, and renal outcomes' },
-    { title: 'CRISPR-Cas9 epigenome editing in oncology', focus: 'Target specificity, off-target mutations, and transcriptional silencing' },
-    { title: 'Solid-state electrolyte degradation in lithium metal batteries', focus: 'Dendrite suppression, ionic conductivity, and interfacial impedance' },
-    { title: 'Microplastics trophic transfer in marine pelagic food webs', focus: 'Bioaccumulation, polychlorinated biphenyl desorption, and cellular toxicity' },
-  ];
-
   return (
     <div className="academic-card rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 space-y-6 shadow-xs">
       
@@ -305,23 +298,6 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
               {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               <span>Discover Literature</span>
             </button>
-          </div>
-
-          {/* Quick topic pills */}
-          <div className="flex flex-wrap items-center gap-2 mt-2.5">
-            <span className="text-xs text-slate-500 font-medium">Sample Research Topics:</span>
-            {quickTopics.map((qt, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setTopic(qt.title);
-                  setFocus(qt.focus);
-                }}
-                className="text-xs px-2.5 py-1 rounded-md bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/60 text-slate-700 hover:text-blue-900 dark:text-slate-300 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition cursor-pointer"
-              >
-                {qt.title.split(' ')[0]} {qt.title.split(' ')[1]}...
-              </button>
-            ))}
           </div>
         </div>
 

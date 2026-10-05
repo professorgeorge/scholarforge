@@ -1993,24 +1993,6 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
               placeholder="e.g. Create a dataset of 1000 records where job autonomy predicts organizational commitment, significantly moderated by psychological safety, controlling for tenure and company size."
             />
 
-            {/* Quick Exemplar Prompts */}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-slate-400 font-semibold">Example Prompts:</span>
-              {[
-                '1000 records: Transformational leadership predicts employee turnover moderated by perceived supervisor support.',
-                'Factorial trial: 500 patient records testing Drug A vs. Placebo at 2 dose levels with baseline severity covariate.',
-                'Interview corpus: 5 hospital nurses discussing moral distress across 5 themes.'
-              ].map((ex, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setAiPrompt(ex)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[11px] cursor-pointer transition border border-slate-200 dark:border-slate-700"
-                >
-                  "{ex.slice(0, 40)}..."
-                </button>
-              ))}
-            </div>
-
             <div className="pt-2 flex items-center justify-between">
               <span className="text-xs text-slate-500">
                 Engine: <strong className="text-slate-700 dark:text-slate-300">{llmConfig.provider.toUpperCase()}</strong> ({llmConfig.model})
