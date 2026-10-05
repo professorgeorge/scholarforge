@@ -235,10 +235,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           <div className="space-y-2">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 font-serif">
               <Cpu className="w-4 h-4 text-blue-800 dark:text-blue-400" />
-              <span>6. AI Engine Connections &amp; Privacy-First Architecture</span>
+              <span>6. AI Engine Connections &amp; Local-First Architecture</span>
             </h4>
             <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
-              Connect your own API key for <strong>Gemini (e.g. Gemini 2.5 Flash / Pro)</strong>, <strong>OpenAI (GPT-4o, o3-mini)</strong>, <strong>Groq</strong>, <strong>DeepSeek</strong>, run <strong>Client-Side WebGPU in your browser</strong> (Qwen 2.5, SmolLM2 under Apache 2.0: zero install, runs in local browser memory), or run <strong>On-Device Local Models with Ollama</strong> on your machine. A zero-configuration built-in heuristic engine is also available.
+              ScholarForge operates on a <strong>local-first, client-side architecture</strong>: manuscripts, drafts, and bibliographies reside in your browser session (<code className="font-mono text-[11px] text-slate-700 dark:text-slate-300">localStorage</code>) with zero central server database or document harvesting. Connect your own API key for <strong>Gemini (e.g. Gemini 2.5 Flash / Pro)</strong>, <strong>OpenAI (GPT-4o, o3-mini)</strong>, <strong>Groq</strong>, or <strong>DeepSeek</strong> (calls travel directly from your browser to the designated provider without proxying). For on-device execution, select <strong>Client-Side WebGPU in your browser</strong> (Qwen 2.5, SmolLM2 under Apache 2.0: zero install, runs in local browser memory) or <strong>On-Device Local Models with Ollama</strong>. A zero-configuration built-in heuristic engine is also available.
             </p>
           </div>
 
@@ -259,7 +259,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
               </span>
             </div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-200 dark:border-slate-800 pt-2 text-justify">
-              <strong>Disclaimer:</strong> ScholarForge is provided strictly &ldquo;as is&rdquo; for research assistance and informational purposes without warranty of any kind. Users assume full, sole responsibility for all associated third-party API usage, token costs, rate limits, output verification, copyright compliance, and academic integrity. The creator, developers, and affiliated entities disclaim all liability for any costs, inaccuracies, damages, or consequences arising from the use of this tool.
+              <strong>Disclaimer &amp; Limitation of Liability:</strong> ScholarForge is provided strictly &ldquo;as is&rdquo; for research assistance and informational purposes without warranty of any kind, express or implied. ScholarForge does not warrant, represent, or guarantee absolute privacy, data immunity, or air-gap security. Users assume full, sole responsibility for all associated third-party API usage, token costs, rate limits, institutional data governance compliance (including HIPAA, IRB, and export controls), output verification, and academic integrity. The creator, developers, and affiliated entities disclaim all liability for any costs, inaccuracies, damages, data incidents, or legal consequences arising from the use of this software.
             </div>
           </div>
 

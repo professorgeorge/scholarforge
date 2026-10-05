@@ -180,7 +180,7 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
           <div className="flex items-center gap-3 pt-1 text-[11px] text-blue-200/80">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Offline &amp; Privacy-Preserving</span>
+              <span>Local-First &amp; Privacy-Focused</span>
             </span>
             <span>&bull;</span>
             <a

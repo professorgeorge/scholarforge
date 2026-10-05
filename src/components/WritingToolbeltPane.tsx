@@ -558,7 +558,7 @@ export const WritingToolbeltPane: React.FC<WritingToolbeltPaneProps> = ({
                       </div>
                       <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5">
                         <span className="font-bold text-purple-900 dark:text-purple-300">LaTeX / Overleaf Ready</span>
-                        <p className="text-slate-500 dark:text-slate-400">Guarantees clean compilation without bibtex parsing errors or missing brace warnings.</p>
+                        <p className="text-slate-500 dark:text-slate-400">Formats entries to prevent bibtex parsing errors and missing brace warnings.</p>
                       </div>
                     </div>
                   </div>

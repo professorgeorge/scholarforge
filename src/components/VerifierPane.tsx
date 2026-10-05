@@ -556,7 +556,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                   <ShieldCheck className="w-4 h-4 text-blue-700 dark:text-blue-400 shrink-0" />
                   <span>Ready to audit. Drop your manuscript or paste citations on the left to begin.</span>
                 </span>
-                <span className="font-mono text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400">Offline Safe</span>
+                <span className="font-mono text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400">Local-First Processing</span>
               </div>
             </div>
           )}

@@ -448,7 +448,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 flex items-center justify-between text-xs text-slate-500">
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Deterministic editorial evaluation • 100% Client-Side Privacy Guaranteed</span>
+            <span>Deterministic editorial evaluation • Client-side local architecture (No central server storage)</span>
           </div>
 
           <button

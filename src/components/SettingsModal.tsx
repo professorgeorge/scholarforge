@@ -457,7 +457,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     className="w-full p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white text-sm font-mono"
                   />
                   <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                    Runs locally on your CPU/GPU with zero data leaving your hardware. Ensure Ollama is running (<code>ollama serve</code>).
+                    Executes locally on your CPU/GPU via localhost without routing through external servers. Ensure Ollama is running (<code>ollama serve</code>).
                   </p>
                 </div>
               )}
@@ -552,6 +552,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Privacy Architecture & Data Handling Disclosure */}
+              <div className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-3 font-sans">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-700 dark:text-blue-400 shrink-0" />
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white font-serif">
+                    Privacy Architecture &amp; Data Handling Disclosure
+                  </h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px]">
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">Local-First Storage</span>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Drafts, bibliographies, and session settings reside in your browser’s local storage. ScholarForge operates with no central database or document harvesting.
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">Direct-to-Endpoint APIs</span>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      When querying registries (Crossref, OpenAlex) or AI providers (Gemini, OpenAI), requests travel directly from your browser without passing through a proxy.
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">On-Device Alternatives</span>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Select WebGPU In-Browser or local Ollama for environments requiring model execution on your own machine.
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 italic pt-1 leading-relaxed border-t border-slate-200/60 dark:border-slate-800">
+                  <strong>Notice:</strong> ScholarForge is designed for local client-side productivity. No software can provide absolute air-gap or legal guarantees; users remain responsible for ensuring data inputs comply with institutional governance, HIPAA, and sponsor policies before submitting proprietary or sensitive materials.
+                </p>
               </div>
             </div>
           )}
