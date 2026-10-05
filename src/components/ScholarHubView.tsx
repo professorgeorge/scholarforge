@@ -26,6 +26,7 @@ export interface UtilityTileDef {
   id: AcademicPillar;
   simpleTitle: string;
   subTitle: string;
+  categoryLabel: string;
   stageId: ResearchStage;
   stageNumber: string;
   stageName: string;
@@ -56,6 +57,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'literature',
     simpleTitle: 'Literature Search',
     subTitle: 'Federated Multi-Registry Search',
+    categoryLabel: 'Literature & Discovery',
     stageId: 'discover',
     stageNumber: '1',
     stageName: 'Discover',
@@ -84,6 +86,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'verify',
     simpleTitle: 'Reference & DOI Audits',
     subTitle: 'Pre-Submission Integrity & Hallucination Auditor',
+    categoryLabel: 'Citation & DOI Audit',
     stageId: 'publish',
     stageNumber: '4',
     stageName: 'Publish & Audit',
@@ -112,6 +115,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'synthetic',
     simpleTitle: 'Synthetic Data Generator',
     subTitle: 'Monte Carlo Engine & Qualitative Simulation',
+    categoryLabel: 'Data & Simulation',
     stageId: 'design',
     stageNumber: '2',
     stageName: 'Design & Data',
@@ -140,6 +144,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'scholars',
     simpleTitle: 'Scholar & Reviewer Finder',
     subTitle: 'Peer Reviewers & Scientometrics Network',
+    categoryLabel: 'Peer Reviewers',
     stageId: 'publish',
     stageNumber: '4',
     stageName: 'Publish & Audit',
@@ -168,6 +173,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'studio',
     simpleTitle: 'Manuscript Studio',
     subTitle: 'Grounded Writing Canvas & R&R Overhaul',
+    categoryLabel: 'Manuscript Studio',
     stageId: 'draft',
     stageNumber: '3',
     stageName: 'Draft & Ground',
@@ -196,6 +202,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'claims',
     simpleTitle: 'Claims & Evidence Workbench',
     subTitle: 'Linguistic Claim Extraction & Consensus',
+    categoryLabel: 'Evidence & Fact-Checking',
     stageId: 'draft',
     stageNumber: '3',
     stageName: 'Draft & Ground',
@@ -224,6 +231,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'journal',
     simpleTitle: 'Journal Matchmaker & Pre-Flight',
     subTitle: 'Scopus/WoS Fit & Desk-Rejection Audit',
+    categoryLabel: 'Journal Pre-Flight',
     stageId: 'publish',
     stageNumber: '4',
     stageName: 'Publish & Audit',
@@ -252,6 +260,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'methodology',
     simpleTitle: 'Methodology Compass',
     subTitle: 'Epistemic Coherence & Statistical Code',
+    categoryLabel: 'Research Design',
     stageId: 'design',
     stageNumber: '2',
     stageName: 'Design & Data',
@@ -280,6 +289,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'irb',
     simpleTitle: 'IRB & Ethics Protocol Triage',
     subTitle: 'Common Rule Exemption & Consent Drafter',
+    categoryLabel: 'Ethics & Compliance',
     stageId: 'design',
     stageNumber: '2',
     stageName: 'Design & Data',
@@ -308,6 +318,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'pico',
     simpleTitle: 'PICO Search Strategy',
     subTitle: 'PRISMA-Compliant Query Formulator',
+    categoryLabel: 'Search Strategy',
     stageId: 'discover',
     stageNumber: '1',
     stageName: 'Discover',
@@ -336,6 +347,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'anonymizer',
     simpleTitle: 'Double-Blind Anonymizer',
     subTitle: 'Self-Citation & Affiliation Redaction',
+    categoryLabel: 'Blind Peer Review',
     stageId: 'publish',
     stageNumber: '4',
     stageName: 'Publish & Audit',
@@ -364,6 +376,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     id: 'writing',
     simpleTitle: 'Academic Writing Utilities',
     subTitle: 'Title Polisher, Word Budget & BibTeX Cleaner',
+    categoryLabel: 'Writing Utilities',
     stageId: 'draft',
     stageNumber: '3',
     stageName: 'Draft & Ground',
@@ -618,7 +631,7 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
                     : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                1. Discover &amp; Search
+                Literature &amp; Search
               </button>
               <button
                 type="button"
@@ -629,7 +642,7 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
                     : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                2. Design &amp; Data
+                Methods, Data &amp; Ethics
               </button>
               <button
                 type="button"
@@ -640,7 +653,7 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
                     : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                3. Draft &amp; Ground
+                Drafting &amp; Writing
               </button>
               <button
                 type="button"
@@ -651,7 +664,7 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
                     : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                4. Audit &amp; Publish
+                Publishing &amp; Audits
               </button>
             </div>
 
@@ -673,10 +686,10 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
                 >
                   <div className="space-y-3.5">
                     
-                    {/* Top Row: Stage Indicator & Popular Badge */}
+                    {/* Top Row: Functional Domain Badge & Popular Badge */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md ${tile.accentColor.badgeBgLight} ${tile.accentColor.badgeBgDark} ${tile.accentColor.badgeTextLight} ${tile.accentColor.badgeTextDark}`}>
-                        Stage {tile.stageNumber}: {tile.stageName}
+                      <span className={`text-[10px] font-semibold tracking-wide px-2.5 py-0.5 rounded-full ${tile.accentColor.badgeBgLight} ${tile.accentColor.badgeBgDark} ${tile.accentColor.badgeTextLight} ${tile.accentColor.badgeTextDark}`}>
+                        {tile.categoryLabel}
                       </span>
                       {tile.popular && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
