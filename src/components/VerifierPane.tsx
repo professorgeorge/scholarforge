@@ -456,31 +456,107 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
         {/* Right Column: Audit Dashboard & Results */}
         <div className="lg:col-span-7 space-y-4">
           
-          {/* Welcome state when no report */}
+          {/* Actionable Guided Empty State when no report */}
           {!report && !isVerifying && (
-            <div className="h-full min-h-[380px] rounded-xl border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center p-8 text-center bg-slate-50/50 dark:bg-slate-950/20">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 flex items-center justify-center mb-3">
-                <FileCheck2 className="w-7 h-7" />
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-6 shadow-xs animate-in fade-in duration-200">
+              {/* Header Banner */}
+              <div className="flex items-center gap-3.5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 flex items-center justify-center shrink-0">
+                  <FileCheck2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-serif font-bold text-base text-slate-900 dark:text-white">
+                      Reference Verification &amp; Forensics Blueprint
+                    </h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      Multi-Registry
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-sans">
+                    Paste raw bibliography lines on the left or upload a manuscript file. ScholarForge cross-checks every entry against official scholarly registries.
+                  </p>
+                </div>
               </div>
-              <h3 className="font-serif font-bold text-base text-slate-900 dark:text-white">
-                Ready to Audit Your Bibliography
-              </h3>
-              <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4 leading-relaxed font-sans">
-                Paste your manuscript references on the left or drop a bibliography file to test citation authenticity, identify year typos, and detect AI hallucinations.
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  ✓ Retraction Sentinel
+
+              {/* 4-Step Verification Engine Explanation */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-900 dark:bg-blue-800 text-white text-[11px] font-bold flex items-center justify-center">1</span>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white font-serif">Registry Resolution</h4>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+                    Queries Crossref, OpenAlex, and Europe PMC to match canonical publisher metadata and permanent DOIs.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-rose-700 text-white text-[11px] font-bold flex items-center justify-center">2</span>
+                    <h4 className="text-xs font-bold text-rose-950 dark:text-rose-200 font-serif">Retraction Sentinel</h4>
+                  </div>
+                  <p className="text-[11px] text-rose-900/80 dark:text-rose-300 leading-relaxed font-sans">
+                    Cross-references Retraction Watch data to alert you if cited works have been retracted or received expressions of concern.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-amber-600 text-white text-[11px] font-bold flex items-center justify-center">3</span>
+                    <h4 className="text-xs font-bold text-amber-950 dark:text-amber-200 font-serif">Discrepancy Forensics</h4>
+                  </div>
+                  <p className="text-[11px] text-amber-900/80 dark:text-amber-300 leading-relaxed font-sans">
+                    Flags author typos, mismatched publication years, fictitious volume/page numbers, and LLM hallucinations.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-emerald-700 text-white text-[11px] font-bold flex items-center justify-center">4</span>
+                    <h4 className="text-xs font-bold text-emerald-950 dark:text-emerald-200 font-serif">1-Click Auto-Repair</h4>
+                  </div>
+                  <p className="text-[11px] text-emerald-900/80 dark:text-emerald-300 leading-relaxed font-sans">
+                    Standardizes citations into clean APA, IEEE, or Vancouver formats, and exports clean BibTeX or Word (.docx) tables.
+                  </p>
+                </div>
+              </div>
+
+              {/* Supported Input Formats Guide */}
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[11px] font-serif">
+                    Supported Citation Formats (Auto-Detected):
+                  </span>
+                  <span className="text-[11px] text-slate-500">Zero manual formatting needed</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Numbered [1] / Vancouver:</span>
+                    <p className="font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">[1] Smith JA, Doe R. Science. 2023;380:123-128.</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Author-Year (APA / Harvard):</span>
+                    <p className="font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">Smith, J., &amp; Doe, R. (2023). Journal of Cell Bio...</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">BibTeX Entries:</span>
+                    <p className="font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">@article&#123;smith2023, author=&#123;Smith, J.&#125;, ...&#125;</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Raw DOIs or URLs:</span>
+                    <p className="font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">10.1038/s41586-023-00000-0 or https://doi.org/...</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ready Indicator Footer */}
+              <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 text-xs text-blue-900 dark:text-blue-300 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-700 dark:text-blue-400 shrink-0" />
+                  <span>Ready to audit. Drop your manuscript or paste citations on the left to begin.</span>
                 </span>
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  ✓ Duplicate Detection
-                </span>
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  ✓ Word Audit Report
-                </span>
-                <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  ✓ 1-Click Auto-Fix
-                </span>
+                <span className="font-mono text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400">Offline Safe</span>
               </div>
             </div>
           )}

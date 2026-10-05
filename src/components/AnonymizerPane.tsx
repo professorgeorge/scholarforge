@@ -4,7 +4,10 @@ import {
   Check,
   Copy,
   Send,
-  BookOpen
+  BookOpen,
+  EyeOff,
+  Lock,
+  FileText
 } from 'lucide-react';
 
 interface AnonymizerPaneProps {
@@ -160,13 +163,74 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
               )}
             </div>
 
-            <div className="w-full min-h-[310px] p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 font-sans leading-relaxed whitespace-pre-wrap">
-              {anonymizationResult.output || (
-                <span className="text-slate-400 dark:text-slate-600 italic">
-                  Sanitized text will appear here with author identities, institutions, and grants masked for journal reviewers.
-                </span>
-              )}
-            </div>
+            {anonymizationResult.output ? (
+              <div className="w-full min-h-[310px] p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 font-sans leading-relaxed whitespace-pre-wrap">
+                {anonymizationResult.output}
+              </div>
+            ) : (
+              <div className="w-full min-h-[310px] p-5 rounded-xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-4">
+                <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200/80 dark:border-slate-800">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white font-serif">
+                      Double-Blind Peer Review Compliance Protocol
+                    </h4>
+                    <p className="text-[11px] text-slate-500 font-sans">
+                      Automated redaction filters for premier journal refereeing
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                      <EyeOff className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>1. Self-Citations</span>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Replaces "as we showed in Smith et al." with <em>[Author Citation Redacted]</em>.
+                    </p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>2. Institutions &amp; Clinics</span>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Masks university departments, medical center names, and geographic sites.
+                    </p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                      <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>3. Grants &amp; IRB Protocols</span>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Shields NIH/NSF award numbers, grant contracts, and institutional ethics IDs.
+                    </p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
+                      <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>4. Repositories &amp; Links</span>
+                    </div>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Neutralizes author-identifying GitHub / OSF usernames and contact emails.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900/60 text-[11px] text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Ready. Paste your manuscript text on the left to generate sanitized blinded copy.</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Action Row */}

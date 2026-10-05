@@ -571,9 +571,29 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
             </div>
           )}
 
-          {/* Journal Match Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {journals.map((journal) => {
+          {/* Journal Match Cards Grid or Actionable Filter Empty State */}
+          {journals.length === 0 ? (
+            <div className="p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center">
+                <Sliders className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
+                No Journals Match Current Filter Criteria
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto font-sans leading-relaxed">
+                Try relaxing the Open Access model (e.g. switch from Diamond OA to All Models), broadening Scopus quartiles, or resetting filters to view matching publishing venues.
+              </p>
+              <button
+                type="button"
+                onClick={() => setFilters({ searchQuery: '', oaModel: 'all', maxApc: null, minQuartile: 'all', publisher: 'all' })}
+                className="px-4 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold cursor-pointer transition shadow-xs"
+              >
+                Reset Filter Criteria
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {journals.map((journal) => {
               const isDiamond = journal.oaType === 'Diamond OA ($0 APC)';
               const quartileColors = {
                 Q1: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800',
@@ -741,6 +761,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
               );
             })}
           </div>
+        )}
         </div>
       )}
 

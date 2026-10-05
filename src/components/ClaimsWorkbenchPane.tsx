@@ -371,6 +371,96 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
         )}
       </div>
 
+      {/* Guided Empty State when no claims are tested yet */}
+      {testedClaims.length === 0 && !isVerifying && (
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in duration-200">
+          <div className="p-6 rounded-2xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-5">
+            <div className="flex items-center gap-3.5 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+              <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300 flex items-center justify-center shrink-0">
+                <Scale className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif font-bold text-base text-slate-900 dark:text-white">
+                    Empirical Claims &amp; Literature Consensus Protocol
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                    Epistemic Audit
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-sans">
+                  Decompose manuscript paragraphs or test hypotheses against 250M+ peer-reviewed scholarly works to evaluate epistemic agreement.
+                </p>
+              </div>
+            </div>
+
+            {/* 3 Pillars of Evidence Extraction */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                <div className="flex items-center gap-2 text-blue-900 dark:text-blue-400">
+                  <Layers className="w-4 h-4" />
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white font-serif">1. Claim Decomposition</h4>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+                  Isolates factual and causal assertions (e.g. effect sizes, interventions, outcomes) from rhetorical or stylistic prose.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                  <Search className="w-4 h-4" />
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white font-serif">2. Federated Evidence Grounding</h4>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+                  Queries OpenAlex, Crossref, and PubMed to identify independent peer-reviewed studies directly testing the asserted variables.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
+                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                  <Flame className="w-4 h-4" />
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white font-serif">3. Adversarial Stress-Testing</h4>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+                  Generates counter-hypotheses and retrieves dissenting literature to eliminate confirmation bias before peer review.
+                </p>
+              </div>
+            </div>
+
+            {/* Practical Formulation Guide */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs font-serif font-bold text-slate-900 dark:text-white">
+                <span>Formulating High-Confidence Testable Hypotheses:</span>
+                <span className="text-[11px] font-sans font-normal text-slate-500">PICO-aligned structure</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] font-sans">
+                <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 space-y-1">
+                  <span className="font-bold text-emerald-900 dark:text-emerald-300">✓ Strong Empirical Hypothesis Format:</span>
+                  <p className="text-slate-700 dark:text-slate-300 italic">
+                    "Intervention [X] significantly reduces [Outcome Y] in [Population Z] compared to standard care."
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                  <span className="font-bold text-slate-700 dark:text-slate-300">ℹ Full Paragraph Synthesis Mode:</span>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Paste an entire Results or Discussion section. ScholarForge will parse each distinct proposition into individual auditable cards.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Ready Callout */}
+            <div className="p-3 rounded-xl bg-purple-50/60 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60 text-xs text-purple-950 dark:text-purple-300 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-purple-700 dark:text-purple-400 shrink-0" />
+                <span>Ready to verify. Enter a scientific statement or paste a paragraph above to start evidence evaluation.</span>
+              </span>
+              <span className="font-mono text-[10px] uppercase font-bold text-purple-700 dark:text-purple-400">250M+ Works</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Results Dashboard: Left Claims List + Right Evidence Inspector */}
       {testedClaims.length > 0 && (
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">

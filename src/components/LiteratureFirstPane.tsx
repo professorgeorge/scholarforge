@@ -469,6 +469,100 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
         )}
       </div>
 
+      {/* Guided Empty State when no literature is retrieved yet */}
+      {discoveredPapers.length === 0 && !isSearching && (
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in duration-200">
+          <div className="p-6 rounded-2xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-5">
+            <div className="flex items-center gap-3.5 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+              <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 flex items-center justify-center shrink-0">
+                <Search className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif font-bold text-base text-slate-900 dark:text-white">
+                    Federated Literature Discovery &amp; PRISMA Search Engine
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    4 Live Registries
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-sans">
+                  Query over 250 million open academic records across multiple global bibliographic registries simultaneously.
+                </p>
+              </div>
+            </div>
+
+            {/* 4 Federated Registries */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="text-xs font-bold text-blue-900 dark:text-blue-400 font-serif">OpenAlex</span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
+                  250M+ open scholarly works, concept graphs, open access status, and citation network context.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400 font-serif">Crossref</span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
+                  150M+ official publisher DOIs, registration metadata, license info, and cross-publisher indexing.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="text-xs font-bold text-purple-900 dark:text-purple-400 font-serif">Europe PMC / PubMed</span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
+                  35M+ biomedical and life science publications with indexed abstracts and open access full texts.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="text-xs font-bold text-amber-800 dark:text-amber-400 font-serif">Semantic Scholar</span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
+                  AI-driven semantic matching, influential citation scoring, and automated TLDR findings.
+                </p>
+              </div>
+            </div>
+
+            {/* Academic Search Tips */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5">
+              <div className="flex items-center justify-between text-xs font-serif font-bold text-slate-900 dark:text-white">
+                <span>Effective Scholarly Search Strategies:</span>
+                <span className="text-[11px] font-sans font-normal text-slate-500">Syntax &amp; Filtering Guidance</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px] font-sans">
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">1. Boolean Operators</span>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    Use <code className="text-blue-700 dark:text-blue-400 font-mono">AND</code>, <code className="text-blue-700 dark:text-blue-400 font-mono">OR</code>, and quotes for exact phrases to narrow your research scope.
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">2. Preprints Exclusion</span>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    Check "Exclude Preprints" to filter out un-refereed drafts (arXiv, bioRxiv) and focus exclusively on peer-reviewed articles.
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+                  <span className="font-bold text-slate-800 dark:text-slate-200">3. Empirical Focus</span>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    Add study design or outcome terms in Step 2 (e.g. <em>"randomized controlled trial"</em> or <em>"longitudinal"</em>).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Ready Callout */}
+            <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-xs text-blue-950 dark:text-blue-300 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-blue-700 dark:text-blue-400 shrink-0" />
+                <span>Ready to explore. Enter a research topic or clinical question above and click Discover Literature.</span>
+              </span>
+              <span className="font-mono text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400">Open Access Live</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Step 2: Discovered Literature Corpus */}
       {discoveredPapers.length > 0 && (
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4 animate-in fade-in duration-200">
