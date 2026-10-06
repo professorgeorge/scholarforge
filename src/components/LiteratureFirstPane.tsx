@@ -100,8 +100,9 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
   };
 
-  const handleSearchLiterature = async () => {
-    if (!topic.trim()) {
+  const handleSearchLiterature = async (queryOverride?: string | React.MouseEvent) => {
+    const searchTopic = (typeof queryOverride === 'string' ? queryOverride : topic).trim();
+    if (!searchTopic) {
       setErrorMsg('Please enter a research topic.');
       return;
     }
@@ -112,7 +113,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
 
     try {
-      const fullQuery = focus ? `${topic} ${focus}` : topic;
+      const fullQuery = focus ? `${searchTopic} ${focus}` : searchTopic;
       const result = await executeFederatedSearch(fullQuery, {
         limitPerSource: 12,
         excludePreprints: options.excludePreprints,
@@ -268,6 +269,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
           onApplyQueryToSearch={(q) => {
             setTopic(q);
             setActiveSubTab('federated');
+            handleSearchLiterature(q);
           }}
           llmConfig={llmConfig}
         />

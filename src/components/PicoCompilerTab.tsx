@@ -308,13 +308,23 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
           </h4>
 
           <div className="flex items-center gap-2">
-            {onApplyQueryToSearch && compiledPico.pubMed && (
+            {onApplyQueryToSearch && hasPicoTerms && (
               <button
                 type="button"
-                onClick={() => onApplyQueryToSearch(`${picoState.population} ${picoState.intervention}`)}
-                className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 text-xs font-semibold flex items-center gap-1.5 border border-blue-200 dark:border-blue-800 cursor-pointer shadow-2xs transition"
+                onClick={() => {
+                  const queryToUse = 
+                    compiledPico.openAlex?.trim() || 
+                    [picoState.population, picoState.intervention, picoState.comparison, picoState.outcome]
+                      .filter(Boolean)
+                      .join(' ');
+                  if (queryToUse) {
+                    onApplyQueryToSearch(queryToUse);
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-950 text-white text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                title="Execute consolidated search across OpenAlex, Europe PMC, Crossref, and Semantic Scholar"
               >
-                <Search className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                <Search className="w-3.5 h-3.5 text-blue-200" />
                 <span>Search in ScholarForge Federated Engine</span>
                 <ArrowRight className="w-3 h-3" />
               </button>

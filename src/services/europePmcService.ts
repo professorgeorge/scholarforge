@@ -51,10 +51,13 @@ export async function searchEuropePmc(
 
   // Build query syntax for Europe PMC
   let scopedQuery = cleanQuery;
+  const hasUserQuotes = cleanQuery.includes('"');
   if (searchScope === 'title_only') {
-    scopedQuery = `TITLE:"${cleanQuery}"`;
+    scopedQuery = hasUserQuotes ? `TITLE:${cleanQuery}` : `TITLE:(${cleanQuery})`;
   } else if (searchScope === 'title_abstract') {
-    scopedQuery = `(TITLE:"${cleanQuery}" OR ABSTRACT:"${cleanQuery}")`;
+    scopedQuery = hasUserQuotes 
+      ? `(TITLE:${cleanQuery} OR ABSTRACT:${cleanQuery})`
+      : `(TITLE:(${cleanQuery}) OR ABSTRACT:(${cleanQuery}))`;
   }
 
   if (excludePreprints) {

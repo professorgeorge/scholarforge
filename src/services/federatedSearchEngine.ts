@@ -4,6 +4,7 @@ import { searchEuropePmc } from './europePmcService';
 import { searchSemanticScholar } from './semanticScholarService';
 import { searchArxiv } from './arxivService';
 import { checkPaperRetraction } from './retractionSentinel';
+import { extractAcademicKeywords } from './academicQueryParser';
 
 export interface FederatedSearchOptions {
   limitPerSource?: number;
@@ -93,11 +94,21 @@ export async function executeFederatedSearch(
   onProgress?.('Dispatching concurrent multi-source queries across scholarly registries...');
 
   // 1. Prepare search tasks
+  // For free-text natural language queries, extract clean keywords for the APIs to prevent stop-word noise
+  let registryQuery = query.trim();
+  const hasBooleanOrQuotes = /["\(\)]|\b(AND|OR|NOT)\b/i.test(registryQuery);
+  if (!hasBooleanOrQuotes) {
+    const extracted = extractAcademicKeywords(registryQuery);
+    if (extracted.length >= 2 && extracted.length < registryQuery.split(/\s+/).length) {
+      registryQuery = extracted.join(' ');
+    }
+  }
+
   const tasks: Promise<{ source: string; papers: AcademicPaper[] }>[] = [];
 
   if (enabledSources.openalex !== false) {
     tasks.push(
-      searchOpenAlex(query, limitPerSource, excludePreprints, fromYear)
+      searchOpenAlex(registryQuery, limitPerSource, excludePreprints, fromYear)
         .then((papers) => ({ source: 'openalex', papers }))
         .catch(() => ({ source: 'openalex', papers: [] }))
     );
@@ -105,7 +116,7 @@ export async function executeFederatedSearch(
 
   if (enabledSources.europepmc !== false) {
     tasks.push(
-      searchEuropePmc(query, {
+      searchEuropePmc(registryQuery, {
         limit: limitPerSource,
         excludePreprints,
         fromYear,
@@ -119,7 +130,7 @@ export async function executeFederatedSearch(
 
   if (enabledSources.crossref !== false) {
     tasks.push(
-      searchCrossref(query, limitPerSource, excludePreprints, fromYear)
+      searchCrossref(registryQuery, limitPerSource, excludePreprints, fromYear)
         .then((papers) => ({ source: 'crossref', papers }))
         .catch(() => ({ source: 'crossref', papers: [] }))
     );
@@ -127,7 +138,7 @@ export async function executeFederatedSearch(
 
   if (enabledSources.semanticscholar) {
     tasks.push(
-      searchSemanticScholar(query, {
+      searchSemanticScholar(registryQuery, {
         limit: limitPerSource,
         fromYear,
         toYear,
@@ -139,7 +150,7 @@ export async function executeFederatedSearch(
 
   if (enabledSources.arxiv && !excludePreprints) {
     tasks.push(
-      searchArxiv(query, limitPerSource)
+      searchArxiv(registryQuery, limitPerSource)
         .then((papers) => ({ source: 'arxiv', papers }))
         .catch(() => ({ source: 'arxiv', papers: [] }))
     );
@@ -223,8 +234,75 @@ export async function executeFederatedSearch(
     screened.push(paper);
   }
 
-  // Sort by highest citation count & relevance
-  screened.sort((a, b) => (b.citationCount || 0) - (a.citationCount || 0));
+  // Compute multi-factor academic relevance score for each candidate paper
+  const queryTokens = extractAcademicKeywords(query);
+  const cleanQ = query.toLowerCase().trim();
+
+  const computeRelevance = (paper: AcademicPaper): number => {
+    let score = 0;
+    const titleLower = (paper.title || '').toLowerCase();
+    const abstractLower = (paper.abstract || '').toLowerCase();
+
+    // 1. Exact phrase match bonus
+    if (cleanQ.length > 5 && titleLower.includes(cleanQ)) {
+      score += 80;
+    } else if (cleanQ.length > 5 && abstractLower.includes(cleanQ)) {
+      score += 40;
+    }
+
+    // 2. Keyword matching in Title (heavy weight)
+    let titleMatches = 0;
+    for (const token of queryTokens) {
+      if (titleLower.includes(token)) {
+        titleMatches++;
+        score += 25;
+      }
+    }
+
+    // 3. Keyword matching in Abstract
+    for (const token of queryTokens) {
+      if (abstractLower.includes(token)) {
+        score += 8;
+      }
+    }
+
+    // 4. Keyword coverage ratio across query tokens
+    if (queryTokens.length > 0) {
+      const matchedTokens = queryTokens.filter(
+        (t) => titleLower.includes(t) || abstractLower.includes(t)
+      );
+      const coverage = matchedTokens.length / queryTokens.length;
+      if (coverage >= 0.75) {
+        score += 35; // high topic fidelity
+      } else if (coverage < 0.3) {
+        score -= 25; // off-topic penalty
+      }
+    }
+
+    // 5. OpenAlex / API native relevance score
+    if (paper.relevanceScore && paper.relevanceScore > 0) {
+      score += Math.min(paper.relevanceScore * 10, 25);
+    }
+
+    // 6. Citation Count: Log-scaled authority boost (capped so it cannot overwhelm topical relevance)
+    const logCitations = Math.log10((paper.citationCount || 0) + 1);
+    score += Math.min(logCitations * 4, 18);
+
+    // 7. Structural quality bonuses
+    if (paper.doi) score += 10;
+    if (paper.abstract && paper.abstract.length > 60) score += 8;
+
+    // 8. Recency bump (last 10 years)
+    const currentYear = new Date().getFullYear();
+    if (paper.year && paper.year >= currentYear - 10) {
+      score += 4;
+    }
+
+    return score;
+  };
+
+  // Sort by multi-factor relevance score descending
+  screened.sort((a, b) => computeRelevance(b) - computeRelevance(a));
 
   const totalExcluded = excludedPreprints + excludedLowCitations;
   const retractedCount = screened.filter((p) => p.isRetracted).length;
