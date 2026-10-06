@@ -113,31 +113,38 @@ export async function executeFederatedSearch(
     fullTextKeywordQuery = strategy.coreKeywords;
   }
 
+  const accumulatedResults: { source: string; papers: AcademicPaper[] }[] = [];
+
   const wrapSource = async (
     sourceName: string,
     label: string,
     promise: Promise<AcademicPaper[]>
   ): Promise<{ source: string; papers: AcademicPaper[] }> => {
     try {
-      // Enforce 6-second hard ceiling per source so slow APIs can never hang the search
+      // Enforce 4.5-second hard ceiling per source so slow APIs can never hang the search
       let timerId: any;
       const timeoutPromise = new Promise<AcademicPaper[]>((resolve) => {
         timerId = setTimeout(() => {
-          console.warn(`[Federated Engine] ${label} response timed out after 6s. Proceeding with other registries.`);
+          console.warn(`[Federated Engine] ${label} response timed out after 4.5s. Proceeding with other registries.`);
           resolve([]);
-        }, 6000);
+        }, 4500);
       });
 
       const papers = await Promise.race([promise, timeoutPromise]);
       clearTimeout(timerId);
 
-      if (papers.length > 0) {
+      const entry = { source: sourceName, papers: Array.isArray(papers) ? papers : [] };
+      accumulatedResults.push(entry);
+
+      if (papers && papers.length > 0) {
         onProgress?.(`✓ ${label} returned ${papers.length} publications. Harmonizing...`);
       }
-      return { source: sourceName, papers };
+      return entry;
     } catch (err: any) {
       console.warn(`[Federated Engine] ${label} failed:`, err?.message);
-      return { source: sourceName, papers: [] };
+      const entry = { source: sourceName, papers: [] };
+      accumulatedResults.push(entry);
+      return entry;
     }
   };
 
@@ -205,18 +212,19 @@ export async function executeFederatedSearch(
     );
   }
 
-  let resultsTimerId: any;
-  const results = await Promise.race([
-    Promise.all(tasks),
-    new Promise<{ source: string; papers: AcademicPaper[] }[]>((resolve) => {
-      resultsTimerId = setTimeout(() => {
+  // Await either all tasks settling OR a 6-second global aggregation window
+  await Promise.race([
+    Promise.allSettled(tasks),
+    new Promise<void>((resolve) => {
+      setTimeout(() => {
         onProgress?.('Aggregation window complete. Harmonizing harvested records...');
-        resolve([]);
-      }, 8000);
+        resolve();
+      }, 6000);
     }),
   ]);
-  clearTimeout(resultsTimerId);
 
+  // Use all successfully accumulated results - never wipe them out
+  const results = accumulatedResults;
 
   // 2. PRISMA 2020 Identification metrics
   const databaseCounts = {
@@ -229,11 +237,13 @@ export async function executeFederatedSearch(
 
   const rawCorpus: AcademicPaper[] = [];
   for (const res of results) {
-    const count = res.papers.length;
+    const count = res.papers ? res.papers.length : 0;
     if (res.source in databaseCounts) {
       databaseCounts[res.source as keyof typeof databaseCounts] = count;
     }
-    rawCorpus.push(...res.papers);
+    if (res.papers) {
+      rawCorpus.push(...res.papers);
+    }
   }
 
   const totalIdentified = rawCorpus.length;
@@ -362,6 +372,34 @@ export async function executeFederatedSearch(
 
     return score;
   };
+
+  // 5. Intelligent Query-Relaxation Fallback: If 0 papers passed, query OpenAlex & Crossref with core academic keywords
+  if (screened.length === 0) {
+    onProgress?.('Broadening search to capture related peer-reviewed studies...');
+    const fallbackTerms = extractAcademicKeywords(query).slice(0, 3).join(' ') || query.replace(/[^\w\s-]/g, ' ').trim();
+    if (fallbackTerms) {
+      try {
+        const fallbackTasks = [
+          searchOpenAlex(fallbackTerms, limitPerSource, excludePreprints, fromYear),
+          searchCrossref(fallbackTerms, limitPerSource, excludePreprints, fromYear),
+        ];
+        const fallbackSettled = await Promise.allSettled(fallbackTasks);
+        for (const res of fallbackSettled) {
+          if (res.status === 'fulfilled') {
+            for (const paper of res.value) {
+              const doiClean = (paper.doi || '').toLowerCase().trim();
+              if (doiClean && !seenDois.has(doiClean)) {
+                seenDois.add(doiClean);
+                screened.push(paper);
+              }
+            }
+          }
+        }
+      } catch (fbErr: any) {
+        console.warn('[Federated Engine] Fallback search failed:', fbErr?.message);
+      }
+    }
+  }
 
   // Sort by multi-factor relevance score descending
   screened.sort((a, b) => computeRelevance(b) - computeRelevance(a));

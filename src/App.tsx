@@ -632,6 +632,7 @@ export const App: React.FC = () => {
               initialFocus={literatureFocus}
               autoSearch={literatureAutoSearch}
               initialPicoQuestion={picoInitialQuestion}
+              onResetAutoSearch={() => setLiteratureAutoSearch(false)}
               onManuscriptSynthesized={(m, c) => {
                 handleManuscriptReady(m, c);
                 setActivePillar('studio');
@@ -677,6 +678,7 @@ export const App: React.FC = () => {
               initialFocus={literatureFocus}
               autoSearch={literatureAutoSearch}
               initialPicoQuestion={picoInitialQuestion}
+              onResetAutoSearch={() => setLiteratureAutoSearch(false)}
               onManuscriptSynthesized={(m, c) => {
                 handleManuscriptReady(m, c);
                 setActivePillar('studio');

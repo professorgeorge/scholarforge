@@ -54,6 +54,7 @@ interface LiteratureFirstPaneProps {
   initialFocus?: string;
   autoSearch?: boolean;
   initialPicoQuestion?: string;
+  onResetAutoSearch?: () => void;
 }
 
 export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
@@ -66,20 +67,24 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   initialFocus = '',
   autoSearch = false,
   initialPicoQuestion = '',
+  onResetAutoSearch,
 }) => {
   const [topic, setTopic] = useState(initialTopic);
   const [focus, setFocus] = useState(initialFocus);
   const [activeSubTab, setActiveSubTab] = useState<'federated' | 'pico'>(initialSubTab);
 
   const hasAutoSearchedTopicRef = React.useRef<string>('');
+  const lastSyncedTopicRef = React.useRef<string>(initialTopic);
 
   // Sync if initialTopic or initialFocus or initialSubTab changes
   React.useEffect(() => {
-    if (initialTopic && initialTopic.trim()) {
+    if (initialTopic && initialTopic.trim() && initialTopic !== lastSyncedTopicRef.current) {
+      lastSyncedTopicRef.current = initialTopic;
       setTopic(initialTopic);
       if (initialFocus) setFocus(initialFocus);
       if (autoSearch && hasAutoSearchedTopicRef.current !== initialTopic) {
         hasAutoSearchedTopicRef.current = initialTopic;
+        onResetAutoSearch?.();
         handleSearchLiterature(initialTopic, initialFocus);
       }
     }
@@ -330,11 +335,22 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                   }
                 }}
                 placeholder="e.g. SGLT2 inhibitors clinical efficacy in heart failure with preserved ejection fraction..."
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-base text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700 transition"
+                className="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-base text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700 transition"
               />
+              {topic && (
+                <button
+                  type="button"
+                  onClick={() => setTopic('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer text-xs rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition"
+                  title="Clear topic query"
+                >
+                  ✕
+                </button>
+              )}
             </div>
             <button
-              onClick={handleSearchLiterature}
+              type="button"
+              onClick={() => handleSearchLiterature()}
               disabled={isSearching || !topic.trim()}
               className={`px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer shadow-md disabled:opacity-50 transition ${
                 isSearching
