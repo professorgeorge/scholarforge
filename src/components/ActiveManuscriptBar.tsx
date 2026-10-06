@@ -239,10 +239,15 @@ export const ActiveManuscriptBar: React.FC<ActiveManuscriptBarProps> = ({
             
             {/* Left: Active Status & Title */}
             <div className="flex items-center gap-2.5 min-w-0 max-w-full md:max-w-xl">
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
+              <div className="flex items-center gap-1.5 shrink-0" title="Active Manuscript in memory">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="hidden xl:inline text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                  Loaded
+                </span>
+              </div>
 
               <div className="flex items-center gap-1.5 truncate">
                 <FileCheck className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400 shrink-0" />

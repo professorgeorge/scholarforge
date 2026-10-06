@@ -88,6 +88,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     }
   }, [initialSubTab]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchProgressMsg, setSearchProgressMsg] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [isPromptsOpen, setIsPromptsOpen] = useState(false);
   const [isPrismaOpen, setIsPrismaOpen] = useState(false);
@@ -128,17 +129,22 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
 
     setErrorMsg('');
     setIsSearching(true);
+    setSearchProgressMsg('Dispatching concurrent multi-source queries across OpenAlex, Europe PMC, Crossref, and Semantic Scholar...');
     setDiscoveredPapers([]);
     setSelectedPaperIds(new Set());
 
     try {
       const fullQuery = searchFocus ? `${searchTopic} ${searchFocus}` : searchTopic;
-      const result = await executeFederatedSearch(fullQuery, {
-        limitPerSource: 35,
-        excludePreprints: options.excludePreprints,
-        searchScope,
-        enabledSources,
-      });
+      const result = await executeFederatedSearch(
+        fullQuery,
+        {
+          limitPerSource: 35,
+          excludePreprints: options.excludePreprints,
+          searchScope,
+          enabledSources,
+        },
+        (msg) => setSearchProgressMsg(msg)
+      );
 
       setPrismaStats(result.prismaStats);
 
@@ -153,6 +159,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       setErrorMsg(`Federated literature discovery failed: ${err.message}`);
     } finally {
       setIsSearching(false);
+      setSearchProgressMsg('');
     }
   };
 
@@ -323,12 +330,43 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
             <button
               onClick={handleSearchLiterature}
               disabled={isSearching || !topic.trim()}
-              className="btn-academic-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+              className={`px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer shadow-md disabled:opacity-50 transition ${
+                isSearching
+                  ? 'bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-700 text-white animate-pulse ring-4 ring-blue-500/30'
+                  : 'btn-academic-primary'
+              }`}
             >
-              {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              <span>Discover Literature</span>
+              {isSearching ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />
+                  <span className="font-bold">Searching 4 Registries...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  <span>Discover Literature</span>
+                </>
+              )}
             </button>
           </div>
+
+          {/* Active Search Live Feedback Strip */}
+          {isSearching && (
+            <div className="mt-3.5 space-y-2 p-3 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 animate-in fade-in duration-150">
+              <div className="flex items-center justify-between text-xs text-blue-900 dark:text-blue-300 font-semibold">
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="font-mono">{searchProgressMsg || 'Querying OpenAlex, Europe PMC, Crossref, and Semantic Scholar...'}</span>
+                </span>
+                <span className="text-[10px] font-mono uppercase bg-blue-200/70 dark:bg-blue-900 px-2 py-0.5 rounded-md border border-blue-300 dark:border-blue-700">
+                  Federated IR Live
+                </span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-blue-200/50 dark:bg-slate-800 overflow-hidden relative">
+                <div className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 rounded-full animate-pulse w-full" />
+              </div>
+            </div>
+          )}
           {topic.trim() && (
             <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-500 font-sans">
               {/[()"]|\b(AND|OR|NOT)\b/i.test(topic) ? (
@@ -518,6 +556,87 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
           </div>
         )}
       </div>
+
+      {/* HIGH-VISIBILITY LIVE SEARCH PROGRESS HUD */}
+      {isSearching && (
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 animate-in fade-in duration-200">
+          <div className="p-8 sm:p-10 rounded-2xl bg-gradient-to-b from-blue-50/90 via-white to-slate-50/90 dark:from-slate-900/95 dark:via-blue-950/30 dark:to-slate-900/95 border-2 border-blue-400 dark:border-blue-700 shadow-xl text-center space-y-6">
+            
+            {/* Visual Radar Pulse Animation */}
+            <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping duration-1000" />
+              <div className="absolute inset-1 rounded-full border-2 border-blue-500/40 animate-spin border-t-transparent" />
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Search className="w-7 h-7 animate-pulse" />
+              </div>
+            </div>
+
+            <div className="space-y-2 max-w-lg mx-auto">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-800 text-xs font-bold tracking-wide uppercase font-mono shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-ping" />
+                <span>Federated Scholarly Search in Progress</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold font-serif text-slate-900 dark:text-white">
+                Harvesting Peer-Reviewed Literature
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
+                Querying over 250 million scholarly publications across 4 live registries simultaneously, screening preprints, verifying DOIs, and compiling PRISMA 2020 attrition metrics.
+              </p>
+            </div>
+
+            {/* Live Progress Status Box */}
+            <div className="p-4 max-w-xl mx-auto rounded-xl bg-blue-500/10 dark:bg-blue-950/50 border border-blue-300 dark:border-blue-700 flex items-center justify-center gap-3 text-xs sm:text-sm text-blue-950 dark:text-blue-200 font-medium shadow-xs">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
+              <span className="font-mono text-left">{searchProgressMsg || 'Coordinating multi-source registry queries...'}</span>
+            </div>
+
+            {/* 4 Active Registries Ping Matrix */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto pt-1">
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shadow-2xs flex flex-col items-center text-center space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-400 font-serif">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <span>OpenAlex</span>
+                </div>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">250M+ Works</span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800 shadow-2xs flex flex-col items-center text-center space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900 dark:text-purple-400 font-serif">
+                  <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                  <span>Europe PMC</span>
+                </div>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">PubMed Central</span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 shadow-2xs flex flex-col items-center text-center space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-400 font-serif">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Crossref</span>
+                </div>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Publisher DOIs</span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 shadow-2xs flex flex-col items-center text-center space-y-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400 font-serif">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span>Semantic Scholar</span>
+                </div>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">AI Citation Graph</span>
+              </div>
+            </div>
+
+            {/* Indeterminate moving bar */}
+            <div className="w-full max-w-xl mx-auto h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 rounded-full animate-pulse w-full" />
+            </div>
+
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
+              Auditing peer-reviewed status, screening preprints, resolving DOIs, and compiling PRISMA 2020 attrition statistics...
+            </p>
+
+          </div>
+        </div>
+      )}
 
       {/* Guided Empty State when no literature is retrieved yet */}
       {discoveredPapers.length === 0 && !isSearching && (

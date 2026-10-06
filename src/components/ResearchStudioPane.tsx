@@ -485,10 +485,23 @@ export const ResearchStudioPane: React.FC<ResearchStudioPaneProps> = ({
               <button
                 onClick={handleSearchLiterature}
                 disabled={isSearching || !topic.trim()}
-                className="btn-academic-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+                className={`px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 cursor-pointer shadow-md disabled:opacity-50 transition ${
+                  isSearching
+                    ? 'bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-700 text-white animate-pulse ring-4 ring-blue-500/30'
+                    : 'btn-academic-primary'
+                }`}
               >
-                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                <span>Discover Literature & Data</span>
+                {isSearching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />
+                    <span className="font-bold">Discovering Literature...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4" />
+                    <span>Discover Literature & Data</span>
+                  </>
+                )}
               </button>
             )}
           </div>
@@ -670,6 +683,36 @@ export const ResearchStudioPane: React.FC<ResearchStudioPaneProps> = ({
         )}
 
       </div>
+
+      {/* High-Visibility Live Search Progress HUD */}
+      {isSearching && (
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 animate-in fade-in duration-200">
+          <div className="p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-white to-slate-50/90 dark:from-slate-900/95 dark:via-blue-950/30 dark:to-slate-900/95 border-2 border-blue-400 dark:border-blue-700 shadow-xl text-center space-y-5">
+            <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping duration-1000" />
+              <div className="absolute inset-1 rounded-full border-2 border-blue-500/40 animate-spin border-t-transparent" />
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Search className="w-6 h-6 animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-1.5 max-w-md mx-auto">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-800 text-xs font-bold tracking-wide uppercase font-mono">
+                <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-ping" />
+                <span>Multi-Registry Literature Discovery Active</span>
+              </div>
+              <h4 className="text-base font-bold font-serif text-slate-900 dark:text-white">
+                Harvesting Verified Empirical Corpus
+              </h4>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-sans">
+                Querying OpenAlex, Crossref, Europe PMC, and Semantic Scholar concurrently...
+              </p>
+            </div>
+            <div className="w-full max-w-lg mx-auto h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 rounded-full animate-pulse w-full" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mode 1: Discovered Corpus Grid (Evidence-First) with Tabs for Literature & Secondary Data */}
       {synthesisStyle === 'evidence_first' && (discoveredPapers.length > 0 || discoveredSecondaryData.length > 0) && (

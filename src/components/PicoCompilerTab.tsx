@@ -50,6 +50,7 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
 
   // In-tab Live Federated Search Results State
   const [isFederatedSearching, setIsFederatedSearching] = useState(false);
+  const [picoSearchProgress, setPicoSearchProgress] = useState('');
   const [discoveredPapers, setDiscoveredPapers] = useState<AcademicPaper[]>([]);
   const [prismaStats, setPrismaStats] = useState<PrismaFlowStats | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -118,14 +119,19 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
     }
 
     setIsFederatedSearching(true);
+    setPicoSearchProgress('Dispatching live PICO queries across OpenAlex, Europe PMC, Crossref, and Semantic Scholar...');
     setSearchError(null);
     setDiscoveredPapers([]);
 
     try {
-      const result = await executeFederatedSearch(queryToRun, {
-        limitPerSource: 30,
-        excludePreprints: true,
-      });
+      const result = await executeFederatedSearch(
+        queryToRun,
+        {
+          limitPerSource: 30,
+          excludePreprints: true,
+        },
+        (msg) => setPicoSearchProgress(msg)
+      );
       setPrismaStats(result.prismaStats);
       if (result.papers.length === 0) {
         setSearchError('No peer-reviewed papers found across selected registries for this strategy. Try broader synonyms.');
@@ -136,6 +142,7 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
       setSearchError(err.message || 'Federated search failed.');
     } finally {
       setIsFederatedSearching(false);
+      setPicoSearchProgress('');
     }
   };
 
@@ -472,11 +479,64 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
             )}
 
             {isFederatedSearching && (
-              <div className="py-8 text-center space-y-3">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-sans">
-                  Querying OpenAlex, Europe PMC / PubMed, Crossref, and Semantic Scholar concurrently...
-                </p>
+              <div className="p-8 rounded-2xl bg-gradient-to-b from-blue-50/90 via-white to-slate-50/90 dark:from-slate-900/95 dark:via-blue-950/30 dark:to-slate-900/95 border-2 border-blue-400 dark:border-blue-700 shadow-xl text-center space-y-5 animate-in fade-in duration-200">
+                <div className="relative w-16 h-16 mx-auto flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping duration-1000" />
+                  <div className="absolute inset-1 rounded-full border-2 border-blue-500/40 animate-spin border-t-transparent" />
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <Search className="w-6 h-6 animate-pulse" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 max-w-md mx-auto">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-800 text-xs font-bold tracking-wide uppercase font-mono">
+                    <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-ping" />
+                    <span>Executing Live PICO Search</span>
+                  </div>
+                  <h4 className="text-base font-bold font-serif text-slate-900 dark:text-white">
+                    Federated Multi-Registry Querying Active
+                  </h4>
+                </div>
+
+                <div className="p-3 max-w-lg mx-auto rounded-xl bg-blue-500/10 dark:bg-blue-950/50 border border-blue-300 dark:border-blue-700 flex items-center justify-center gap-3 text-xs text-blue-950 dark:text-blue-200 font-medium">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="font-mono text-left">{picoSearchProgress || 'Querying OpenAlex, Europe PMC / PubMed, Crossref, and Semantic Scholar...'}</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 max-w-xl mx-auto pt-1">
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 text-center space-y-0.5">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                      <span>OpenAlex</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">250M+ Works</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800 text-center space-y-0.5">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-purple-900 dark:text-purple-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                      <span>Europe PMC</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">PubMed</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 text-center space-y-0.5">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Crossref</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">DOIs</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 text-center space-y-0.5">
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      <span>S2 Graph</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500">Citations</span>
+                  </div>
+                </div>
+
+                <div className="w-full max-w-lg mx-auto h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 rounded-full animate-pulse w-full" />
+                </div>
               </div>
             )}
 

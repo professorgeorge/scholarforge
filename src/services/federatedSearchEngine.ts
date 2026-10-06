@@ -113,57 +113,83 @@ export async function executeFederatedSearch(
     fullTextKeywordQuery = strategy.coreKeywords;
   }
 
+  const wrapSource = async (
+    sourceName: string,
+    label: string,
+    promise: Promise<AcademicPaper[]>
+  ): Promise<{ source: string; papers: AcademicPaper[] }> => {
+    try {
+      const papers = await promise;
+      if (papers.length > 0) {
+        onProgress?.(`✓ ${label} returned ${papers.length} publications. Harmonizing...`);
+      }
+      return { source: sourceName, papers };
+    } catch {
+      return { source: sourceName, papers: [] };
+    }
+  };
+
   const tasks: Promise<{ source: string; papers: AcademicPaper[] }>[] = [];
 
   if (enabledSources.openalex !== false) {
     tasks.push(
-      searchOpenAlex(fullTextKeywordQuery, limitPerSource, excludePreprints, fromYear)
-        .then((papers) => ({ source: 'openalex', papers }))
-        .catch(() => ({ source: 'openalex', papers: [] }))
+      wrapSource(
+        'openalex',
+        'OpenAlex (250M+ Works)',
+        searchOpenAlex(fullTextKeywordQuery, limitPerSource, excludePreprints, fromYear)
+      )
     );
   }
 
   if (enabledSources.europepmc !== false) {
     tasks.push(
-      searchEuropePmc(europePmcQuery, {
-        limit: limitPerSource,
-        excludePreprints,
-        fromYear,
-        openAccessOnly,
-        searchScope,
-      })
-        .then((papers) => ({ source: 'europepmc', papers }))
-        .catch(() => ({ source: 'europepmc', papers: [] }))
+      wrapSource(
+        'europepmc',
+        'Europe PMC / PubMed Central',
+        searchEuropePmc(europePmcQuery, {
+          limit: limitPerSource,
+          excludePreprints,
+          fromYear,
+          openAccessOnly,
+          searchScope,
+        })
+      )
     );
   }
 
   if (enabledSources.crossref !== false) {
     tasks.push(
-      searchCrossref(fullTextKeywordQuery, limitPerSource, excludePreprints, fromYear)
-        .then((papers) => ({ source: 'crossref', papers }))
-        .catch(() => ({ source: 'crossref', papers: [] }))
+      wrapSource(
+        'crossref',
+        'Crossref Publisher Registry',
+        searchCrossref(fullTextKeywordQuery, limitPerSource, excludePreprints, fromYear)
+      )
     );
   }
 
   if (enabledSources.semanticscholar) {
     const s2Keywords = extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
     tasks.push(
-      searchSemanticScholar(s2Keywords || fullTextKeywordQuery, {
-        limit: limitPerSource,
-        fromYear,
-        toYear,
-      })
-        .then((papers) => ({ source: 'semanticscholar', papers }))
-        .catch(() => ({ source: 'semanticscholar', papers: [] }))
+      wrapSource(
+        'semanticscholar',
+        'Semantic Scholar Graph',
+        searchSemanticScholar(s2Keywords || fullTextKeywordQuery, {
+          limit: limitPerSource,
+          fromYear,
+          toYear,
+        })
+      )
     );
   }
 
   if (enabledSources.arxiv && !excludePreprints) {
     const arxivKeywords = extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
     tasks.push(
-      searchArxiv(arxivKeywords || fullTextKeywordQuery, limitPerSource)
-        .then((papers) => ({ source: 'arxiv', papers }))
-        .catch(() => ({ source: 'arxiv', papers: [] }))
+      wrapSource(
+        'arxiv',
+        'arXiv Archive',
+        searchArxiv(arxivKeywords || fullTextKeywordQuery, limitPerSource)
+      )
     );
   }
 
