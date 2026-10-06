@@ -15,20 +15,26 @@ import {
 import { 
   compilePicoQueries, 
   buildPlatformUrls, 
+  buildPicoFederatedQuery,
   type PicoQueryState 
 } from '../services/picoQueryService';
 import type { LLMConfig } from '../services/llmService';
 import { DEFAULT_LLM_CONFIG } from '../services/llmService';
 import { generatePicoFromQuestion, isLlmConfigured } from '../services/aiScholarExtensions';
+import { executeFederatedSearch, type PrismaFlowStats } from '../services/federatedSearchEngine';
+import type { AcademicPaper } from '../types/citation';
+import { BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface PicoCompilerTabProps {
-  onApplyQueryToSearch?: (queryText: string) => void;
+  onApplyQueryToSearch?: (queryText: string, focusText?: string) => void;
   llmConfig?: LLMConfig;
+  initialQuestion?: string;
 }
 
 export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
   onApplyQueryToSearch,
-  llmConfig = DEFAULT_LLM_CONFIG
+  llmConfig = DEFAULT_LLM_CONFIG,
+  initialQuestion = '',
 }) => {
   const [picoState, setPicoState] = useState<PicoQueryState>({
     population: '',
@@ -37,10 +43,25 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
     outcome: '',
   });
 
-  const [questionInput, setQuestionInput] = useState('');
+  const [questionInput, setQuestionInput] = useState(initialQuestion);
   const [isGeneratingWithLlm, setIsGeneratingWithLlm] = useState(false);
   const [llmNotice, setLlmNotice] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // In-tab Live Federated Search Results State
+  const [isFederatedSearching, setIsFederatedSearching] = useState(false);
+  const [discoveredPapers, setDiscoveredPapers] = useState<AcademicPaper[]>([]);
+  const [prismaStats, setPrismaStats] = useState<PrismaFlowStats | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [expandedAbstractId, setExpandedAbstractId] = useState<string | null>(null);
+
+  // Sync initialQuestion if provided from Intelligent Scholarly Workbench
+  React.useEffect(() => {
+    if (initialQuestion && initialQuestion.trim() && !questionInput) {
+      setQuestionInput(initialQuestion);
+    }
+  }, [initialQuestion]);
+
 
   const handleGenerateFromQuestion = async () => {
     if (!questionInput.trim()) return;
@@ -88,6 +109,36 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
     setQuestionInput('');
   };
 
+  const handleExecuteInTabFederatedSearch = async () => {
+    const payload = buildPicoFederatedQuery(picoState);
+    const queryToRun = payload.federatedQuery || payload.topic;
+    if (!queryToRun) {
+      setSearchError('Please enter at least Population or Intervention terms to execute search.');
+      return;
+    }
+
+    setIsFederatedSearching(true);
+    setSearchError(null);
+    setDiscoveredPapers([]);
+
+    try {
+      const result = await executeFederatedSearch(queryToRun, {
+        limitPerSource: 30,
+        excludePreprints: true,
+      });
+      setPrismaStats(result.prismaStats);
+      if (result.papers.length === 0) {
+        setSearchError('No peer-reviewed papers found across selected registries for this strategy. Try broader synonyms.');
+      } else {
+        setDiscoveredPapers(result.papers);
+      }
+    } catch (err: any) {
+      setSearchError(err.message || 'Federated search failed.');
+    } finally {
+      setIsFederatedSearching(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       
@@ -103,20 +154,48 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
           </p>
         </div>
 
-        {hasPicoTerms && (
-          <div className="flex items-center text-xs">
+        <div className="flex items-center gap-2 flex-wrap">
+          {hasPicoTerms && (
+            <button
+              type="button"
+              onClick={handleExecuteInTabFederatedSearch}
+              disabled={isFederatedSearching}
+              className="btn-academic-primary px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {isFederatedSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              <span>Execute Live PICO Search</span>
+            </button>
+          )}
+
+          {onApplyQueryToSearch && hasPicoTerms && (
+            <button
+              type="button"
+              onClick={() => {
+                const payload = buildPicoFederatedQuery(picoState);
+                onApplyQueryToSearch(payload.federatedQuery || payload.topic, payload.focus);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/60 dark:hover:bg-blue-900 text-blue-900 dark:text-blue-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-blue-300 dark:border-blue-800"
+              title="Transfer query and open in Federated Discovery Studio"
+            >
+              <span>Transfer to Federated Tab</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {hasPicoTerms && (
             <button
               type="button"
               onClick={handleClearPico}
-              className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-xs font-bold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 cursor-pointer transition flex items-center gap-1"
+              className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-xs font-bold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 cursor-pointer transition flex items-center gap-1"
               title="Clear all fields"
             >
               <X className="w-3 h-3" />
-              <span>Clear All</span>
+              <span>Clear</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
 
       {/* AI Assistant Question-to-PICO Box */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-purple-50/60 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-blue-200/80 dark:border-blue-900/60 shadow-xs space-y-2.5">
@@ -308,24 +387,30 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
           </h4>
 
           <div className="flex items-center gap-2">
+            {hasPicoTerms && (
+              <button
+                type="button"
+                onClick={handleExecuteInTabFederatedSearch}
+                disabled={isFederatedSearching}
+                className="btn-academic-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition cursor-pointer disabled:opacity-50"
+                title="Execute multi-source federated search directly in this view"
+              >
+                {isFederatedSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                <span>Execute Federated Strategy</span>
+              </button>
+            )}
+
             {onApplyQueryToSearch && hasPicoTerms && (
               <button
                 type="button"
                 onClick={() => {
-                  const queryToUse = 
-                    compiledPico.openAlex?.trim() || 
-                    [picoState.population, picoState.intervention, picoState.comparison, picoState.outcome]
-                      .filter(Boolean)
-                      .join(' ');
-                  if (queryToUse) {
-                    onApplyQueryToSearch(queryToUse);
-                  }
+                  const payload = buildPicoFederatedQuery(picoState);
+                  onApplyQueryToSearch(payload.federatedQuery || payload.topic, payload.focus);
                 }}
-                className="px-3.5 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-950 text-white text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
-                title="Execute consolidated search across OpenAlex, Europe PMC, Crossref, and Semantic Scholar"
+                className="px-3.5 py-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/60 dark:hover:bg-blue-900 text-blue-950 dark:text-blue-200 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition cursor-pointer border border-blue-300 dark:border-blue-800"
+                title="Transfer structured query and switch to Federated Discovery Tab"
               >
-                <Search className="w-3.5 h-3.5 text-blue-200" />
-                <span>Search in ScholarForge Federated Engine</span>
+                <span>Transfer to Federated Tab</span>
                 <ArrowRight className="w-3 h-3" />
               </button>
             )}
@@ -341,6 +426,136 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
             </button>
           </div>
         </div>
+
+        {/* LIVE IN-TAB FEDERATED SEARCH RESULTS */}
+        {(isFederatedSearching || searchError || discoveredPapers.length > 0) && (
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm animate-in fade-in duration-200">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-blue-600" />
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
+                  Live Federated Evidence Results
+                </h4>
+                {discoveredPapers.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 text-xs font-bold font-mono">
+                    {discoveredPapers.length} Studies Included
+                  </span>
+                )}
+              </div>
+
+              {discoveredPapers.length > 0 && onApplyQueryToSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const payload = buildPicoFederatedQuery(picoState);
+                    onApplyQueryToSearch(payload.federatedQuery || payload.topic, payload.focus);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Open in Discovery Studio & Synthesize Manuscript</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* PRISMA flow indicator */}
+            {prismaStats && (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+                <div className="flex items-center gap-4 text-slate-700 dark:text-slate-300">
+                  <span><strong>Identified:</strong> {prismaStats.identification.totalIdentified}</span>
+                  <span><strong>Deduplicated:</strong> {prismaStats.identification.duplicatesRemoved} removed</span>
+                  <span><strong>Screened:</strong> {prismaStats.screening.recordsScreened}</span>
+                  <span className="text-emerald-700 dark:text-emerald-400 font-bold"><strong>Included:</strong> {prismaStats.included.totalIncluded}</span>
+                </div>
+              </div>
+            )}
+
+            {isFederatedSearching && (
+              <div className="py-8 text-center space-y-3">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600" />
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-sans">
+                  Querying OpenAlex, Europe PMC / PubMed, Crossref, and Semantic Scholar concurrently...
+                </p>
+              </div>
+            )}
+
+            {searchError && (
+              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>{searchError}</span>
+              </div>
+            )}
+
+            {discoveredPapers.length > 0 && !isFederatedSearching && (
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                {discoveredPapers.map((paper) => {
+                  const isExpanded = expandedAbstractId === paper.id;
+                  return (
+                    <div
+                      key={paper.id}
+                      className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2 hover:border-blue-400 transition"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0">
+                          <h5 className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                            {paper.title}
+                          </h5>
+                          <div className="text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <span>{paper.authors.slice(0, 3).map((a) => a.name).join(', ')}{paper.authors.length > 3 ? ' et al.' : ''}</span>
+                            <span>•</span>
+                            <span className="font-semibold">{paper.venue}</span>
+                            <span>•</span>
+                            <span>{paper.year}</span>
+                            {paper.citationCount !== undefined && (
+                              <>
+                                <span>•</span>
+                                <span className="font-mono text-blue-700 dark:text-blue-300 font-semibold">{paper.citationCount} citations</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {paper.doi && (
+                            <a
+                              href={`https://doi.org/${paper.doi}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[10px] font-mono hover:underline flex items-center gap-1"
+                            >
+                              <span>DOI</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {paper.abstract && (
+                        <div>
+                          <p className={`text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
+                            {paper.abstract}
+                          </p>
+                          {paper.abstract.length > 140 && (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedAbstractId(isExpanded ? null : paper.id)}
+                              className="text-[11px] text-blue-700 dark:text-blue-400 font-semibold hover:underline mt-1 cursor-pointer flex items-center gap-0.5"
+                            >
+                              <span>{isExpanded ? 'Show less' : 'Read abstract'}</span>
+                              {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
 
         <div className="grid grid-cols-1 gap-3">
           {platformUrls.map((item) => (

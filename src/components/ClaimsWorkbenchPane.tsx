@@ -87,7 +87,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
     try {
       if (evidenceMode === 'single_claim') {
         const result = await executeFederatedSearch(claimInput, {
-          limitPerSource: 6,
+          limitPerSource: 12,
           searchScope: 'default',
           excludePreprints: options?.excludePreprints,
         });
@@ -126,7 +126,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
           const c = extracted[idx];
           const query = c.searchQueries[0] || c.text;
           const result = await executeFederatedSearch(query, { 
-            limitPerSource: 4,
+            limitPerSource: 8,
             excludePreprints: options?.excludePreprints 
           });
           batchClaims.push({
@@ -178,7 +178,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
     try {
       const counter = await generateCounterHypothesisQuery(activeClaim.text, llmConfig);
       const result = await executeFederatedSearch(counter.searchQuery, {
-        limitPerSource: 3,
+        limitPerSource: 6,
         excludePreprints: options?.excludePreprints
       });
 

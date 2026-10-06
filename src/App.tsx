@@ -201,10 +201,17 @@ export const App: React.FC = () => {
     };
   });
 
+  // Cross-pillar literature and PICO search state
+  const [literatureTopic, setLiteratureTopic] = useState('');
+  const [literatureFocus, setLiteratureFocus] = useState('');
+  const [literatureAutoSearch, setLiteratureAutoSearch] = useState(false);
+  const [picoInitialQuestion, setPicoInitialQuestion] = useState('');
+
   // Keep options and sensitivity synchronized in localStorage
   useEffect(() => {
     localStorage.setItem('scholarforge_citation_options', JSON.stringify(options));
   }, [options]);
+
 
   useEffect(() => {
     localStorage.setItem('scholarforge_claim_sensitivity', sensitivity);
@@ -595,7 +602,14 @@ export const App: React.FC = () => {
               onOpenBinder={() => setIsBinderOpen(true)}
               onInjectDraftText={(text, destination, filename) => {
                 handleManuscriptUpdate(text, filename);
-                if (destination && destination !== 'hub') {
+                if (destination === 'literature') {
+                  setLiteratureTopic(text);
+                  setLiteratureAutoSearch(true);
+                  setActivePillar('literature');
+                } else if (destination === 'pico') {
+                  setPicoInitialQuestion(text);
+                  setActivePillar('pico');
+                } else if (destination && destination !== 'hub') {
                   setActivePillar(destination);
                 }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -614,6 +628,10 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200 space-y-6">
             <LiteratureFirstPane
               initialSubTab="federated"
+              initialTopic={literatureTopic}
+              initialFocus={literatureFocus}
+              autoSearch={literatureAutoSearch}
+              initialPicoQuestion={picoInitialQuestion}
               onManuscriptSynthesized={(m, c) => {
                 handleManuscriptReady(m, c);
                 setActivePillar('studio');
@@ -655,6 +673,10 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200 space-y-6">
             <LiteratureFirstPane
               initialSubTab="pico"
+              initialTopic={literatureTopic}
+              initialFocus={literatureFocus}
+              autoSearch={literatureAutoSearch}
+              initialPicoQuestion={picoInitialQuestion}
               onManuscriptSynthesized={(m, c) => {
                 handleManuscriptReady(m, c);
                 setActivePillar('studio');
@@ -671,12 +693,22 @@ export const App: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => { setActivePillar('literature'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  onClick={() => {
+                    if (picoInitialQuestion && !literatureTopic) {
+                      setLiteratureTopic(picoInitialQuestion);
+                    }
+                    setLiteratureFocus('');
+                    setLiteratureAutoSearch(true);
+                    setActivePillar('literature');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <Search className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
                   <span>Execute Federated Search</span>
                 </button>
+
+
                 <button
                   type="button"
                   onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}

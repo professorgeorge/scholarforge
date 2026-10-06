@@ -19,7 +19,7 @@ export async function searchSemanticScholar(
   const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
   if (!cleanQuery) return [];
 
-  const { limit = 8, fromYear, toYear } = options;
+  const { limit = 20, fromYear, toYear } = options;
   const cacheKey = `s2_${cleanQuery}_${limit}_${fromYear || 'all'}_${toYear || 'all'}`;
   if (CACHE.has(cacheKey)) {
     return CACHE.get(cacheKey)!;
@@ -34,7 +34,7 @@ export async function searchSemanticScholar(
 
   const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(
     cleanQuery
-  )}&limit=${Math.min(limit * 2, 25)}&fields=title,abstract,authors,year,venue,citationCount,isOpenAccess,openAccessPdf,externalIds${yearParam}`;
+  )}&limit=${Math.min(Math.max(limit * 2, 30), 50)}&fields=title,abstract,authors,year,venue,citationCount,isOpenAccess,openAccessPdf,externalIds${yearParam}`;
 
   try {
     const controller = new AbortController();

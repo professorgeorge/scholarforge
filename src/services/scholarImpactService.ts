@@ -186,27 +186,42 @@ async function fetchScholarPageHtml(userId: string, cstart = 0, pagesize = 100):
         `https://api.allorigins.win/raw?url=${encodeURIComponent(directScholarUrl)}`,
       ];
 
+  const headers: Record<string, string> = {
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  };
+  if (isNode) {
+    headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+  }
+
   for (const ep of endpoints) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 7000);
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
       const res = await fetch(ep, {
         signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
+        headers,
       });
       clearTimeout(timeoutId);
 
+      if (res.status === 429 || res.status === 403) {
+        // Source website rate limit or bot challenge reached; abort gracefully
+        return null;
+      }
+
       if (res.ok) {
         const text = await res.text();
+        // Check for Google Scholar bot challenge / captcha before proceeding
+        if (text && (text.includes('unusual traffic') || text.includes('recaptcha') || text.includes('automated queries') || text.includes('captcha'))) {
+          // Detected anti-bot challenge; return null immediately to avoid repeated scraping warnings
+          return null;
+        }
+
         if (text && (text.includes('gsc_prf_in') || text.includes('gsc_a_tr') || text.includes('gsc_rsb_std'))) {
           return text;
         }
       }
     } catch {
-      // Try next endpoint
+      // Try next endpoint silently
     }
   }
 
@@ -252,6 +267,8 @@ export async function fetchCompleteGoogleScholarCatalog(userId: string): Promise
 
     if (parsed.papers.length < pagesize) break;
     cstart += pagesize;
+    // Polite pacing between multi-page fetches to prevent trigger warnings
+    await new Promise((r) => setTimeout(r, 200));
   }
 
   return {

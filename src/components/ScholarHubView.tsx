@@ -681,6 +681,12 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
                     setOmniboxInput(e.target.value);
                     if (importedFilename) setImportedFilename(null);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && omniboxInput.trim()) {
+                      e.preventDefault();
+                      handleExecuteIntent(detectedIntent?.targetPillar || 'literature');
+                    }
+                  }}
                   rows={omniboxInput.includes('\n') || omniboxInput.length > 80 ? 3 : 1}
                   placeholder="Drop a .docx file, paste any DOI (e.g. 10.1038/...), bibliography, draft snippet, or research question..."
                   className="w-full bg-transparent text-white placeholder-blue-200/60 text-sm sm:text-base outline-none resize-none py-1.5 leading-relaxed font-sans"
@@ -713,6 +719,18 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
                   {isProcessingFile ? <RefreshCw className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
                 </button>
 
+                {omniboxInput.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteIntent(detectedIntent?.targetPillar || 'literature')}
+                    className="px-3 py-1.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-slate-950 font-bold text-xs transition cursor-pointer flex items-center gap-1 shadow-md active:scale-95"
+                    title="Run query across detected academic tools (or press Enter)"
+                  >
+                    <span>{detectedIntent?.badgeLabel === 'Federated Search' ? 'Search' : 'Run'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
                 {omniboxInput && (
                   <button
                     type="button"
@@ -724,6 +742,7 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
                 )}
               </div>
             </div>
+
 
             {/* REAL-TIME INTENT DETECTION FLOATING BANNER */}
             {detectedIntent && (

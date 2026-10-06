@@ -7,7 +7,7 @@ const CACHE = new Map<string, AcademicPaper[]>();
  */
 export async function searchArxiv(
   query: string,
-  limit = 8
+  limit = 20
 ): Promise<AcademicPaper[]> {
   const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
   if (!cleanQuery) return [];
@@ -19,7 +19,7 @@ export async function searchArxiv(
 
   const url = `https://export.arxiv.org/api/query?search_query=all:${encodeURIComponent(
     cleanQuery
-  )}&start=0&max_results=${Math.min(limit, 20)}`;
+  )}&start=0&max_results=${Math.min(Math.max(limit, 20), 40)}`;
 
   try {
     const controller = new AbortController();

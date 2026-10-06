@@ -83,13 +83,25 @@ export function compilePicoQueries(pico: PicoQueryState): CompiledDatabaseQuerie
   const ieeeBlocks = activeBlocks.map((b) => `(${b.terms.map((t) => `("Abstract":${t} OR "Document Title":${t})`).join(' OR ')})`);
   const ieeeXplore = ieeeBlocks.join(' AND ');
 
-  // 6. OpenAlex Search Phrase
-  const openAlex = activeBlocks.map((b) => b.terms.map((t) => t.replace(/"/g, '')).join(' ')).join(' ');
+  // 6. OpenAlex Search Phrase - Focus on the top salient terms from Population and Intervention
+  const primaryPop = popTerms[0]?.replace(/"/g, '') || '';
+  const primaryInt = intTerms[0]?.replace(/"/g, '') || '';
+  const primaryOut = outTerms[0]?.replace(/"/g, '') || '';
+  const openAlex = [primaryPop, primaryInt, primaryOut].filter(Boolean).join(' ') ||
+    activeBlocks.map((b) => b.terms[0]?.replace(/"/g, '')).filter(Boolean).join(' ');
 
-  // 7. PRISMA Systematic Review Documentation Block
+  // 7. Structured Federated Multi-Registry Query (High-Precision Boolean)
+  const federatedBlocks: string[] = [];
+  if (popTerms.length > 0) federatedBlocks.push(popTerms.length === 1 ? popTerms[0] : `(${popTerms.slice(0, 3).join(' OR ')})`);
+  if (intTerms.length > 0) federatedBlocks.push(intTerms.length === 1 ? intTerms[0] : `(${intTerms.slice(0, 3).join(' OR ')})`);
+  if (outTerms.length > 0) federatedBlocks.push(outTerms.length === 1 ? outTerms[0] : `(${outTerms.slice(0, 2).join(' OR ')})`);
+  const federatedQuery = federatedBlocks.join(' AND ') || openAlex;
+
+  // 8. PRISMA Systematic Review Documentation Block
   const prismaLines = [
     `# PRISMA Systematic Search Strategy (${new Date().toLocaleDateString()})`,
     `Database Searches Executed:`,
+    `- Federated Multi-Source: ${federatedQuery || 'None'}`,
     `- Google Scholar: ${googleScholar || 'None'}`,
     `- PubMed / MEDLINE: ${pubMed || 'None'}`,
     `- Scopus: ${scopus || 'None'}`,
@@ -113,6 +125,35 @@ export function compilePicoQueries(pico: PicoQueryState): CompiledDatabaseQuerie
     prismaSummary: prismaLines.join('\n'),
   };
 }
+
+/**
+ * Extracts optimized parameters from PICO state for ScholarForge's Federated Engine.
+ */
+export function buildPicoFederatedQuery(pico: PicoQueryState): {
+  federatedQuery: string;
+  topic: string;
+  focus: string;
+} {
+  const popTerms = parseSynonyms(pico.population);
+  const intTerms = parseSynonyms(pico.intervention);
+  const outTerms = parseSynonyms(pico.outcome);
+
+  const primaryPop = popTerms[0]?.replace(/"/g, '') || '';
+  const primaryInt = intTerms[0]?.replace(/"/g, '') || '';
+  const primaryOut = outTerms[0]?.replace(/"/g, '') || '';
+
+  const blocks: string[] = [];
+  if (popTerms.length > 0) blocks.push(popTerms.length === 1 ? popTerms[0] : `(${popTerms.slice(0, 3).join(' OR ')})`);
+  if (intTerms.length > 0) blocks.push(intTerms.length === 1 ? intTerms[0] : `(${intTerms.slice(0, 3).join(' OR ')})`);
+  if (outTerms.length > 0) blocks.push(outTerms.length === 1 ? outTerms[0] : `(${outTerms.slice(0, 2).join(' OR ')})`);
+
+  const federatedQuery = blocks.join(' AND ') || [primaryPop, primaryInt, primaryOut].filter(Boolean).join(' ');
+  const topic = [primaryPop, primaryInt].filter(Boolean).join(' ') || primaryOut || 'Systematic Review';
+  const focus = primaryOut || (intTerms[1]?.replace(/"/g, '') || '');
+
+  return { federatedQuery, topic, focus };
+}
+
 
 /**
  * Builds direct 1-click external launch URLs for database queries.

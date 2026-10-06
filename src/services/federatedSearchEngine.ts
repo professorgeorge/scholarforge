@@ -4,7 +4,7 @@ import { searchEuropePmc } from './europePmcService';
 import { searchSemanticScholar } from './semanticScholarService';
 import { searchArxiv } from './arxivService';
 import { checkPaperRetraction } from './retractionSentinel';
-import { extractAcademicKeywords } from './academicQueryParser';
+import { extractAcademicKeywords, synthesizeBooleanSearchStrategy } from './academicQueryParser';
 
 export interface FederatedSearchOptions {
   limitPerSource?: number;
@@ -75,7 +75,7 @@ export async function executeFederatedSearch(
   onProgress?: (msg: string) => void
 ): Promise<FederatedSearchResult> {
   const {
-    limitPerSource = 12,
+    limitPerSource = 30,
     excludePreprints = true,
     fromYear,
     toYear,
@@ -93,22 +93,31 @@ export async function executeFederatedSearch(
 
   onProgress?.('Dispatching concurrent multi-source queries across scholarly registries...');
 
-  // 1. Prepare search tasks
-  // For free-text natural language queries, extract clean keywords for the APIs to prevent stop-word noise
-  let registryQuery = query.trim();
-  const hasBooleanOrQuotes = /["\(\)]|\b(AND|OR|NOT)\b/i.test(registryQuery);
-  if (!hasBooleanOrQuotes) {
-    const extracted = extractAcademicKeywords(registryQuery);
-    if (extracted.length >= 2 && extracted.length < registryQuery.split(/\s+/).length) {
-      registryQuery = extracted.join(' ');
-    }
+  const rawTrimmed = query.trim();
+  const hasBooleanOrQuotes = /["\(\)]|\b(AND|OR|NOT)\b/i.test(rawTrimmed);
+
+  // 1. Prepare registry-optimized query representations
+  let europePmcQuery: string;
+  let fullTextKeywordQuery: string;
+
+  if (hasBooleanOrQuotes) {
+    europePmcQuery = rawTrimmed;
+    // For full-text search APIs (OpenAlex, Crossref, S2), extract the clean core words without quotes/parens
+    const cleanTokens = extractAcademicKeywords(rawTrimmed);
+    fullTextKeywordQuery = cleanTokens.slice(0, 5).join(' ') || rawTrimmed.replace(/[^\w\s-]/g, ' ').trim();
+  } else {
+    // Natural Language: Synthesize high-fidelity Boolean query for Europe PMC
+    // and concise core concept keywords for OpenAlex / Crossref / Semantic Scholar
+    const strategy = synthesizeBooleanSearchStrategy(rawTrimmed);
+    europePmcQuery = strategy.booleanQuery;
+    fullTextKeywordQuery = strategy.coreKeywords;
   }
 
   const tasks: Promise<{ source: string; papers: AcademicPaper[] }>[] = [];
 
   if (enabledSources.openalex !== false) {
     tasks.push(
-      searchOpenAlex(registryQuery, limitPerSource, excludePreprints, fromYear)
+      searchOpenAlex(fullTextKeywordQuery, limitPerSource, excludePreprints, fromYear)
         .then((papers) => ({ source: 'openalex', papers }))
         .catch(() => ({ source: 'openalex', papers: [] }))
     );
@@ -116,7 +125,7 @@ export async function executeFederatedSearch(
 
   if (enabledSources.europepmc !== false) {
     tasks.push(
-      searchEuropePmc(registryQuery, {
+      searchEuropePmc(europePmcQuery, {
         limit: limitPerSource,
         excludePreprints,
         fromYear,
@@ -130,15 +139,16 @@ export async function executeFederatedSearch(
 
   if (enabledSources.crossref !== false) {
     tasks.push(
-      searchCrossref(registryQuery, limitPerSource, excludePreprints, fromYear)
+      searchCrossref(fullTextKeywordQuery, limitPerSource, excludePreprints, fromYear)
         .then((papers) => ({ source: 'crossref', papers }))
         .catch(() => ({ source: 'crossref', papers: [] }))
     );
   }
 
   if (enabledSources.semanticscholar) {
+    const s2Keywords = extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
     tasks.push(
-      searchSemanticScholar(registryQuery, {
+      searchSemanticScholar(s2Keywords || fullTextKeywordQuery, {
         limit: limitPerSource,
         fromYear,
         toYear,
@@ -149,14 +159,16 @@ export async function executeFederatedSearch(
   }
 
   if (enabledSources.arxiv && !excludePreprints) {
+    const arxivKeywords = extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
     tasks.push(
-      searchArxiv(registryQuery, limitPerSource)
+      searchArxiv(arxivKeywords || fullTextKeywordQuery, limitPerSource)
         .then((papers) => ({ source: 'arxiv', papers }))
         .catch(() => ({ source: 'arxiv', papers: [] }))
     );
   }
 
   const results = await Promise.all(tasks);
+
 
   // 2. PRISMA 2020 Identification metrics
   const databaseCounts = {
@@ -266,18 +278,20 @@ export async function executeFederatedSearch(
       }
     }
 
-    // 4. Keyword coverage ratio across query tokens
+    // 4. Keyword coverage ratio across salient query tokens
     if (queryTokens.length > 0) {
-      const matchedTokens = queryTokens.filter(
+      const salientTokens = queryTokens.slice(0, 5);
+      const matchedTokens = salientTokens.filter(
         (t) => titleLower.includes(t) || abstractLower.includes(t)
       );
-      const coverage = matchedTokens.length / queryTokens.length;
-      if (coverage >= 0.75) {
+      const coverage = matchedTokens.length / salientTokens.length;
+      if (coverage >= 0.6) {
         score += 35; // high topic fidelity
-      } else if (coverage < 0.3) {
-        score -= 25; // off-topic penalty
+      } else if (coverage < 0.25 && salientTokens.length > 2) {
+        score -= 15; // mild off-topic penalty
       }
     }
+
 
     // 5. OpenAlex / API native relevance score
     if (paper.relevanceScore && paper.relevanceScore > 0) {

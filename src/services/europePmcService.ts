@@ -1,5 +1,4 @@
 import type { AcademicPaper, Author } from '../types/citation';
-import { checkPaperRetraction } from './retractionSentinel';
 
 const CACHE = new Map<string, AcademicPaper[]>();
 
@@ -26,6 +25,8 @@ function normalizeEuropePmcAuthors(authorList?: any[]): Author[] {
   });
 }
 
+import { synthesizeBooleanSearchStrategy, extractAcademicKeywords } from './academicQueryParser';
+
 /**
  * Searches Europe PMC & PubMed Central repository for peer-reviewed medical and life sciences research.
  */
@@ -33,50 +34,63 @@ export async function searchEuropePmc(
   query: string,
   options: EuropePmcSearchOptions = {}
 ): Promise<AcademicPaper[]> {
-  const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
-  if (!cleanQuery) return [];
+  const trimmed = query.trim();
+  if (!trimmed) return [];
 
   const {
-    limit = 10,
+    limit = 30,
     excludePreprints = true,
     fromYear,
     openAccessOnly = false,
     searchScope = 'default',
   } = options;
 
+  // Check if user provided Boolean syntax or quotes
+  const hasBooleanSyntax = /["\(\)]|\b(AND|OR|NOT)\b/i.test(trimmed);
+
+  // If natural language without boolean, synthesize structured boolean concepts
+  let cleanQuery: string;
+  if (hasBooleanSyntax) {
+    cleanQuery = trimmed.replace(/[^\w\s\-:"\(\)]/g, ' ').replace(/\s+/g, ' ').trim();
+  } else {
+    const strategy = synthesizeBooleanSearchStrategy(trimmed);
+    cleanQuery = strategy.booleanQuery;
+  }
+
   const cacheKey = `epmc_${cleanQuery}_${limit}_${excludePreprints}_${fromYear || 'all'}_${openAccessOnly}_${searchScope}`;
   if (CACHE.has(cacheKey)) {
     return CACHE.get(cacheKey)!;
   }
 
-  // Build query syntax for Europe PMC
-  let scopedQuery = cleanQuery;
-  const hasUserQuotes = cleanQuery.includes('"');
-  if (searchScope === 'title_only') {
-    scopedQuery = hasUserQuotes ? `TITLE:${cleanQuery}` : `TITLE:(${cleanQuery})`;
-  } else if (searchScope === 'title_abstract') {
-    scopedQuery = hasUserQuotes 
-      ? `(TITLE:${cleanQuery} OR ABSTRACT:${cleanQuery})`
-      : `(TITLE:(${cleanQuery}) OR ABSTRACT:(${cleanQuery}))`;
-  }
+  const executeFetch = async (queryToRun: string): Promise<AcademicPaper[]> => {
+    // Build query syntax for Europe PMC
+    let scopedQuery = queryToRun;
+    const hasGrouping = queryToRun.includes('(') || queryToRun.includes('"');
+    
+    if (searchScope === 'title_only') {
+      scopedQuery = hasGrouping ? `TITLE:(${queryToRun})` : `TITLE:(${queryToRun})`;
+    } else if (searchScope === 'title_abstract') {
+      scopedQuery = hasGrouping 
+        ? `(TITLE:(${queryToRun}) OR ABSTRACT:(${queryToRun}))`
+        : `(TITLE:(${queryToRun}) OR ABSTRACT:(${queryToRun}))`;
+    }
 
-  if (excludePreprints) {
-    scopedQuery += ' NOT (SRC:PPR OR PUB_TYPE:"Preprint")';
-  }
-  if (openAccessOnly) {
-    scopedQuery += ' AND (OPEN_ACCESS:Y)';
-  }
-  if (fromYear && fromYear > 1900) {
-    const currentYear = new Date().getFullYear();
-    scopedQuery += ` AND (PUB_YEAR:[${fromYear} TO ${currentYear}])`;
-  }
+    if (excludePreprints) {
+      scopedQuery += ' NOT (SRC:PPR OR PUB_TYPE:"Preprint")';
+    }
+    if (openAccessOnly) {
+      scopedQuery += ' AND (OPEN_ACCESS:Y)';
+    }
+    if (fromYear && fromYear > 1900) {
+      const currentYear = new Date().getFullYear();
+      scopedQuery += ` AND (PUB_YEAR:[${fromYear} TO ${currentYear}])`;
+    }
 
-  const pageSize = Math.min(limit * 2, 40);
-  const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(
-    scopedQuery
-  )}&format=json&resultType=core&pageSize=${pageSize}`;
+    const pageSize = Math.min(Math.max(limit * 2, 50), 100);
+    const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(
+      scopedQuery
+    )}&format=json&resultType=core&pageSize=${pageSize}`;
 
-  try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -84,7 +98,6 @@ export async function searchEuropePmc(
       signal: controller.signal,
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'ScholarForge/1.0 (mailto:scholarforge-app@gmail.com)',
       },
     });
     clearTimeout(timeoutId);
@@ -97,54 +110,51 @@ export async function searchEuropePmc(
     const data = await res.json();
     const results: any[] = data.resultList?.result || [];
 
-    const papers: AcademicPaper[] = results.map((item) => {
-      const journalInfo = item.journalInfo || {};
-      const venue =
-        journalInfo.journal?.title ||
-        item.bookOrReportDetails?.publisher ||
-        'Europe PMC / PubMed Central';
+    return results
+      .filter((item) => {
+        // Enforce peer-reviewed quality: must have title and either DOI or journal title
+        if (!item.title) return false;
+        if (!item.doi && !item.pmid) return false;
+        return true;
+      })
+      .map((item) => {
+        const rawTitle = (item.title || 'Untitled Publication').replace(/<[^>]*>/g, '').trim();
+        const venue = item.journalInfo?.journal?.title || 
+                      item.journalTitle || 
+                      item.bookOrReportDetails?.publisher || 
+                      'Europe PMC Peer-Reviewed Archive';
+        const year = item.pubYear ? parseInt(item.pubYear, 10) : new Date().getFullYear();
+        const doiClean = (item.doi || '').replace(/^https?:\/\/doi\.org\//i, '');
 
-      const doiClean = item.doi ? item.doi.replace(/^https?:\/\/doi\.org\//i, '') : '';
-      const authors = normalizeEuropePmcAuthors(item.authorList?.author);
-      const abstractText = item.abstractText
-        ? item.abstractText.replace(/<[^>]+>/g, '').trim()
-        : '';
+        return {
+          id: item.doi ? `epmc_${doiClean}` : `epmc_${item.id || item.pmid}`,
+          title: rawTitle,
+          authors: normalizeEuropePmcAuthors(item.authorList?.author),
+          year,
+          venue,
+          doi: doiClean,
+          pmid: item.pmid || '',
+          pmcid: item.pmcid || '',
+          url: doiClean ? `https://doi.org/${doiClean}` : `https://europepmc.org/article/MED/${item.pmid}`,
+          citationCount: item.citedByCount || 0,
+          abstract: (item.abstractText || '').replace(/<[^>]*>/g, '').trim(),
+          openAccess: item.isOpenAccess === 'Y',
+          source: 'europepmc',
+          type: item.pubType === 'Preprint' ? 'preprint' : 'journal',
+        };
+      });
+  };
 
-      const pdfItem = item.fullTextUrlList?.fullTextUrl?.find(
-        (f: any) => f.documentStyle === 'pdf'
-      );
-      const pdfUrl = pdfItem?.url || undefined;
-      const isOpenAccess = item.isOpenAccess === 'Y';
+  try {
+    let papers = await executeFetch(cleanQuery);
 
-      // Check retraction status via Retraction Sentinel
-      const retraction = checkPaperRetraction({}, item);
-
-      return {
-        id: item.pmid ? `pmid_${item.pmid}` : item.id || `epmc_${doiClean || Math.random()}`,
-        title: (item.title || 'Untitled Scholarly Publication').replace(/\.$/, '').trim(),
-        authors,
-        year: item.pubYear ? parseInt(item.pubYear, 10) : new Date().getFullYear(),
-        venue,
-        doi: doiClean,
-        url: doiClean
-          ? `https://doi.org/${doiClean}`
-          : item.pmid
-          ? `https://pubmed.ncbi.nlm.nih.gov/${item.pmid}/`
-          : `https://europepmc.org/article/${item.source || 'MED'}/${item.id}`,
-        citationCount: item.citedByCount || 0,
-        abstract: abstractText,
-        openAccess: isOpenAccess,
-        openAccessPdf: pdfUrl,
-        source: 'europepmc',
-        pmid: item.pmid || undefined,
-        pmcid: item.pmcid || undefined,
-        volume: journalInfo.volume || '',
-        issue: journalInfo.issue || '',
-        pages: item.pageInfo || '',
-        isRetracted: retraction.isRetracted,
-        retractionDetails: retraction.reason,
-      };
-    });
+    // Fallback if 0 results: try broader core keywords
+    if (papers.length === 0) {
+      const fallbackKeywords = extractAcademicKeywords(trimmed).slice(0, 3).join(' ');
+      if (fallbackKeywords && fallbackKeywords !== cleanQuery) {
+        papers = await executeFetch(fallbackKeywords);
+      }
+    }
 
     CACHE.set(cacheKey, papers);
     return papers.slice(0, limit);
@@ -153,3 +163,4 @@ export async function searchEuropePmc(
     return [];
   }
 }
+

@@ -50,6 +50,10 @@ interface LiteratureFirstPaneProps {
   setOptions?: React.Dispatch<React.SetStateAction<CitationOptions>>;
   llmConfig?: LLMConfig;
   initialSubTab?: 'federated' | 'pico';
+  initialTopic?: string;
+  initialFocus?: string;
+  autoSearch?: boolean;
+  initialPicoQuestion?: string;
 }
 
 export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
@@ -58,12 +62,26 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   setOptions,
   llmConfig = DEFAULT_LLM_CONFIG,
   initialSubTab = 'federated',
+  initialTopic = '',
+  initialFocus = '',
+  autoSearch = false,
+  initialPicoQuestion = '',
 }) => {
-  const [topic, setTopic] = useState('');
-  const [focus, setFocus] = useState('');
+  const [topic, setTopic] = useState(initialTopic);
+  const [focus, setFocus] = useState(initialFocus);
   const [activeSubTab, setActiveSubTab] = useState<'federated' | 'pico'>(initialSubTab);
 
-  // Sync if initialSubTab changes
+  // Sync if initialTopic or initialFocus or initialSubTab changes
+  React.useEffect(() => {
+    if (initialTopic && initialTopic.trim()) {
+      setTopic(initialTopic);
+      if (initialFocus) setFocus(initialFocus);
+      if (autoSearch) {
+        handleSearchLiterature(initialTopic, initialFocus);
+      }
+    }
+  }, [initialTopic, initialFocus, autoSearch]);
+
   React.useEffect(() => {
     if (initialSubTab) {
       setActiveSubTab(initialSubTab);
@@ -100,8 +118,9 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
   };
 
-  const handleSearchLiterature = async (queryOverride?: string | React.MouseEvent) => {
+  const handleSearchLiterature = async (queryOverride?: string | React.MouseEvent, focusOverride?: string) => {
     const searchTopic = (typeof queryOverride === 'string' ? queryOverride : topic).trim();
+    const searchFocus = (typeof focusOverride === 'string' ? focusOverride : focus).trim();
     if (!searchTopic) {
       setErrorMsg('Please enter a research topic.');
       return;
@@ -113,9 +132,9 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
 
     try {
-      const fullQuery = focus ? `${searchTopic} ${focus}` : searchTopic;
+      const fullQuery = searchFocus ? `${searchTopic} ${searchFocus}` : searchTopic;
       const result = await executeFederatedSearch(fullQuery, {
-        limitPerSource: 12,
+        limitPerSource: 35,
         excludePreprints: options.excludePreprints,
         searchScope,
         enabledSources,
@@ -127,8 +146,8 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
         setErrorMsg('No peer-reviewed papers found with DOIs for this exact topic across selected registries. Try broader search terms.');
       } else {
         setDiscoveredPapers(result.papers);
-        // By default select top 6 papers
-        setSelectedPaperIds(new Set(result.papers.slice(0, 6).map((p) => p.id)));
+        // By default select top 12 papers
+        setSelectedPaperIds(new Set(result.papers.slice(0, 12).map((p) => p.id)));
       }
     } catch (err: any) {
       setErrorMsg(`Federated literature discovery failed: ${err.message}`);
@@ -137,11 +156,12 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     }
   };
 
+
   const handleAddCustomKeywordSearch = async () => {
     if (!customKeyword.trim()) return;
     setIsSearching(true);
     try {
-      const extraPapers = await huntAcademicPapers([customKeyword], 6, options.excludePreprints);
+      const extraPapers = await huntAcademicPapers([customKeyword], 15, options.excludePreprints);
       const existingIds = new Set(discoveredPapers.map((p) => p.id));
       const newUnique = extraPapers.filter((p) => !existingIds.has(p.id));
       
@@ -266,11 +286,13 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
 
       {activeSubTab === 'pico' ? (
         <PicoCompilerTab
-          onApplyQueryToSearch={(q) => {
+          onApplyQueryToSearch={(q, f) => {
             setTopic(q);
+            if (f) setFocus(f);
             setActiveSubTab('federated');
-            handleSearchLiterature(q);
+            handleSearchLiterature(q, f);
           }}
+          initialQuestion={initialPicoQuestion}
           llmConfig={llmConfig}
         />
       ) : (
@@ -288,6 +310,12 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSearchLiterature();
+                  }
+                }}
                 placeholder="e.g. SGLT2 inhibitors clinical efficacy in heart failure with preserved ejection fraction..."
                 className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-base text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700 transition"
               />
@@ -301,6 +329,19 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
               <span>Discover Literature</span>
             </button>
           </div>
+          {topic.trim() && (
+            <div className="mt-1.5 flex items-center gap-2 text-[11px] text-slate-500 font-sans">
+              {/[()"]|\b(AND|OR|NOT)\b/i.test(topic) ? (
+                <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-medium">
+                  ⚡ <strong>Boolean Query Mode:</strong> Using custom operator syntax across supported registries.
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-blue-700 dark:text-blue-400 font-medium">
+                  ✦ <strong>Intelligent Academic IR Mode:</strong> Natural language question auto-synthesizing Boolean &amp; core concepts across 5 registries.
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Focus area */}
@@ -312,10 +353,17 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
             type="text"
             value={focus}
             onChange={(e) => setFocus(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearchLiterature();
+              }
+            }}
             placeholder="e.g. Randomized clinical trials, cardiovascular mortality, mechanistic pathways, or adverse events"
             className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700 transition"
           />
         </div>
+
 
         {/* Contextual Quality & Preprints Bar */}
         {setOptions && (
@@ -681,7 +729,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
           })()}
 
           {/* Paper Cards List */}
-          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
             {discoveredPapers.map((paper) => {
               const isSelected = selectedPaperIds.has(paper.id);
               const isExpanded = expandedAbstractId === paper.id;

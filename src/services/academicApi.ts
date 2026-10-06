@@ -91,7 +91,7 @@ function normalizeAuthors(rawAuthors: any[]): Author[] {
  */
 export async function searchOpenAlex(
   query: string, 
-  limit = 10, 
+  limit = 30, 
   excludePreprints = true,
   fromYear?: number
 ): Promise<AcademicPaper[]> {
@@ -106,7 +106,7 @@ export async function searchOpenAlex(
   try {
     const url = new URL('https://api.openalex.org/works');
     url.searchParams.set('search', cleanQuery);
-    url.searchParams.set('per-page', String(Math.min(limit * 2, 40)));
+    url.searchParams.set('per-page', String(Math.min(Math.max(limit * 2, 60), 100)));
     url.searchParams.set('sort', 'relevance_score:desc');
     
     let filterString = 'has_doi:true,is_paratext:false';
@@ -123,7 +123,6 @@ export async function searchOpenAlex(
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'ScholarForge/1.0 (mailto:scholarforge-app@gmail.com)',
       },
     });
     clearTimeout(timeoutId);
@@ -136,7 +135,7 @@ export async function searchOpenAlex(
     const data = await response.json();
     const results: any[] = data.results || [];
 
-    const papers: AcademicPaper[] = results
+    let papers: AcademicPaper[] = results
       .filter((work) => {
         if (!work.doi) return false;
         if (excludePreprints && isPreprintOrQuestionable(work)) {
@@ -170,6 +169,60 @@ export async function searchOpenAlex(
         };
       });
 
+    // If 0 results, fall back to core keywords if input had many terms
+    if (papers.length === 0) {
+      const kw = cleanQuery.split(/\s+/);
+      if (kw.length > 3) {
+        const fallback = kw.slice(0, 3).join(' ');
+        const fallbackUrl = new URL('https://api.openalex.org/works');
+        fallbackUrl.searchParams.set('search', fallback);
+        fallbackUrl.searchParams.set('per-page', String(Math.min(Math.max(limit * 2, 40), 100)));
+        fallbackUrl.searchParams.set('sort', 'relevance_score:desc');
+        fallbackUrl.searchParams.set('filter', filterString);
+        fallbackUrl.searchParams.set('mailto', 'citation-filler-app@gmail.com');
+
+        try {
+          const fbRes = await fetch(fallbackUrl.toString(), {
+            headers: {
+              'Accept': 'application/json',
+            },
+          });
+          if (fbRes.ok) {
+            const fbData = await fbRes.json();
+            const fbResults: any[] = fbData.results || [];
+            papers = fbResults
+              .filter((work) => work.doi && (!excludePreprints || !isPreprintOrQuestionable(work)))
+              .map((work) => {
+                const rawAbstract = reconstructAbstract(work.abstract_inverted_index);
+                const doiClean = (work.doi || '').replace(/^https?:\/\/doi\.org\//i, '');
+                const venue = work.primary_location?.source?.display_name || 
+                              work.host_venue?.display_name || 
+                              'Peer-Reviewed Scholarly Journal';
+                return {
+                  id: work.id || `openalex_${doiClean}`,
+                  title: (work.title || 'Untitled Scholarly Publication').replace(/\n+/g, ' ').trim(),
+                  authors: normalizeAuthors(work.authorships?.map((a: any) => a.author) || []),
+                  year: work.publication_year || new Date().getFullYear(),
+                  venue,
+                  doi: doiClean,
+                  url: work.doi || `https://doi.org/${doiClean}`,
+                  citationCount: work.cited_by_count || 0,
+                  abstract: rawAbstract || '',
+                  openAccess: Boolean(work.open_access?.is_oa),
+                  source: 'openalex',
+                  relevanceScore: work.relevance_score || 0,
+                  volume: work.biblio?.volume || '',
+                  issue: work.biblio?.issue || '',
+                  pages: work.biblio?.first_page ? `${work.biblio.first_page}-${work.biblio.last_page || ''}` : '',
+                };
+              });
+          }
+        } catch {
+          // ignore fallback error
+        }
+      }
+    }
+
     CACHE.set(cacheKey, papers);
     return papers.slice(0, limit);
   } catch (err) {
@@ -178,12 +231,13 @@ export async function searchOpenAlex(
   }
 }
 
+
 /**
  * Searches Crossref as a high-authority fallback for registered DOIs.
  */
 export async function searchCrossref(
   query: string, 
-  limit = 8, 
+  limit = 25, 
   excludePreprints = true,
   fromYear?: number
 ): Promise<AcademicPaper[]> {
@@ -198,7 +252,7 @@ export async function searchCrossref(
   try {
     const url = new URL('https://api.crossref.org/works');
     url.searchParams.set('query', cleanQuery);
-    url.searchParams.set('rows', String(Math.min(limit * 2, 30)));
+    url.searchParams.set('rows', String(Math.min(Math.max(limit * 2, 50), 100)));
     url.searchParams.set('sort', 'relevance');
     
     let filterString = 'type:journal-article,has-doi:true';
@@ -215,7 +269,6 @@ export async function searchCrossref(
       signal: controller.signal,
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'ScholarForge/1.0 (mailto:scholarforge-app@gmail.com)',
       },
     });
     clearTimeout(timeoutId);
@@ -301,7 +354,7 @@ export async function huntLiteratureCorpus(
  */
 export async function huntAcademicPapers(
   queries: string[], 
-  limit = 25, 
+  limit = 35, 
   excludePreprints = true,
   fromYear?: number
 ): Promise<AcademicPaper[]> {
@@ -309,7 +362,7 @@ export async function huntAcademicPapers(
   const seenDois = new Set<string>();
   const seenTitles = new Set<string>();
 
-  const perQueryLimit = Math.max(Math.ceil(limit / Math.max(queries.length, 1)) + 5, 10);
+  const perQueryLimit = Math.max(Math.ceil(limit / Math.max(queries.length, 1)) + 10, 20);
 
   for (const query of queries) {
     if (!query || query.trim().length < 3) continue;
