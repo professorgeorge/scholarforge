@@ -119,12 +119,24 @@ export async function executeFederatedSearch(
     promise: Promise<AcademicPaper[]>
   ): Promise<{ source: string; papers: AcademicPaper[] }> => {
     try {
-      const papers = await promise;
+      // Enforce 6-second hard ceiling per source so slow APIs can never hang the search
+      let timerId: any;
+      const timeoutPromise = new Promise<AcademicPaper[]>((resolve) => {
+        timerId = setTimeout(() => {
+          console.warn(`[Federated Engine] ${label} response timed out after 6s. Proceeding with other registries.`);
+          resolve([]);
+        }, 6000);
+      });
+
+      const papers = await Promise.race([promise, timeoutPromise]);
+      clearTimeout(timerId);
+
       if (papers.length > 0) {
         onProgress?.(`✓ ${label} returned ${papers.length} publications. Harmonizing...`);
       }
       return { source: sourceName, papers };
-    } catch {
+    } catch (err: any) {
+      console.warn(`[Federated Engine] ${label} failed:`, err?.message);
       return { source: sourceName, papers: [] };
     }
   };
@@ -193,7 +205,17 @@ export async function executeFederatedSearch(
     );
   }
 
-  const results = await Promise.all(tasks);
+  let resultsTimerId: any;
+  const results = await Promise.race([
+    Promise.all(tasks),
+    new Promise<{ source: string; papers: AcademicPaper[] }[]>((resolve) => {
+      resultsTimerId = setTimeout(() => {
+        onProgress?.('Aggregation window complete. Harmonizing harvested records...');
+        resolve([]);
+      }, 8000);
+    }),
+  ]);
+  clearTimeout(resultsTimerId);
 
 
   // 2. PRISMA 2020 Identification metrics

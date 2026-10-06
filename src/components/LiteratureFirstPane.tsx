@@ -71,12 +71,15 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   const [focus, setFocus] = useState(initialFocus);
   const [activeSubTab, setActiveSubTab] = useState<'federated' | 'pico'>(initialSubTab);
 
+  const hasAutoSearchedTopicRef = React.useRef<string>('');
+
   // Sync if initialTopic or initialFocus or initialSubTab changes
   React.useEffect(() => {
     if (initialTopic && initialTopic.trim()) {
       setTopic(initialTopic);
       if (initialFocus) setFocus(initialFocus);
-      if (autoSearch) {
+      if (autoSearch && hasAutoSearchedTopicRef.current !== initialTopic) {
+        hasAutoSearchedTopicRef.current = initialTopic;
         handleSearchLiterature(initialTopic, initialFocus);
       }
     }
@@ -88,6 +91,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     }
   }, [initialSubTab]);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [searchProgressMsg, setSearchProgressMsg] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [isPromptsOpen, setIsPromptsOpen] = useState(false);
@@ -147,9 +151,10 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       );
 
       setPrismaStats(result.prismaStats);
+      setHasSearched(true);
 
       if (result.papers.length === 0) {
-        setErrorMsg('No peer-reviewed papers found with DOIs for this exact topic across selected registries. Try broader search terms.');
+        setErrorMsg('No peer-reviewed papers found with DOIs for this exact topic across selected registries. Try broader search terms or removing Boolean operators.');
       } else {
         setDiscoveredPapers(result.papers);
         // By default select top 12 papers
@@ -157,6 +162,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       }
     } catch (err: any) {
       setErrorMsg(`Federated literature discovery failed: ${err.message}`);
+      setHasSearched(true);
     } finally {
       setIsSearching(false);
       setSearchProgressMsg('');
@@ -638,8 +644,49 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
         </div>
       )}
 
-      {/* Guided Empty State when no literature is retrieved yet */}
-      {discoveredPapers.length === 0 && !isSearching && (
+      {/* Search completed with 0 results */}
+      {discoveredPapers.length === 0 && !isSearching && hasSearched && (
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-4 animate-in fade-in duration-200">
+          <div className="p-8 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-center space-y-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center mx-auto">
+              <Search className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5 max-w-md mx-auto">
+              <h4 className="text-base font-bold text-amber-950 dark:text-amber-200 font-serif">
+                No Verified Peer-Reviewed Records Found
+              </h4>
+              <p className="text-xs text-amber-900/80 dark:text-amber-300 font-sans">
+                The search produced 0 matches with verified DOIs across OpenAlex, Europe PMC, Crossref, and Semantic Scholar.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const broader = topic.replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 2).slice(0, 3).join(' ');
+                  if (broader) {
+                    setTopic(broader);
+                    handleSearchLiterature(broader);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition cursor-pointer shadow-xs"
+              >
+                Retry with Broad Keywords
+              </button>
+              <button
+                type="button"
+                onClick={() => setHasSearched(false)}
+                className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-semibold hover:bg-amber-100 transition cursor-pointer"
+              >
+                Show Search Guide
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Guided Empty State when no search has been initiated yet */}
+      {discoveredPapers.length === 0 && !isSearching && !hasSearched && (
         <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in duration-200">
           <div className="p-6 rounded-2xl bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-5">
             <div className="flex items-center gap-3.5 pb-4 border-b border-slate-200/80 dark:border-slate-800">

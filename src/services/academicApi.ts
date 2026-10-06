@@ -181,12 +181,17 @@ export async function searchOpenAlex(
         fallbackUrl.searchParams.set('filter', filterString);
         fallbackUrl.searchParams.set('mailto', 'citation-filler-app@gmail.com');
 
+        const fbController = new AbortController();
+        const fbTimeoutId = setTimeout(() => fbController.abort(), 5000);
+
         try {
           const fbRes = await fetch(fallbackUrl.toString(), {
+            signal: fbController.signal,
             headers: {
               'Accept': 'application/json',
             },
           });
+          clearTimeout(fbTimeoutId);
           if (fbRes.ok) {
             const fbData = await fbRes.json();
             const fbResults: any[] = fbData.results || [];
@@ -255,7 +260,7 @@ export async function searchCrossref(
     url.searchParams.set('rows', String(Math.min(Math.max(limit * 2, 50), 100)));
     url.searchParams.set('sort', 'relevance');
     
-    let filterString = 'type:journal-article,has-doi:true';
+    let filterString = 'type:journal-article';
     if (fromYear && fromYear > 1900) {
       filterString += `,from-pub-date:${fromYear}-01-01`;
     }
