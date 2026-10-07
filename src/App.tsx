@@ -696,7 +696,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (picoInitialQuestion && !literatureTopic) {
+                    if (picoInitialQuestion) {
                       setLiteratureTopic(picoInitialQuestion);
                     }
                     setLiteratureFocus('');

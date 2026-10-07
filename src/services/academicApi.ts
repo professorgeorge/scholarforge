@@ -1,5 +1,6 @@
 import type { AcademicPaper, Author } from '../types/citation';
 import { generateAcademicSearchTiers } from './academicQueryParser';
+import { searchEuropePmc } from './europePmcService';
 
 const CACHE = new Map<string, AcademicPaper[]>();
 
@@ -379,6 +380,20 @@ export async function huntAcademicPapers(
     if (papers.length < perQueryLimit) {
       const crossrefPapers = await searchCrossref(query, perQueryLimit, excludePreprints, fromYear);
       papers = [...papers, ...crossrefPapers];
+    }
+
+    // Complement with Europe PMC / PubMed Central if still under limit
+    if (papers.length < perQueryLimit) {
+      try {
+        const epmcPapers = await searchEuropePmc(query, {
+          limit: perQueryLimit,
+          excludePreprints,
+          fromYear,
+        });
+        papers = [...papers, ...epmcPapers];
+      } catch {
+        // Continue with collected papers
+      }
     }
 
     for (const paper of papers) {

@@ -143,7 +143,17 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
 
     try {
-      const fullQuery = searchFocus ? `${searchTopic} ${searchFocus}` : searchTopic;
+      const hasBooleanInTopic = /["\(\)]|\b(AND|OR|NOT)\b/i.test(searchTopic);
+      let fullQuery = searchTopic;
+      if (searchFocus) {
+        if (hasBooleanInTopic) {
+          if (!searchTopic.toLowerCase().includes(searchFocus.toLowerCase())) {
+            fullQuery = `(${searchTopic}) AND (${searchFocus})`;
+          }
+        } else {
+          fullQuery = `${searchTopic} ${searchFocus}`;
+        }
+      }
       const result = await executeFederatedSearch(
         fullQuery,
         {

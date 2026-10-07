@@ -121,22 +121,22 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
           return;
         }
 
-        const batchClaims: Claim[] = [];
-        for (let idx = 0; idx < Math.min(extracted.length, 5); idx++) {
-          const c = extracted[idx];
-          const query = c.searchQueries[0] || c.text;
-          const result = await executeFederatedSearch(query, { 
-            limitPerSource: 8,
-            excludePreprints: options?.excludePreprints 
-          });
-          batchClaims.push({
-            ...c,
-            candidatePapers: result.papers,
-            selectedPaper: result.papers[0] || null,
-            status: result.papers.length > 0 ? 'found' : 'not_found',
-            citationNumber: idx + 1,
-          });
-        }
+        const batchClaims: Claim[] = await Promise.all(
+          extracted.slice(0, 5).map(async (c, idx) => {
+            const query = c.searchQueries[0] || c.text;
+            const result = await executeFederatedSearch(query, { 
+              limitPerSource: 8,
+              excludePreprints: options?.excludePreprints 
+            });
+            return {
+              ...c,
+              candidatePapers: result.papers,
+              selectedPaper: result.papers[0] || null,
+              status: result.papers.length > 0 ? 'found' : 'not_found',
+              citationNumber: idx + 1,
+            };
+          })
+        );
 
         setTestedClaims([...batchClaims, ...testedClaims]);
         setSelectedClaimIndex(0);
