@@ -49,9 +49,7 @@ export const LiteratureExportModal: React.FC<LiteratureExportModalProps> = ({
   activeStyle = 'apa',
 }) => {
   const [format, setFormat] = useState<LiteratureExportFormat>('word');
-  const [scope, setScope] = useState<'selected' | 'all'>(
-    selectedPaperIds.size > 0 && selectedPaperIds.size < papers.length ? 'selected' : 'all'
-  );
+  const [scope, setScope] = useState<'all' | 'selected' | 'top25' | 'top50' | 'top100'>('all');
   const [includeAbstracts, setIncludeAbstracts] = useState<boolean>(true);
   const [includeTags, setIncludeTags] = useState<boolean>(true);
   const [includeMetrics, setIncludeMetrics] = useState<boolean>(true);
@@ -61,6 +59,15 @@ export const LiteratureExportModal: React.FC<LiteratureExportModalProps> = ({
   const activePapers = useMemo(() => {
     if (scope === 'selected' && selectedPaperIds.size > 0) {
       return papers.filter((p) => selectedPaperIds.has(p.id));
+    }
+    if (scope === 'top25') {
+      return papers.slice(0, 25);
+    }
+    if (scope === 'top50') {
+      return papers.slice(0, 50);
+    }
+    if (scope === 'top100') {
+      return papers.slice(0, 100);
     }
     return papers;
   }, [papers, scope, selectedPaperIds]);
@@ -258,7 +265,7 @@ export const LiteratureExportModal: React.FC<LiteratureExportModalProps> = ({
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-slate-600 dark:text-slate-400">Export Scope:</span>
-              <div className="inline-flex rounded-lg p-0.5 bg-slate-200 dark:bg-slate-800">
+              <div className="inline-flex flex-wrap items-center rounded-lg p-0.5 bg-slate-200 dark:bg-slate-800 gap-0.5">
                 <button
                   type="button"
                   onClick={() => setScope('all')}
@@ -268,8 +275,47 @@ export const LiteratureExportModal: React.FC<LiteratureExportModalProps> = ({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  All Discovered ({papers.length})
+                  All ({papers.length})
                 </button>
+                {papers.length > 25 && (
+                  <button
+                    type="button"
+                    onClick={() => setScope('top25')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+                      scope === 'top25'
+                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    Top 25
+                  </button>
+                )}
+                {papers.length > 50 && (
+                  <button
+                    type="button"
+                    onClick={() => setScope('top50')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+                      scope === 'top50'
+                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    Top 50
+                  </button>
+                )}
+                {papers.length > 100 && (
+                  <button
+                    type="button"
+                    onClick={() => setScope('top100')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+                      scope === 'top100'
+                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    Top 100
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setScope('selected')}
@@ -280,7 +326,7 @@ export const LiteratureExportModal: React.FC<LiteratureExportModalProps> = ({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  Selected Only ({selectedPaperIds.size})
+                  Selected ({selectedPaperIds.size})
                 </button>
               </div>
             </div>

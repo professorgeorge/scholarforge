@@ -107,6 +107,10 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
   };
 
+  const handleSelectTopN = (n: number) => {
+    setSelectedPaperIds(new Set(discoveredPapers.slice(0, n).map((p) => p.id)));
+  };
+
   const handleSearchLiterature = React.useCallback(async (queryOverride?: string | React.MouseEvent, focusOverride?: string) => {
     const searchTopic = (typeof queryOverride === 'string' ? queryOverride : topic).trim();
     const searchFocus = (typeof focusOverride === 'string' ? focusOverride : focus).trim();
@@ -151,8 +155,8 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
         setErrorMsg('No peer-reviewed papers found with DOIs for this exact topic across selected registries. Try broader search terms or removing Boolean operators.');
       } else {
         setDiscoveredPapers(result.papers);
-        // By default select top 12 papers
-        setSelectedPaperIds(new Set(result.papers.slice(0, 12).map((p) => p.id)));
+        // Auto-select ALL discovered papers by default for download and review
+        setSelectedPaperIds(new Set(result.papers.map((p) => p.id)));
       }
     } catch (err: any) {
       setErrorMsg(`Federated literature discovery failed: ${err.message}`);
@@ -818,20 +822,68 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                   <span>Verified Scholarly Corpus ({discoveredPapers.length} Peer-Reviewed Works)</span>
                 </h3>
               </div>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                <span>{selectedPaperIds.size} of {discoveredPapers.length} selected.</span>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {selectedPaperIds.size} of {discoveredPapers.length} selected:
+                </span>
                 <button
                   type="button"
                   onClick={handleSelectAll}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-semibold cursor-pointer"
+                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition cursor-pointer border ${
+                    selectedPaperIds.size === discoveredPapers.length
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200'
+                  }`}
+                  title="Select all identified papers"
                 >
-                  Select All
+                  All ({discoveredPapers.length})
                 </button>
-                <span>&bull;</span>
+                {discoveredPapers.length > 25 && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTopN(25)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition cursor-pointer border ${
+                      selectedPaperIds.size === 25
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200'
+                    }`}
+                    title="Select top 25 most relevant papers"
+                  >
+                    Top 25
+                  </button>
+                )}
+                {discoveredPapers.length > 50 && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTopN(50)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition cursor-pointer border ${
+                      selectedPaperIds.size === 50
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200'
+                    }`}
+                    title="Select top 50 most relevant papers"
+                  >
+                    Top 50
+                  </button>
+                )}
+                {discoveredPapers.length > 100 && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectTopN(100)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-semibold transition cursor-pointer border ${
+                      selectedPaperIds.size === 100
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200'
+                    }`}
+                    title="Select top 100 most relevant papers"
+                  >
+                    Top 100
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleDeselectAll}
-                  className="text-slate-500 hover:underline cursor-pointer"
+                  className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:underline cursor-pointer text-[11px] ml-1"
                 >
                   Clear Selection
                 </button>
