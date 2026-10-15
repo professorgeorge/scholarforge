@@ -256,7 +256,7 @@ export const App: React.FC = () => {
   const handleStartGroundingDraft = async (draftText: string) => {
     if (!draftText.trim() || isProcessing) return;
 
-    setInputText(draftText);
+    handleManuscriptUpdate(draftText, uploadedDocName || 'Draft_Manuscript.docx');
     setRebuttalPackage(null);
     setOriginalPreRevisionText('');
     setIsProcessing(true);
@@ -759,7 +759,8 @@ export const App: React.FC = () => {
               }} 
               onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               onAppendToDraft={(declarationText) => {
-                setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
+                const combined = inputText ? `${inputText}\n\n${declarationText}` : declarationText;
+                handleManuscriptUpdate(combined, activeManuscript?.filename);
               }}
             />
             {/* Stage 2 Workflow Next-Step Bridge */}
@@ -1291,7 +1292,8 @@ export const App: React.FC = () => {
         onClose={() => setIsToolbeltOpen(false)}
         initialToolId={activeToolbeltId}
         onSendToStudio={(text) => {
-          setInputText((prev) => (prev ? `${prev}\n\n${text}` : text));
+          const combined = inputText ? `${inputText}\n\n${text}` : text;
+          handleManuscriptUpdate(combined, activeManuscript?.filename);
           setActivePillar('studio');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
@@ -1302,7 +1304,8 @@ export const App: React.FC = () => {
         isOpen={isBinderOpen}
         onClose={() => setIsBinderOpen(false)}
         onSendToStudio={(text) => {
-          setInputText((prev) => (prev ? `${prev}\n\n${text}` : text));
+          const combined = inputText ? `${inputText}\n\n${text}` : text;
+          handleManuscriptUpdate(combined, activeManuscript?.filename);
           setActivePillar('studio');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
