@@ -254,15 +254,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
         action: () => onSelectPillar('journal')
       },
       {
-        id: 'pillar-scholars',
-        title: 'Stage 4: Scholar & Reviewer Finder',
-        description: 'Reviewer discovery, Google Scholar profile analysis, h-index, and scientometrics',
-        category: '4. Audit & Publish',
-        icon: <Users className="w-4 h-4 text-purple-600" />,
-        keywords: ['scholars', 'reviewers', 'google scholar', 'profile', 'tenure', 'bio', 'h-index', 'co-authors'],
-        action: () => onSelectPillar('scholars')
-      },
-      {
         id: 'pillar-anonymizer',
         title: 'Stage 4: Double-Blind Peer Review Anonymizer',
         description: 'Sanitize self-citations, author identifiers, university affiliations, and grant numbers',
@@ -271,12 +262,21 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
         keywords: ['anonymizer', 'double-blind', 'peer review', 'sanitize', 'redact', 'self-citation', 'blind review'],
         action: () => onSelectPillar('anonymizer')
       },
+      {
+        id: 'pillar-scholars',
+        title: 'Stage 4: Scholar & Reviewer Finder',
+        description: 'Reviewer discovery, Google Scholar profile analysis, h-index, and scientometrics',
+        category: '4. Audit & Publish',
+        icon: <Users className="w-4 h-4 text-purple-600" />,
+        keywords: ['scholars', 'reviewers', 'google scholar', 'profile', 'tenure', 'bio', 'h-index', 'co-authors'],
+        action: () => onSelectPillar('scholars')
+      },
 
       // --- WORKFLOW LENSES ---
       {
         id: 'lens-full',
-        title: 'Workflow Lens: Full Suite (All 8 Pillars)',
-        description: 'Display all research tools and pillars simultaneously',
+        title: 'Workflow Lens: Full Suite (All 12 Utilities)',
+        description: 'Display all research tools and pillars simultaneously across all 4 stages',
         category: 'Workflow Lenses',
         icon: <Layers className="w-4 h-4 text-blue-600" />,
         keywords: ['lens', 'workflow', 'all', 'full', 'suite', 'reset'],

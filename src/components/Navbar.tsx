@@ -112,8 +112,8 @@ export const RESEARCH_STAGES: StageDef[] = [
     tools: [
       { id: 'verify', label: 'DOI & Retraction Audit', icon: ShieldCheck, description: 'Retraction Watch detection, Crossref DOI health & verification' },
       { id: 'journal', label: 'Journal Fit Sentinel', icon: FileCheck, description: 'Scopus/WoS journal matcher & desk-rejection risk audit' },
-      { id: 'scholars', label: 'Scholar & Reviewer Finder', icon: Users, description: 'Find peer reviewers, co-authors & calculate scientometrics' },
       { id: 'anonymizer', label: 'Double-Blind Anonymizer', icon: ShieldAlert, description: 'Redact self-citations, author names & affiliations' },
+      { id: 'scholars', label: 'Scholar & Reviewer Finder', icon: Users, description: 'Find peer reviewers, co-authors & calculate scientometrics' },
     ]
   }
 ];
@@ -123,12 +123,12 @@ export function getStageForPillar(pillar: AcademicPillar): ResearchStage | null 
   if (pillar === 'literature' || pillar === 'pico') return 'discover';
   if (pillar === 'methodology' || pillar === 'synthetic' || pillar === 'irb') return 'design';
   if (pillar === 'studio' || pillar === 'claims' || pillar === 'writing') return 'draft';
-  if (pillar === 'verify' || pillar === 'scholars' || pillar === 'journal' || pillar === 'anonymizer') return 'publish';
+  if (pillar === 'verify' || pillar === 'journal' || pillar === 'anonymizer' || pillar === 'scholars') return 'publish';
   return null;
 }
 
 // Backwards compatibility alias for WorkflowLens
-export type WorkflowLensId = 'full' | 'review' | 'drafting' | 'methods' | 'submission';
+export type WorkflowLensId = 'full' | 'review' | 'methods' | 'drafting' | 'submission';
 export interface WorkflowLensDef {
   id: WorkflowLensId;
   label: string;
@@ -137,11 +137,41 @@ export interface WorkflowLensDef {
   description: string;
 }
 export const WORKFLOW_LENSES: WorkflowLensDef[] = [
-  { id: 'full', label: 'All Stages', icon: '🔭', pillars: ['literature', 'studio', 'claims', 'verify', 'scholars', 'journal', 'methodology', 'synthetic'], description: 'All 4 research lifecycle stages' },
-  { id: 'review', label: 'Literature & Search', icon: '📖', pillars: ['literature', 'claims', 'verify'], description: 'Literature search, PICO matrix, and DOI auditing' },
-  { id: 'drafting', label: 'Manuscript Drafting', icon: '✍️', pillars: ['studio', 'claims', 'verify'], description: 'Manuscript writing, claim validation, and citation styling' },
-  { id: 'methods', label: 'Methods & Simulation', icon: '📊', pillars: ['methodology', 'synthetic', 'claims'], description: 'Methodology compass, IRB ethics triage, and synthetic data' },
-  { id: 'submission', label: 'Journal Pre-Flight', icon: '🚀', pillars: ['journal', 'verify', 'scholars'], description: 'Desk-rejection triage, journal matching, and reviewer outreach' }
+  { 
+    id: 'full', 
+    label: 'All Stages', 
+    icon: '🔭', 
+    pillars: ['literature', 'pico', 'methodology', 'synthetic', 'irb', 'studio', 'claims', 'writing', 'verify', 'journal', 'anonymizer', 'scholars'], 
+    description: 'All 4 research lifecycle stages (12 utilities)' 
+  },
+  { 
+    id: 'review', 
+    label: 'Literature & Search', 
+    icon: '📖', 
+    pillars: ['literature', 'pico', 'claims', 'verify'], 
+    description: 'Literature search, PICO matrix, PRISMA, and DOI auditing' 
+  },
+  { 
+    id: 'methods', 
+    label: 'Methods & Simulation', 
+    icon: '📊', 
+    pillars: ['methodology', 'synthetic', 'irb'], 
+    description: 'Methodology compass, synthetic data forge, and IRB ethics triage' 
+  },
+  { 
+    id: 'drafting', 
+    label: 'Manuscript Drafting', 
+    icon: '✍️', 
+    pillars: ['studio', 'claims', 'writing', 'verify'], 
+    description: 'Manuscript writing, claim validation, word budgets, and citation styling' 
+  },
+  { 
+    id: 'submission', 
+    label: 'Journal Pre-Flight', 
+    icon: '🚀', 
+    pillars: ['verify', 'journal', 'anonymizer', 'scholars'], 
+    description: 'Desk-rejection triage, journal matching, anonymization, and reviewer outreach' 
+  }
 ];
 
 interface NavbarProps {
