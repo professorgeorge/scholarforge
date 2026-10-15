@@ -55,6 +55,21 @@ export interface BatchVerificationReport {
   results: VerifiedReferenceResult[];
 }
 
+/**
+ * Fine-grained inclusion options for the "Clean Bibliography" Word export.
+ * Each flag independently controls whether that group appears in the download.
+ */
+export interface CleanExportOptions {
+  /** Include references that are fully verified (no discrepancies). */
+  includeVerified: boolean;
+  /** Include references that had discrepancies — export the corrected registry version. */
+  includeDiscrepancyCorrected: boolean;
+  /** Include discrepancy references in their ORIGINAL as-submitted form instead. */
+  includeDiscrepancyOriginal: boolean;
+  /** Include unindexed / not-found references as-is. */
+  includeNotFound: boolean;
+}
+
 export interface ExtractedBibliography {
   bibliography: string;
   fullText: string;
@@ -517,18 +532,24 @@ export async function verifySingleReference(rawCitation: string): Promise<Verifi
 
       const pool = [...crossrefResults, ...openalexResults, ...epmcResults];
       if (pool.length > 0) {
-        let bestItem = pool[0];
+        let bestItem: AcademicPaper | null = null;
         let maxScore = -1;
 
         for (const item of pool) {
           const titleSim = calculateStringSimilarity(parsed.title || parsed.raw, item.title);
+
+          // Guard: title similarity must clear a minimum bar on its own so that
+          // a topically-similar but *different* paper cannot be accepted merely
+          // because the year or first-author surname happen to match.
+          if (titleSim < 0.50) continue;
+
           let score = titleSim * 60;
 
           if (parsed.year && item.year) {
             const yDiff = Math.abs(parsed.year - item.year);
             if (yDiff === 0) score += 20;
-            else if (yDiff <= 1) score += 12;
-            else if (yDiff <= 3) score += 5;
+            else if (yDiff <= 1) score += 10;
+            else if (yDiff <= 3) score += 4;
           }
 
           if (parsed.authors.length > 0 && item.authors.length > 0) {
@@ -545,7 +566,9 @@ export async function verifySingleReference(rawCitation: string): Promise<Verifi
           }
         }
 
-        if (maxScore >= 35) {
+        // Require a composite score of at least 52 (roughly: title sim ≥ 0.55
+        // plus some year/author confirmation) to avoid accepting an unrelated paper.
+        if (bestItem && maxScore >= 52) {
           candidate = bestItem;
         }
       }
@@ -745,7 +768,8 @@ export async function verifyReferenceBatch(
 export function generateVerificationWordReport(
   report: BatchVerificationReport,
   style: string = 'apa',
-  mode: 'clean' | 'audit' = 'audit'
+  mode: 'clean' | 'audit' = 'audit',
+  cleanOptions?: CleanExportOptions
 ): string {
   const s = style.toLowerCase();
   let title = 'References';
@@ -753,12 +777,44 @@ export function generateVerificationWordReport(
   else if (s === 'chicago') title = 'Bibliography';
   else if (s === 'ieee') title = 'References';
 
-  let listToExport = report.results;
-  if (mode === 'clean') {
-    // In clean mode, exclude unindexed / hallucinated and retracted references
-    listToExport = report.results.filter(
-      (r) => (r.status === 'verified' || r.status === 'discrepancy') && !r.isRetracted
-    );
+  // Determine which items to include and how to format each discrepancy entry.
+  // We track a parallel array that records the text to use for each exported item.
+  interface ExportItem {
+    result: VerifiedReferenceResult;
+    useOriginal: boolean; // true → use r.raw; false → use correctedCitations[style]
+  }
+
+  let exportItems: ExportItem[] = [];
+
+  if (mode === 'audit') {
+    // Audit mode: always export everything, always show corrected citation
+    exportItems = report.results.map((r) => ({ result: r, useOriginal: false }));
+  } else {
+    // Clean mode: apply fine-grained inclusion options
+    const opts: CleanExportOptions = cleanOptions ?? {
+      includeVerified: true,
+      includeDiscrepancyCorrected: true,
+      includeDiscrepancyOriginal: false,
+      includeNotFound: false,
+    };
+
+    for (const r of report.results) {
+      if (r.isRetracted) continue; // retracted entries never appear in clean output
+
+      if (r.status === 'verified' && opts.includeVerified) {
+        exportItems.push({ result: r, useOriginal: false });
+      } else if (r.status === 'discrepancy') {
+        // Both options can be true simultaneously — user gets BOTH versions
+        if (opts.includeDiscrepancyCorrected) {
+          exportItems.push({ result: r, useOriginal: false });
+        } else if (opts.includeDiscrepancyOriginal) {
+          // Only fall back to original if corrected is not selected
+          exportItems.push({ result: r, useOriginal: true });
+        }
+      } else if (r.status === 'not_found' && opts.includeNotFound) {
+        exportItems.push({ result: r, useOriginal: true });
+      }
+    }
   }
 
   let auditSummaryTable = '';
@@ -782,9 +838,13 @@ export function generateVerificationWordReport(
     </table>`;
   }
 
-  const itemsHtml = listToExport
-    .map((item, idx) => {
-      const formattedCite = item.correctedCitations[s] || item.correctedCitations.apa || item.raw;
+  const itemsHtml = exportItems
+    .map((exportItem, idx) => {
+      const item = exportItem.result;
+      const rawText = exportItem.useOriginal
+        ? item.raw
+        : (item.correctedCitations[s] || item.correctedCitations.apa || item.raw);
+      const formattedCite = rawText;
       const isIeee = s === 'ieee';
       const citePrefix = isIeee ? `[${idx + 1}] ` : '';
 
@@ -881,9 +941,10 @@ export function generateVerificationWordReport(
 export function downloadVerificationWordDocument(
   report: BatchVerificationReport,
   style: string = 'apa',
-  mode: 'clean' | 'audit' = 'audit'
+  mode: 'clean' | 'audit' = 'audit',
+  cleanOptions?: CleanExportOptions
 ): void {
-  const docHtml = generateVerificationWordReport(report, style, mode);
+  const docHtml = generateVerificationWordReport(report, style, mode, cleanOptions);
   const blob = new Blob(['\ufeff', docHtml], { type: 'application/msword' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

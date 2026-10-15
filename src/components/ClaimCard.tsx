@@ -10,7 +10,8 @@ import {
   RefreshCw, 
   AlertCircle,
   ShoppingCart,
-  Check
+  Check,
+  Sparkles
 } from 'lucide-react';
 import { formatInTextCitation } from '../services/citationFormatter';
 import { getCitationTier } from '../services/datasetScientometrics';
@@ -164,6 +165,16 @@ export const ClaimCard: React.FC<ClaimCardProps> = ({
           {/* Paper Badges & Links */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
             <div className="flex flex-wrap items-center gap-1.5">
+              {selectedPaper.relevanceExplanation && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100/90 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800 shadow-2xs"
+                  title={`Topical Match Score: ${selectedPaper.relevanceExplanation.matchPercentage}%\n• ${selectedPaper.relevanceExplanation.summary}\n• Title Similarity: ${selectedPaper.relevanceExplanation.titleSimilarity}%\n• Keyword Coverage: ${selectedPaper.relevanceExplanation.keywordCoveragePct}%`}
+                >
+                  <Sparkles className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                  <span>{selectedPaper.relevanceExplanation.matchPercentage}% Match</span>
+                </span>
+              )}
+
               {/* Citation Impact Tier */}
               {(() => {
                 const tier = getCitationTier(selectedPaper.citationCount || 0);

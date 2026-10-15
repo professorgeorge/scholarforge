@@ -1,6 +1,7 @@
 import type { AcademicPaper, Author } from '../types/citation';
 import { generateAcademicSearchTiers } from './academicQueryParser';
 import { searchEuropePmc } from './europePmcService';
+import { rankPapersByRelevance } from './relevanceScoringService';
 
 const CACHE = new Map<string, AcademicPaper[]>();
 
@@ -415,9 +416,8 @@ export async function huntAcademicPapers(
     if (combinedPapers.length >= limit) break;
   }
 
-  return combinedPapers.sort((a, b) => {
-    const scoreA = (a.doi ? 100 : 0) + (a.abstract.length > 50 ? 30 : 0) + Math.min(a.citationCount, 500) * 0.1;
-    const scoreB = (b.doi ? 100 : 0) + (b.abstract.length > 50 ? 30 : 0) + Math.min(b.citationCount, 500) * 0.1;
-    return scoreB - scoreA;
-  });
+  // Rank using the shared verifier-grade multi-signal relevance scorer.
+  // Join all queries as the combined topic so the scorer sees the full intent.
+  const combinedQuery = queries.filter(Boolean).join(' ');
+  return rankPapersByRelevance(combinedPapers, combinedQuery, false);
 }

@@ -22,6 +22,7 @@ import { WritingToolbeltPane } from './components/WritingToolbeltPane';
 import { AnonymizerPane } from './components/AnonymizerPane';
 import { ScholarHubView } from './components/ScholarHubView';
 import { ActiveManuscriptBar } from './components/ActiveManuscriptBar';
+import { PillarErrorBoundary } from './components/PillarErrorBoundary';
 import {
   parseManuscript,
   loadActiveManuscriptFromStorage,
@@ -37,6 +38,7 @@ import type {
 import { DEFAULT_LLM_CONFIG, type LLMConfig, type PeerReviewOverhaulResult } from './services/llmService';
 import { extractClaimsFromText } from './services/claimExtractor';
 import { huntAcademicPapers } from './services/academicApi';
+import { rankPapersByRelevance } from './services/relevanceScoringService';
 import { 
   BookOpen, 
   RotateCcw, 
@@ -348,13 +350,26 @@ export const App: React.FC = () => {
 
     const updatedClaims: Claim[] = extractedClaims.map((claim, idx) => {
       const match = existingPaperMap.get(claim.text.trim().toLowerCase());
-      const selected = match || (candidatePool.length > 0 ? candidatePool[idx % candidatePool.length] : null);
+      let selected: AcademicPaper | null = match || null;
+      let relevantCandidates: AcademicPaper[] = [];
+
+      if (!selected && candidatePool.length > 0) {
+        // Authentically rank the candidate pool against this specific claim text
+        const ranked = rankPapersByRelevance(candidatePool, claim.text, true);
+        if (ranked.length > 0) {
+          relevantCandidates = ranked;
+          selected = ranked[0];
+        }
+      } else if (selected) {
+        relevantCandidates = [selected, ...candidatePool.filter((p) => p.id !== selected?.id)];
+      }
+
       return {
         ...claim,
-        candidatePapers: candidatePool,
+        candidatePapers: relevantCandidates,
         selectedPaper: selected,
         status: selected ? 'found' : 'not_found',
-        confidence: selected ? 'high' : 'medium',
+        confidence: selected ? (match ? 'high' : 'medium') : 'low',
         isExcluded: false,
         citationNumber: idx + 1,
       };
@@ -411,13 +426,23 @@ export const App: React.FC = () => {
     const existingPapers = uniquePapers;
     
     const newClaims: Claim[] = extractedClaims.map((claim, idx) => {
-      const assigned = existingPapers[idx % Math.max(existingPapers.length, 1)] || null;
+      let assigned: AcademicPaper | null = null;
+      let relevantCandidates: AcademicPaper[] = [];
+
+      if (existingPapers.length > 0) {
+        const ranked = rankPapersByRelevance(existingPapers, claim.text, true);
+        if (ranked.length > 0) {
+          relevantCandidates = ranked;
+          assigned = ranked[0];
+        }
+      }
+
       return {
         ...claim,
-        candidatePapers: existingPapers,
+        candidatePapers: relevantCandidates,
         selectedPaper: assigned,
-        status: assigned ? 'found' : 'searching',
-        confidence: 'high',
+        status: assigned ? 'found' : 'not_found',
+        confidence: assigned ? 'medium' : 'low',
         isExcluded: false,
         citationNumber: idx + 1,
       };
@@ -473,6 +498,7 @@ export const App: React.FC = () => {
         )
       );
     } catch (err) {
+      console.error(`Retry search failed for claim ${claimId}:`, err);
       setClaims((prev) =>
         prev.map((c) => (c.id === claimId ? { ...c, status: 'not_found' } : c))
       );
@@ -583,6 +609,9 @@ export const App: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Isolated Pillar Error Boundary protects user workspace session */}
+        <PillarErrorBoundary key={activePillar} pillarName={activePillar.toUpperCase()}>
 
         {/* HOME: SCHOLARFORGE UTILITIES HUB */}
         {activePillar === 'hub' && (
@@ -779,7 +808,8 @@ export const App: React.FC = () => {
             <SyntheticDataForgePane
               llmConfig={llmConfig}
               onNavigateToStudio={(seedText) => {
-                setInputText(prev => prev ? `${prev}\n\n${seedText}` : seedText);
+                const combined = inputText ? `${inputText}\n\n${seedText}` : seedText;
+                handleManuscriptUpdate(combined, activeManuscript?.filename);
                 setActivePillar('studio');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
@@ -1110,6 +1140,7 @@ export const App: React.FC = () => {
           </>
         )}
 
+        </PillarErrorBoundary>
       </main>
 
       {/* Consolidated Master Settings Modal */}

@@ -5,6 +5,7 @@ import { searchSemanticScholar } from './semanticScholarService';
 import { searchArxiv } from './arxivService';
 import { checkPaperRetraction } from './retractionSentinel';
 import { extractAcademicKeywords, synthesizeBooleanSearchStrategy } from './academicQueryParser';
+import { rankPapersByRelevance } from './relevanceScoringService';
 
 export interface FederatedSearchOptions {
   limitPerSource?: number;
@@ -304,75 +305,6 @@ export async function executeFederatedSearch(
     screened.push(paper);
   }
 
-  // Compute multi-factor academic relevance score for each candidate paper
-  const queryTokens = extractAcademicKeywords(query);
-  const cleanQ = query.toLowerCase().trim();
-
-  const computeRelevance = (paper: AcademicPaper): number => {
-    let score = 0;
-    const titleLower = (paper.title || '').toLowerCase();
-    const abstractLower = (paper.abstract || '').toLowerCase();
-
-    // 1. Exact phrase match bonus
-    if (cleanQ.length > 5 && titleLower.includes(cleanQ)) {
-      score += 80;
-    } else if (cleanQ.length > 5 && abstractLower.includes(cleanQ)) {
-      score += 40;
-    }
-
-    // 2. Keyword matching in Title (heavy weight)
-    let titleMatches = 0;
-    for (const token of queryTokens) {
-      if (titleLower.includes(token)) {
-        titleMatches++;
-        score += 25;
-      }
-    }
-
-    // 3. Keyword matching in Abstract
-    for (const token of queryTokens) {
-      if (abstractLower.includes(token)) {
-        score += 8;
-      }
-    }
-
-    // 4. Keyword coverage ratio across salient query tokens
-    if (queryTokens.length > 0) {
-      const salientTokens = queryTokens.slice(0, 5);
-      const matchedTokens = salientTokens.filter(
-        (t) => titleLower.includes(t) || abstractLower.includes(t)
-      );
-      const coverage = matchedTokens.length / salientTokens.length;
-      if (coverage >= 0.6) {
-        score += 35; // high topic fidelity
-      } else if (coverage < 0.25 && salientTokens.length > 2) {
-        score -= 15; // mild off-topic penalty
-      }
-    }
-
-
-    // 5. OpenAlex / API native relevance score
-    if (paper.relevanceScore && paper.relevanceScore > 0) {
-      score += Math.min(paper.relevanceScore * 10, 25);
-    }
-
-    // 6. Citation Count: Log-scaled authority boost (capped so it cannot overwhelm topical relevance)
-    const logCitations = Math.log10((paper.citationCount || 0) + 1);
-    score += Math.min(logCitations * 4, 18);
-
-    // 7. Structural quality bonuses
-    if (paper.doi) score += 10;
-    if (paper.abstract && paper.abstract.length > 60) score += 8;
-
-    // 8. Recency bump (last 10 years)
-    const currentYear = new Date().getFullYear();
-    if (paper.year && paper.year >= currentYear - 10) {
-      score += 4;
-    }
-
-    return score;
-  };
-
   // 5. Intelligent Query-Relaxation Fallback: If 0 papers passed, query OpenAlex & Crossref with core academic keywords
   if (screened.length === 0) {
     onProgress?.('Broadening search to capture related peer-reviewed studies...');
@@ -401,11 +333,12 @@ export async function executeFederatedSearch(
     }
   }
 
-  // Sort by multi-factor relevance score descending
-  screened.sort((a, b) => computeRelevance(b) - computeRelevance(a));
+  // Sort and optionally filter off-topic papers using the shared verifier-grade relevance scorer.
+  // filterOffTopic=false keeps all papers but still sorts them — ensures zero result-count regression.
+  const ranked = rankPapersByRelevance(screened, query, false);
 
   const totalExcluded = excludedPreprints + excludedLowCitations;
-  const retractedCount = screened.filter((p) => p.isRetracted).length;
+  const retractedCount = ranked.filter((p) => p.isRetracted).length;
 
   const prismaStats: PrismaFlowStats = {
     identification: {
@@ -421,14 +354,14 @@ export async function executeFederatedSearch(
       totalExcluded,
     },
     included: {
-      totalIncluded: screened.length,
+      totalIncluded: ranked.length,
     },
   };
 
-  onProgress?.(`Systematic extraction complete: ${screened.length} peer-reviewed studies included.`);
+  onProgress?.(`Systematic extraction complete: ${ranked.length} peer-reviewed studies included.`);
 
   return {
-    papers: screened,
+    papers: ranked,
     prismaStats,
     retractedCount,
   };

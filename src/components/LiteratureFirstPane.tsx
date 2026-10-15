@@ -24,6 +24,7 @@ import type { AcademicPaper, CitationOptions, Claim } from '../types/citation';
 import { huntAcademicPapers } from '../services/academicApi';
 import { executeFederatedSearch, type PrismaFlowStats } from '../services/federatedSearchEngine';
 import { extractClaimsFromText } from '../services/claimExtractor';
+import { rankPapersByRelevance } from '../services/relevanceScoringService';
 import { PicoCompilerTab } from './PicoCompilerTab';
 import { 
   DEFAULT_LLM_CONFIG, 
@@ -73,28 +74,6 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   const [focus, setFocus] = useState(initialFocus);
   const [activeSubTab, setActiveSubTab] = useState<'federated' | 'pico'>(initialSubTab);
 
-  const hasAutoSearchedTopicRef = React.useRef<string>('');
-  const lastSyncedTopicRef = React.useRef<string>(initialTopic);
-
-  // Sync if initialTopic or initialFocus or initialSubTab changes
-  React.useEffect(() => {
-    if (initialTopic && initialTopic.trim() && initialTopic !== lastSyncedTopicRef.current) {
-      lastSyncedTopicRef.current = initialTopic;
-      setTopic(initialTopic);
-      if (initialFocus) setFocus(initialFocus);
-      if (autoSearch && hasAutoSearchedTopicRef.current !== initialTopic) {
-        hasAutoSearchedTopicRef.current = initialTopic;
-        onResetAutoSearch?.();
-        handleSearchLiterature(initialTopic, initialFocus);
-      }
-    }
-  }, [initialTopic, initialFocus, autoSearch]);
-
-  React.useEffect(() => {
-    if (initialSubTab) {
-      setActiveSubTab(initialSubTab);
-    }
-  }, [initialSubTab]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [searchProgressMsg, setSearchProgressMsg] = useState('');
@@ -128,7 +107,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
   };
 
-  const handleSearchLiterature = async (queryOverride?: string | React.MouseEvent, focusOverride?: string) => {
+  const handleSearchLiterature = React.useCallback(async (queryOverride?: string | React.MouseEvent, focusOverride?: string) => {
     const searchTopic = (typeof queryOverride === 'string' ? queryOverride : topic).trim();
     const searchFocus = (typeof focusOverride === 'string' ? focusOverride : focus).trim();
     if (!searchTopic) {
@@ -143,7 +122,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
 
     try {
-      const hasBooleanInTopic = /["\(\)]|\b(AND|OR|NOT)\b/i.test(searchTopic);
+      const hasBooleanInTopic = /["()]|\b(AND|OR|NOT)\b/i.test(searchTopic);
       let fullQuery = searchTopic;
       if (searchFocus) {
         if (hasBooleanInTopic) {
@@ -182,7 +161,30 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       setIsSearching(false);
       setSearchProgressMsg('');
     }
-  };
+  }, [topic, focus, options.excludePreprints, searchScope, enabledSources]);
+
+  const hasAutoSearchedTopicRef = React.useRef<string>('');
+  const lastSyncedTopicRef = React.useRef<string>(initialTopic);
+
+  // Sync if initialTopic or initialFocus or initialSubTab changes
+  React.useEffect(() => {
+    if (initialTopic && initialTopic.trim() && initialTopic !== lastSyncedTopicRef.current) {
+      lastSyncedTopicRef.current = initialTopic;
+      setTopic(initialTopic);
+      if (initialFocus) setFocus(initialFocus);
+      if (autoSearch && hasAutoSearchedTopicRef.current !== initialTopic) {
+        hasAutoSearchedTopicRef.current = initialTopic;
+        onResetAutoSearch?.();
+        handleSearchLiterature(initialTopic, initialFocus);
+      }
+    }
+  }, [initialTopic, initialFocus, autoSearch, onResetAutoSearch, handleSearchLiterature]);
+
+  React.useEffect(() => {
+    if (initialSubTab) {
+      setActiveSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
 
 
   const handleAddCustomKeywordSearch = async () => {
@@ -235,16 +237,16 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       // Extract claims from the synthesized manuscript
       const extractedClaims = extractClaimsFromText(manuscript, 'all');
 
-      // Map each extracted claim to the most relevant selected paper
+      // Map each extracted claim to the most authentically relevant selected paper
       const claims: Claim[] = extractedClaims.map((claim, idx) => {
-        // Find best matching paper based on keywords or round-robin through selectedPapers
-        const assignedPaper = selectedPapers[idx % selectedPapers.length];
+        const ranked = rankPapersByRelevance(selectedPapers, claim.text, true);
+        const assignedPaper = ranked[0] || selectedPapers[0] || null;
         return {
           ...claim,
-          candidatePapers: selectedPapers,
+          candidatePapers: ranked.length > 0 ? ranked : selectedPapers,
           selectedPaper: assignedPaper,
-          status: 'found',
-          confidence: 'high',
+          status: assignedPaper ? 'found' : 'not_found',
+          confidence: assignedPaper ? 'high' : 'low',
           isExcluded: false,
           citationNumber: idx + 1,
         };
@@ -951,6 +953,15 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                          {paper.relevanceExplanation && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100/90 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800 shadow-2xs"
+                              title={`Topical Match Score: ${paper.relevanceExplanation.matchPercentage}%\n• ${paper.relevanceExplanation.summary}\n• Title Similarity: ${paper.relevanceExplanation.titleSimilarity}%\n• Keyword Coverage: ${paper.relevanceExplanation.keywordCoveragePct}%`}
+                            >
+                              <Sparkles className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                              <span>{paper.relevanceExplanation.matchPercentage}% Match</span>
+                            </span>
+                          )}
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.badgeClass}`}
                           >

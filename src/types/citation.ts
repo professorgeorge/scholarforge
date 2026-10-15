@@ -27,6 +27,14 @@ export interface AcademicPaper {
   retractionDetails?: string;
   pmid?: string;
   pmcid?: string;
+  relevanceExplanation?: {
+    matchPercentage: number;
+    titleSimilarity: number;
+    keywordCoveragePct: number;
+    exactPhrase: boolean;
+    citationBoost: number;
+    summary: string;
+  };
 }
 
 export interface DatasetMetrics {

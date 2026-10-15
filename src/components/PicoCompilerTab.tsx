@@ -644,6 +644,18 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
                     <span>{copiedKey === item.platform ? 'Copied' : 'Copy Query'}</span>
                   </button>
 
+                  {onApplyQueryToSearch && item.query && (
+                    <button
+                      type="button"
+                      onClick={() => onApplyQueryToSearch(item.query, '')}
+                      className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 text-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-800 text-xs font-semibold flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                      title="Run this compiled query directly in ScholarForge Federated Search"
+                    >
+                      <Search className="w-3 h-3 text-blue-600" />
+                      <span>Federated Search</span>
+                    </button>
+                  )}
+
                   {item.query ? (
                     <a
                       href={item.url}

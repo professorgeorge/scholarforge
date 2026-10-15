@@ -22,7 +22,8 @@ import {
   verifyReferenceBatch,
   downloadVerificationWordDocument,
   extractBibliographyFromManuscript,
-  type BatchVerificationReport
+  type BatchVerificationReport,
+  type CleanExportOptions
 } from '../services/referenceVerifierService';
 import { CITATION_STYLES } from '../services/citationFormatter';
 import type { CitationStyle } from '../types/citation';
@@ -82,7 +83,27 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
   const [forensicMap, setForensicMap] = useState<Record<string, CitationForensicReport>>({});
   const [analyzingForensicId, setAnalyzingForensicId] = useState<string | null>(null);
   const [forensicNotice, setForensicNotice] = useState<string | null>(null);
+  const [showCleanExportMenu, setShowCleanExportMenu] = useState<boolean>(false);
+  const [cleanExportOptions, setCleanExportOptions] = useState<CleanExportOptions>({
+    includeVerified: true,
+    includeDiscrepancyCorrected: true,
+    includeDiscrepancyOriginal: false,
+    includeNotFound: false,
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cleanExportMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close the Clean Export popover when clicking outside
+  useEffect(() => {
+    if (!showCleanExportMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (cleanExportMenuRef.current && !cleanExportMenuRef.current.contains(e.target as Node)) {
+        setShowCleanExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showCleanExportMenu]);
 
   // Synchronize incoming bibliography/manuscript text when transmitted from hub or other panes
   useEffect(() => {
@@ -244,7 +265,12 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
 
   const handleDownloadWordClean = () => {
     if (!report) return;
-    downloadVerificationWordDocument(report, selectedOutputStyle, 'clean');
+    downloadVerificationWordDocument(report, selectedOutputStyle, 'clean', cleanExportOptions);
+    setShowCleanExportMenu(false);
+  };
+
+  const toggleCleanOpt = (key: keyof CleanExportOptions) => {
+    setCleanExportOptions(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   // Filter results
@@ -732,7 +758,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                 </div>
 
                 {/* Toolbar Buttons: Sort A-Z, Word Exports */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 relative">
                   <button
                     onClick={handleSortAlphabetically}
                     className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
@@ -742,14 +768,103 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                     <span>Sort A-Z</span>
                   </button>
 
-                  <button
-                    onClick={handleDownloadWordClean}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
-                    title="Download publication-ready Word (.doc) bibliography with hanging indents"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Clean Word (.doc)</span>
-                  </button>
+                  {/* Clean Word export with inline options popover */}
+                  <div className="relative" ref={cleanExportMenuRef}>
+                    <button
+                      onClick={() => setShowCleanExportMenu(v => !v)}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
+                      title="Choose which reference groups to include in the clean Word export"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Clean Word (.doc)</span>
+                    </button>
+
+                    {showCleanExportMenu && (
+                      <div className="absolute right-0 top-full mt-1.5 z-50 w-72 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl p-3 space-y-2 animate-in fade-in duration-100">
+                        <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider pb-1 border-b border-slate-100 dark:border-slate-800">
+                          Include in Clean Export:
+                        </p>
+
+                        {/* Verified */}
+                        <label className="flex items-start gap-2.5 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={cleanExportOptions.includeVerified}
+                            onChange={() => toggleCleanOpt('includeVerified')}
+                            className="mt-0.5 accent-emerald-600 cursor-pointer"
+                          />
+                          <span className="text-xs text-slate-800 dark:text-slate-200 leading-snug">
+                            <span className="font-semibold text-emerald-700 dark:text-emerald-400">✓ Fully Verified</span>
+                            <span className="block text-[11px] text-slate-500 dark:text-slate-400">
+                              Registry-confirmed references with zero discrepancies ({report.verifiedCount})
+                            </span>
+                          </span>
+                        </label>
+
+                        {/* Discrepancy — corrected */}
+                        <label className="flex items-start gap-2.5 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={cleanExportOptions.includeDiscrepancyCorrected}
+                            onChange={() => toggleCleanOpt('includeDiscrepancyCorrected')}
+                            className="mt-0.5 accent-amber-500 cursor-pointer"
+                          />
+                          <span className="text-xs text-slate-800 dark:text-slate-200 leading-snug">
+                            <span className="font-semibold text-amber-700 dark:text-amber-400">⚠ Discrepancies — Corrected Version</span>
+                            <span className="block text-[11px] text-slate-500 dark:text-slate-400">
+                              Export the auto-corrected registry form of references with minor issues ({report.discrepancyCount})
+                            </span>
+                          </span>
+                        </label>
+
+                        {/* Discrepancy — original as-is */}
+                        <label className="flex items-start gap-2.5 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={cleanExportOptions.includeDiscrepancyOriginal}
+                            onChange={() => toggleCleanOpt('includeDiscrepancyOriginal')}
+                            className="mt-0.5 accent-amber-500 cursor-pointer"
+                          />
+                          <span className="text-xs text-slate-800 dark:text-slate-200 leading-snug">
+                            <span className="font-semibold text-amber-700 dark:text-amber-400">⚠ Discrepancies — Original As-Is</span>
+                            <span className="block text-[11px] text-slate-500 dark:text-slate-400">
+                              Keep your submitted text unchanged for discrepancy entries (if Corrected is also checked, corrected wins)
+                            </span>
+                          </span>
+                        </label>
+
+                        {/* Not found */}
+                        <label className="flex items-start gap-2.5 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={cleanExportOptions.includeNotFound}
+                            onChange={() => toggleCleanOpt('includeNotFound')}
+                            className="mt-0.5 accent-rose-500 cursor-pointer"
+                          />
+                          <span className="text-xs text-slate-800 dark:text-slate-200 leading-snug">
+                            <span className="font-semibold text-rose-700 dark:text-rose-400">✗ Unindexed / Unverifiable</span>
+                            <span className="block text-[11px] text-slate-500 dark:text-slate-400">
+                              Include references not found in any registry, as originally submitted ({report.notFoundCount})
+                            </span>
+                          </span>
+                        </label>
+
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-slate-400">
+                            Retracted entries are always excluded.
+                          </span>
+                          <button
+                            onClick={handleDownloadWordClean}
+                            disabled={!cleanExportOptions.includeVerified && !cleanExportOptions.includeDiscrepancyCorrected && !cleanExportOptions.includeDiscrepancyOriginal && !cleanExportOptions.includeNotFound}
+                            className="px-3 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                          >
+                            <Download className="w-3 h-3" />
+                            Download
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     onClick={handleDownloadWordAudit}

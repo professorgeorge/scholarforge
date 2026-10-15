@@ -62,4 +62,25 @@ export default defineConfig({
     tailwindcss(),
     scholarProxyPlugin(),
   ],
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('@mlc-ai/web-llm')) {
+            return 'vendor-webllm';
+          }
+          if (id.includes('mammoth')) {
+            return 'vendor-mammoth';
+          }
+          if (id.includes('lucide-react')) {
+            return 'vendor-lucide';
+          }
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'vendor-react-core';
+          }
+        },
+      },
+    },
+  },
 })
