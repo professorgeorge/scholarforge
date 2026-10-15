@@ -48,8 +48,7 @@ import {
   ShieldCheck,
   Users,
   Compass,
-  Database,
-  Search
+  Database
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { addMultiplePapersToCart } from './services/cartService';
@@ -634,6 +633,7 @@ export const App: React.FC = () => {
                 handleManuscriptUpdate(text, filename);
                 if (destination === 'literature') {
                   setLiteratureTopic(text);
+                  setLiteratureFocus('');
                   setLiteratureAutoSearch(true);
                   setActivePillar('literature');
                 } else if (destination === 'pico') {
@@ -720,34 +720,24 @@ export const App: React.FC = () => {
             {/* Stage 1 Workflow Next-Step Bridge */}
             <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
               <div className="text-xs text-slate-600 dark:text-slate-400">
-                <span className="font-bold text-slate-900 dark:text-white font-serif">PICO queries compiled?</span> Execute federated searches or design your study:
+                <span className="font-bold text-slate-900 dark:text-white font-serif">PICO strategy ready?</span> Move to study design or start drafting:
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (picoInitialQuestion) {
-                      setLiteratureTopic(picoInitialQuestion);
-                    }
-                    setLiteratureFocus('');
-                    setLiteratureAutoSearch(true);
-                    setActivePillar('literature');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
+                  onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 transition cursor-pointer"
                 >
-                  <Search className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
-                  <span>Execute Federated Search</span>
+                  <Compass className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                  <span>2. Design Methodology</span>
                 </button>
-
-
                 <button
                   type="button"
-                  onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  onClick={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   className="px-3.5 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
                 >
-                  <Compass className="w-3.5 h-3.5" />
-                  <span>2. Design Methodology</span>
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>3. Draft Manuscript</span>
                   <ExternalLink className="w-3 h-3" />
                 </button>
               </div>

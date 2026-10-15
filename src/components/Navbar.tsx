@@ -69,8 +69,8 @@ export const RESEARCH_STAGES: StageDef[] = [
     icon: '🔍',
     defaultPillar: 'literature',
     tools: [
-      { id: 'literature', label: 'Federated Search', icon: Search, description: 'Search OpenAlex, PubMed, Semantic Scholar, Crossref & ArXiv' },
-      { id: 'pico', label: 'PICO Systematic Strategy', icon: Compass, description: 'Formulate PRISMA queries for PubMed, Scopus, WOS, IEEE' },
+      { id: 'literature', label: 'Federated Literature Search', icon: Search, description: 'Narrative & multi-source discovery across OpenAlex, Europe PMC, Crossref & Semantic Scholar' },
+      { id: 'pico', label: 'PICO Systematic Strategy', icon: Compass, description: 'Clinical & PRISMA query formulator for PubMed, Cochrane, Scopus & Web of Science' },
     ]
   },
   {

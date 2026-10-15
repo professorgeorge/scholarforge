@@ -203,6 +203,13 @@ export function buildPlatformUrls(queries: CompiledDatabaseQueries): PlatformSea
  */
 export const SAMPLE_PICO_PRESETS = [
   {
+    label: 'Cardiology / HFpEF SGLT2i (Pharmacology)',
+    population: 'heart failure with preserved ejection fraction, HFpEF patients',
+    intervention: 'SGLT2 inhibitors, empagliflozin, dapagliflozin',
+    comparison: 'placebo, conventional heart failure therapy',
+    outcome: 'cardiovascular death, heart failure hospitalizations, quality of life',
+  },
+  {
     label: 'Healthcare / Nursing Burnout (Clinical)',
     population: 'ICU nurses, critical care staff, healthcare workers',
     intervention: 'resilience training, peer support programs, mindfulness',
