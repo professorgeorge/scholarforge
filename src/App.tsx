@@ -511,6 +511,7 @@ export const App: React.FC = () => {
       setClaims([]);
       setProgress({ current: 0, total: 0 });
       setSelectedClaimId(null);
+      handleClearManuscript();
     }
   };
 

@@ -34,7 +34,10 @@ import {
   AlertCircle,
   Wand2,
   ShoppingCart,
-  Crown
+  Crown,
+  Edit3,
+  Save,
+  RotateCcw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -73,10 +76,47 @@ export const ResultPane: React.FC<ResultPaneProps> = ({
   primaryData,
   secondaryData,
 }) => {
-  const [activeTab, setActiveTab] = useState<'rebuttal' | 'annotated' | 'diff' | 'rebuttal_diff' | 'bib' | 'raw'>(
+  const [activeTab, setActiveTab] = useState<'rebuttal' | 'annotated' | 'edit' | 'diff' | 'rebuttal_diff' | 'bib' | 'raw'>(
     rebuttalPackage ? 'rebuttal' : 'annotated'
   );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  // Direct Manuscript Canvas Editor State
+  const [editableText, setEditableText] = useState<string>(originalText);
+  const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
+  const [editSuccessMsg, setEditSuccessMsg] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setEditableText(originalText);
+  }, [originalText]);
+
+  const handleSaveAndReground = () => {
+    if (!editableText.trim()) return;
+    setIsSavingEdit(true);
+    setEditSuccessMsg(null);
+    try {
+      if (onApplyRevision) {
+        onApplyRevision(editableText);
+      }
+      setEditSuccessMsg('Manuscript updated! Claims re-grounded.');
+      confetti({
+        particleCount: 35,
+        spread: 55,
+        origin: { y: 0.8 },
+        colors: ['#1e3a8a', '#059669', '#d97706'],
+      });
+      setTimeout(() => {
+        setEditSuccessMsg(null);
+        setActiveTab('annotated');
+      }, 1200);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleInsertSectionToEditor = (heading: string, placeholder: string) => {
+    setEditableText((prev) => `${prev.trim()}\n\n## ${heading}\n${placeholder}\n`);
+  };
 
   // Peer-Review AI Revision state
   const [showRevisionPanel, setShowRevisionPanel] = useState<boolean>(false);
@@ -278,6 +318,18 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
           >
             <FileText className="w-3.5 h-3.5" />
             <span>{rebuttalPackage ? 'Revised Manuscript' : 'Annotated Manuscript'}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('edit')}
+            className={`px-3 py-1.5 rounded-md font-semibold flex items-center gap-1.5 transition cursor-pointer shrink-0 ${
+              activeTab === 'edit'
+                ? 'bg-white dark:bg-slate-800 text-blue-900 dark:text-blue-300 shadow-xs border border-blue-300 dark:border-blue-700'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Edit3 className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+            <span>Interactive Editor</span>
           </button>
 
           {rebuttalPackage && originalPreRevisionText && (
@@ -615,6 +667,116 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
                   {originalText}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Direct Interactive Manuscript Canvas Editor */}
+        {activeTab === 'edit' && (
+          <div className="space-y-4 max-w-4xl animate-in fade-in duration-150">
+            {/* Editor Action & Scaffolding Toolbar */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Insert Section:</span>
+                <button
+                  type="button"
+                  onClick={() => handleInsertSectionToEditor('Abstract', 'Contextualize the empirical investigation, methodology, key estimators, and conclusions...')}
+                  className="px-2 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer shadow-2xs"
+                >
+                  + Abstract
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertSectionToEditor('Introduction', 'Articulate the foundational inquiry, epistemic gap, and empirical hypotheses...')}
+                  className="px-2 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer shadow-2xs"
+                >
+                  + Intro
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertSectionToEditor('Methodology & Research Design', 'Detail the sampling paradigm, variables, instruments, and statistical specifications...')}
+                  className="px-2 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer shadow-2xs"
+                >
+                  + Methods
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertSectionToEditor('Results & Empirical Findings', 'Report primary findings, regression estimators, effect sizes, and model metrics...')}
+                  className="px-2 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer shadow-2xs"
+                >
+                  + Results
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertSectionToEditor('Discussion', 'Interpret empirical results relative to theoretical precedent and literature...')}
+                  className="px-2 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer shadow-2xs"
+                >
+                  + Discussion
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInsertSectionToEditor('Limitations & Future Work', 'Acknowledge study boundary conditions and propose prospective empirical investigations...')}
+                  className="px-2 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer shadow-2xs"
+                >
+                  + Limitations
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditableText(originalText)}
+                  className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1 border border-slate-300 dark:border-slate-700 cursor-pointer transition shadow-2xs"
+                  title="Discard unsaved edits and restore current manuscript"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Revert</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveAndReground}
+                  disabled={isSavingEdit || !editableText.trim()}
+                  className="btn-academic-primary px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 transition"
+                  title="Save edits and re-extract claims with citation alignment"
+                >
+                  {isSavingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>Save &amp; Re-Ground</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Success toast */}
+            {editSuccessMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2 font-semibold animate-in fade-in duration-150">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{editSuccessMsg}</span>
+              </div>
+            )}
+
+            {/* Editable Writing Canvas */}
+            <div className="relative">
+              <textarea
+                rows={18}
+                value={editableText}
+                onChange={(e) => setEditableText(e.target.value)}
+                placeholder="Write or refine your manuscript draft directly..."
+                className="w-full p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs sm:text-sm text-slate-900 dark:text-white font-serif leading-relaxed placeholder-slate-400 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700"
+              />
+            </div>
+
+            {/* Live Metrics Footer */}
+            <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 font-sans px-1">
+              <div className="flex items-center gap-3">
+                <span><strong>{editableText.trim() ? editableText.trim().split(/\s+/).filter(Boolean).length : 0}</strong> words</span>
+                <span>•</span>
+                <span><strong>{editableText.length.toLocaleString()}</strong> characters</span>
+                <span>•</span>
+                <span>~{Math.ceil((editableText.trim() ? editableText.trim().split(/\s+/).filter(Boolean).length : 0) / 220)} min reading time</span>
+              </div>
+              <span className="italic text-slate-400">
+                Clicking "Save &amp; Re-Ground" extracts factual statements and aligns verified citations.
+              </span>
             </div>
           </div>
         )}

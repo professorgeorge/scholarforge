@@ -20,7 +20,9 @@ import {
   Wand2,
   ShieldCheck,
   SlidersHorizontal,
-  Download
+  Download,
+  ShoppingCart,
+  BookOpen
 } from 'lucide-react';
 import type { AcademicPaper, CitationOptions, Claim } from '../types/citation';
 import { extractTextFromManuscriptFile } from '../services/fileImportService';
@@ -33,6 +35,8 @@ import {
 } from '../services/llmService';
 import { huntLiteratureCorpus } from '../services/academicApi';
 import { extractClaimsFromText } from '../services/claimExtractor';
+import { rankPapersByRelevance } from '../services/relevanceScoringService';
+import { getCartPapers } from '../services/cartService';
 import { LiteratureExportModal } from './LiteratureExportModal';
 
 interface ScholarLaunchpadProps {
@@ -114,6 +118,90 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
   // Loading & Error States
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
+
+  // Research Cart Integration
+  const [cartPapers, setCartPapers] = useState<AcademicPaper[]>([]);
+  useEffect(() => {
+    setCartPapers(getCartPapers());
+  }, []);
+
+  const handleInsertImradTemplate = () => {
+    const imradTemplate = `# Enter Your Research Title Here
+
+## Abstract
+**Background:** Contextualize the clinical, empirical, or theoretical problem under investigation.
+**Methods:** Outline the study design, empirical paradigm, sample/dataset characteristics, and primary variables.
+**Results:** Report key empirical findings, statistical estimators, effect sizes, or thematic findings.
+**Conclusions:** State practical, clinical, or policy implications and theoretical contributions.
+
+## 1. Introduction
+State the foundational inquiry, epistemic context, and specific research questions. Frame why existing literature requires this investigation and articulate your core hypotheses or research objectives.
+
+## 2. Literature Review & Theoretical Framework
+Synthesize empirical precedent, conceptual models, and conflicting evidence in the literature. Delineate the boundary conditions and establish the gap this manuscript addresses.
+
+## 3. Methodology & Research Design
+Detail the philosophical paradigm, sampling strategy, data collection instruments, experimental controls, and quantitative or qualitative analytical procedures. Ensure sufficient procedural rigor for external reproducibility.
+
+## 4. Results & Empirical Analysis
+Present empirical findings, model estimations, regression tables, or qualitative discourse excerpts. Distinguish primary endpoints from exploratory sensitivity analyses.
+
+## 5. Discussion
+Interpret your findings in conversation with prior scholarly literature. Address theoretical ramifications, clinical or practical translations, and boundary conditions.
+
+## 6. Limitations & Future Directions
+Address methodological constraints, potential confounding variables, and recommend prospective avenues for scholarly inquiry.
+
+## 7. Conclusion
+Summarize the overarching contribution of the research and its definitive takeaways for the academic community.`;
+
+    setDraftText(imradTemplate);
+    if (onManuscriptLoaded) {
+      onManuscriptLoaded(imradTemplate, 'IMRaD_Manuscript_Scaffold.md');
+    }
+  };
+
+  const handleExecuteSynthesisWithCart = async () => {
+    if (cartPapers.length === 0) return;
+    setErrorMsg('');
+    setStatusMessage(`Synthesizing grounded manuscript citing ${cartPapers.length} curated papers from your Research Cart...`);
+
+    try {
+      const synthesisTopic = topic.trim() || cartPapers[0]?.title || 'Systematic Empirical Investigation';
+      const manuscript = await synthesizeGroundedManuscript(
+        synthesisTopic,
+        focus,
+        cartPapers,
+        llmConfig,
+        primaryDataText.trim() || undefined,
+        [],
+        (_step, _total, msg) => {
+          setStatusMessage(msg);
+        }
+      );
+
+      const extractedClaims = extractClaimsFromText(manuscript, 'all');
+      const claims: Claim[] = extractedClaims.map((claim, idx) => {
+        const ranked = rankPapersByRelevance(cartPapers, claim.text, true);
+        const assignedPaper = ranked[0] || cartPapers[0] || null;
+        return {
+          ...claim,
+          candidatePapers: ranked.length > 0 ? ranked : cartPapers,
+          selectedPaper: assignedPaper,
+          status: assignedPaper ? 'found' : 'not_found',
+          confidence: 'high',
+          isExcluded: false,
+          citationNumber: idx + 1,
+        };
+      });
+
+      onManuscriptReady(manuscript, claims);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Synthesis from Cart failed.');
+    } finally {
+      setStatusMessage('');
+    }
+  };
 
   // Handle Word Docx Upload for Tab 2
   const handleDocxUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,15 +334,16 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
         }
       );
 
-      // Step 3: Extract claims and assign verified papers
+      // Step 3: Extract claims and assign verified papers by semantic relevance
       const extractedClaims = extractClaimsFromText(manuscript, 'all');
       const claims: Claim[] = extractedClaims.map((claim, idx) => {
-        const assignedPaper = papers[idx % papers.length];
+        const ranked = rankPapersByRelevance(papers, claim.text, true);
+        const assignedPaper = ranked[0] || papers[0] || null;
         return {
           ...claim,
-          candidatePapers: papers,
+          candidatePapers: ranked.length > 0 ? ranked : papers,
           selectedPaper: assignedPaper,
-          status: 'found',
+          status: assignedPaper ? 'found' : 'not_found',
           confidence: 'high',
           isExcluded: false,
           citationNumber: idx + 1,
@@ -327,10 +416,11 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
 
       const extractedClaims = extractClaimsFromText(overhaulResult.revisedManuscript, 'all');
       const claims: Claim[] = extractedClaims.map((claim, idx) => {
-        const assignedPaper = papers.length > 0 ? papers[idx % papers.length] : null;
+        const ranked = rankPapersByRelevance(papers, claim.text, true);
+        const assignedPaper = ranked[0] || (papers.length > 0 ? papers[0] : null);
         return {
           ...claim,
-          candidatePapers: papers,
+          candidatePapers: ranked.length > 0 ? ranked : papers,
           selectedPaper: assignedPaper,
           status: assignedPaper ? 'found' : 'not_found',
           confidence: 'high',
@@ -443,6 +533,37 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
       {activeTab === 'synthesize' && (
         <div className="space-y-4 animate-in fade-in duration-150">
           
+          {/* Research Cart Synergy Banner */}
+          {cartPapers.length > 0 && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-purple-50/80 dark:from-blue-950/60 dark:via-indigo-950/40 dark:to-purple-950/50 border border-blue-200 dark:border-blue-800 space-y-2.5 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-900 text-white flex items-center justify-center shrink-0">
+                    <ShoppingCart className="w-4 h-4 text-amber-300" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-blue-950 dark:text-blue-200 font-serif">
+                      Curated Corpus: {cartPapers.length} Papers Saved in Research Cart
+                    </h4>
+                    <p className="text-[11px] text-blue-900/80 dark:text-blue-300/80">
+                      Synthesize a complete research manuscript citing these exact verified studies from your Discovery stage.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleExecuteSynthesisWithCart}
+                  disabled={isBusy}
+                  className="btn-academic-primary px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 transition"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Synthesize from Cart ({cartPapers.length} Papers)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Research Topic */}
           <div>
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2 uppercase tracking-wider">
@@ -541,6 +662,16 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
 
 
 
+              <button
+                type="button"
+                onClick={handleInsertImradTemplate}
+                className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900 text-xs font-semibold text-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-800 flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
+                title="Insert full academic IMRaD section structure"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-blue-700 dark:text-blue-400" />
+                <span>Insert IMRaD Scaffold</span>
+              </button>
+
               {draftText && (
                 <button
                   type="button"
@@ -568,6 +699,15 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
             placeholder="Paste your manuscript draft, thesis section, or literature notes here..."
             className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs text-slate-900 dark:text-white font-serif leading-relaxed placeholder-slate-400 focus:outline-none focus:border-blue-700 focus:ring-1 focus:ring-blue-700"
           />
+
+          <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 font-sans px-1">
+            <span>
+              <strong>{draftText.trim() ? draftText.trim().split(/\s+/).filter(Boolean).length : 0}</strong> words • <strong>{draftText.length.toLocaleString()}</strong> characters
+            </span>
+            <span>
+              ~{Math.ceil((draftText.trim() ? draftText.trim().split(/\s+/).filter(Boolean).length : 0) / 220)} min reading time
+            </span>
+          </div>
 
           {/* Reviewer Comments & Editorial Critiques Section */}
           <div className="p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 space-y-2.5">
