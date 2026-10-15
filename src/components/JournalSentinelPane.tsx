@@ -23,7 +23,8 @@ import {
   Mail,
   Flame,
   X,
-  Info
+  Info,
+  BookOpen
 } from 'lucide-react';
 import { IrbTriagePane } from './IrbTriagePane';
 import {
@@ -42,7 +43,25 @@ import {
   type AIDeskRejectionReport
 } from '../services/aiScholarExtensions';
 
-interface JournalSentinelPaneProps {
+const JOURNAL_SENTINEL_PRESETS = [
+  {
+    topic: 'Cardiology / Medicine',
+    title: 'SGLT2 inhibitors and cardiorenal outcomes in type 2 diabetes and nephropathy',
+    abstract: 'Background: Sodium-glucose cotransporter 2 (SGLT2) inhibitors reduce glycemic parameters, but long-term renal and cardiovascular events across stages of chronic kidney disease require systematic evaluation. Methods: In this double-blind, randomized, placebo-controlled trial, we assigned 4,401 patients with type 2 diabetes and albuminuric kidney disease to receive either canagliflozin or matching placebo. The primary outcome was a composite of end-stage kidney disease, doubling of serum creatinine, or renal/cardiovascular death. Results: Relative risk of the primary composite outcome was reduced by 30% (hazard ratio 0.70; 95% CI, 0.59 to 0.82; P < 0.001). Conclusion: Canagliflozin confers significant renal and cardiovascular protection in patients with type 2 diabetes and established nephropathy.'
+  },
+  {
+    topic: 'AI / Computer Science',
+    title: 'Towards Metacognitive Calibration in Large Language Models',
+    abstract: 'Despite superhuman factual recall, modern large language models exhibit severe metacognitive failures, generating high-confidence hallucinations under epistemically uncertain queries. Here, we introduce a dual-stage calibration framework combining conformal uncertainty estimation with token-level entropy gating. Evaluated across 14 reasoning benchmarks (including MedQA, GSM8K, and HumanEval), our approach reduces catastrophic hallucination rates by 41.2% while retaining 96.8% task efficiency.'
+  },
+  {
+    topic: 'Materials / Energy',
+    title: 'Perovskite-Silicon Tandem Solar Cells Under Accelerated Thermal Cycling',
+    abstract: 'Monolithic perovskite-silicon tandem photovoltaics offer power conversion efficiencies exceeding 30%, but interfacial delamination under thermal cycling restricts commercial deployment. We demonstrate a molecular cross-linking self-assembled monolayer that passivates deep-level halide vacancies and mechanically stabilizes the perovskite/C60 interface. Devices retain 95.4% of initial efficiency after 1,000 standard thermal cycles (-40°C to 85°C).'
+  }
+];
+
+export interface JournalSentinelPaneProps {
   initialTitle?: string;
   initialAbstract?: string;
   initialFullDraft?: string;
@@ -50,9 +69,8 @@ interface JournalSentinelPaneProps {
   llmConfig: LLMConfig;
   onAppendToDraft?: (textToAppend: string) => void;
   onNavigateToStudio?: () => void;
+  onNavigateToWordBudget?: () => void;
 }
-
-
 
 export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   initialTitle = '',
@@ -61,7 +79,8 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   initialReferences = [],
   llmConfig,
   onAppendToDraft,
-  onNavigateToStudio: _onNavigateToStudio
+  onNavigateToStudio,
+  onNavigateToWordBudget
 }) => {
   // Input States
   const [title, setTitle] = useState<string>(initialTitle);
@@ -225,44 +244,57 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
       
       {/* Hero Header */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 border border-slate-800 text-white p-5 sm:p-6 shadow-md">
-        <div className="relative z-10 max-w-4xl space-y-2">
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-semibold border border-blue-400/30 backdrop-blur-md">
-            <Compass className="w-3.5 h-3.5 text-blue-400" />
-            <span>Strategic Publishing Intelligence</span>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="relative z-10 max-w-3xl space-y-2">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[11px] font-semibold border border-blue-400/30 backdrop-blur-md">
+              <Compass className="w-3.5 h-3.5 text-blue-400" />
+              <span>Strategic Publishing Intelligence</span>
+            </div>
+
+            <h2 className="text-lg sm:text-xl font-serif font-bold text-white tracking-tight">
+              The Journal Fit &amp; Desk-Rejection Pre-Flight Sentinel
+            </h2>
+
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+              Match your manuscript against Scopus Q1-Q4 journals, filter by APC budgets (including $0 Diamond OA),
+              and audit 7 mission-critical integrity signals before submission to prevent instantaneous desk rejections.
+            </p>
+
+            {/* Quick Stats Banner */}
+            <div className="pt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-300">
+              <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
+                <Award className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Scopus Q1-Q4 Quartile Indexing</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
+                <DollarSign className="w-3.5 h-3.5 text-teal-400" />
+                <span>Diamond Open Access ($0 APC) Discovery</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                <span>7-Point Desk-Rejection Pre-Flight Triage</span>
+              </div>
+            </div>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-serif font-bold text-white tracking-tight">
-            The Journal Fit &amp; Desk-Rejection Pre-Flight Sentinel
-          </h2>
+          {onNavigateToStudio && (
+            <button
+              type="button"
+              onClick={onNavigateToStudio}
+              className="relative z-10 px-4 py-2.5 rounded-xl bg-blue-800 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 transition cursor-pointer shadow-md shrink-0"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Open Manuscript Studio</span>
+            </button>
+          )}
+        </div>
 
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-            Match your manuscript against Scopus Q1-Q4 journals, filter by APC budgets (including $0 Diamond OA),
-            and audit 7 mission-critical integrity signals before submission to prevent instantaneous desk rejections.
-          </p>
-
-          {/* Quick Stats Banner */}
-          <div className="pt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-300">
-            <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
-              <Award className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Scopus Q1-Q4 Quartile Indexing</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
-              <DollarSign className="w-3.5 h-3.5 text-teal-400" />
-              <span>Diamond Open Access ($0 APC) Discovery</span>
-            </div>
-            <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
-              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-              <span>7-Point Desk-Rejection Pre-Flight Triage</span>
-            </div>
-          </div>
-
-          {/* Nominative Trademark & Heuristic Proxy Notice */}
-          <div className="mt-3.5 pt-3 border-t border-slate-700/60 text-[11px] text-slate-400 flex items-start gap-2">
-            <Info className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-            <span className="leading-relaxed">
-              <strong>Nominative Fair Use &amp; Metric Notice:</strong> Quartile ratings (Q1–Q4) and CiteScore estimates are heuristic scientometric approximations computed from open bibliographic records (OpenAlex CC0) for comparative research guidance. Scopus&reg; and CiteScore&trade; are registered trademarks of Elsevier B.V.; Web of Science&trade; is a trademark of Clarivate Analytics. ScholarForge is an independent scholarly tool and is not affiliated with, sponsored by, or endorsed by Elsevier B.V. or Clarivate.
-            </span>
-          </div>
+        {/* Nominative Trademark & Heuristic Proxy Notice */}
+        <div className="mt-3.5 pt-3 border-t border-slate-700/60 text-[11px] text-slate-400 flex items-start gap-2">
+          <Info className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+          <span className="leading-relaxed">
+            <strong>Nominative Fair Use &amp; Metric Notice:</strong> Quartile ratings (Q1–Q4) and CiteScore estimates are heuristic scientometric approximations computed from open bibliographic records (OpenAlex CC0) for comparative research guidance. Scopus&reg; and CiteScore&trade; are registered trademarks of Elsevier B.V.; Web of Science&trade; is a trademark of Clarivate Analytics. ScholarForge is an independent scholarly tool and is not affiliated with, sponsored by, or endorsed by Elsevier B.V. or Clarivate.
+          </span>
         </div>
       </div>
 
@@ -296,6 +328,34 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
 
         {isInputExpanded && (
           <div className="p-4 sm:p-6 space-y-4 bg-slate-50/50 dark:bg-slate-950/40">
+            {/* Quick 1-Click Presets */}
+            <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2 shadow-2xs">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
+                <span className="flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-amber-500" />
+                  <span>1-Click Test Manuscript Presets:</span>
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {JOURNAL_SENTINEL_PRESETS.map((p, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setTitle(p.title);
+                      setAbstract(p.abstract);
+                      setFullDraft(p.abstract);
+                      runDiscoveryAndAudit(p.title, p.abstract, p.abstract, []);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-slate-700 cursor-pointer transition flex items-center gap-1"
+                  >
+                    <span className="font-bold text-blue-900 dark:text-blue-300">{p.topic}:</span>
+                    <span className="truncate max-w-[210px]">{p.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 Manuscript Title
@@ -747,15 +807,28 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
                       )}
                     </button>
 
-                    <a
-                      href={journal.homepageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1.5 transition"
-                    >
-                      <span>Guide for Authors</span>
-                      <ExternalLink className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    </a>
+                    <div className="flex items-center gap-1.5">
+                      {onNavigateToWordBudget && (
+                        <button
+                          type="button"
+                          onClick={onNavigateToWordBudget}
+                          className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1 transition cursor-pointer"
+                          title="Check word budget allocation and limits for this journal in Stage 3 Writing Toolbelt"
+                        >
+                          <span>Word Budget →</span>
+                        </button>
+                      )}
+
+                      <a
+                        href={journal.homepageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-1.5 transition"
+                      >
+                        <span>Guide for Authors</span>
+                        <ExternalLink className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               );
@@ -1401,7 +1474,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
       {activeSubTab === 'irb' && (
         <IrbTriagePane
           onAppendToDraft={onAppendToDraft}
-          onNavigateToStudio={_onNavigateToStudio}
+          onNavigateToStudio={onNavigateToStudio}
         />
       )}
 

@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { 
   Search, Users, Award, FileEdit, Briefcase, ShieldCheck, Sparkles, 
   Bookmark, Loader2, AlertCircle,
-  ChevronDown, ChevronUp, ArrowRight, UploadCloud, GraduationCap
+  ChevronDown, ChevronUp, ArrowRight, UploadCloud, GraduationCap,
+  BookOpen, Send, Zap
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import type { 
   ManuscriptQuery, 
   FilterOptions, 
@@ -27,22 +29,45 @@ const REGION_COUNTRIES: Record<string, string[]> = {
   mea: ['ZA', 'EG', 'SA', 'AE', 'IL', 'TR', 'NG', 'KE', 'MA', 'QA']
 };
 
+const SCHOLAR_PRESETS = [
+  {
+    topic: 'Cardiology / SGLT2',
+    title: 'SGLT2 inhibitors and cardiorenal outcomes in diabetes',
+    keywords: 'SGLT2 inhibitors, empagliflozin, canagliflozin, cardiorenal, diabetic nephropathy'
+  },
+  {
+    topic: 'AI / Metacognition',
+    title: 'Metacognitive calibration in large language models',
+    keywords: 'large language models, hallucination, calibration, conformal prediction, uncertainty estimation'
+  },
+  {
+    topic: 'Materials / Solar',
+    title: 'Perovskite-silicon tandem solar cell stability under thermal cycling',
+    keywords: 'perovskite solar cells, tandem photovoltaics, thermal cycling, degradation, passivating layers'
+  }
+];
+
 import type { LLMConfig } from '../services/llmService';
 import { DEFAULT_LLM_CONFIG } from '../services/llmService';
 
-interface ScholarSearchPaneProps {
+export interface ScholarSearchPaneProps {
   initialTitle?: string;
   initialAbstract?: string;
   llmConfig?: LLMConfig;
+  onSendToStudio?: (text: string) => void;
+  onNavigateToStudio?: () => void;
 }
 
 export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
   initialTitle = '',
   initialAbstract = '',
   llmConfig = DEFAULT_LLM_CONFIG,
+  onSendToStudio,
+  onNavigateToStudio
 }) => {
   const [paneMode, setPaneMode] = useState<'talent_search' | 'scholar_impact'>('talent_search');
   const [objective, setObjective] = useState<SearchObjective>('grant_coi');
+  const [exportedToStudio, setExportedToStudio] = useState<boolean>(false);
 
   const [query, setQuery] = useState<ManuscriptQuery>({
     title: initialTitle,
@@ -264,6 +289,31 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
     return candidates.filter(c => shortlistedIds.has(c.id));
   }, [candidates, shortlistedIds]);
 
+  const handleExportReviewersToStudio = () => {
+    if (!onSendToStudio) return;
+    const targetList = shortlistedList.length > 0 ? shortlistedList : candidates.slice(0, 4);
+    if (targetList.length === 0) return;
+
+    const reviewerProse = `### Suggested Peer Reviewers (Zero-COI Screened)\n\n` +
+      targetList.map((c, idx) => {
+        const emailStr = c.email ? ` (Email: ${c.email})` : '';
+        const orcidStr = c.orcid ? ` [ORCID: ${c.orcid}]` : '';
+        const worksSample = c.sampleWorks?.slice(0, 2).map(w => `"${w.title}"`).join(', ');
+        const worksLine = worksSample ? `\n   - Representative Works: ${worksSample}` : '';
+        return `${idx + 1}. **${c.name}**${orcidStr} — *${c.primaryInstitution}*${emailStr}${worksLine}\n   - Rationale: Active publishing authority (${c.careerStage}, h-index est: ~${c.hIndexEst}); verified independent scholar with zero institutional or co-authorship conflict of interest.`;
+      }).join('\n\n');
+
+    onSendToStudio(reviewerProse);
+    setExportedToStudio(true);
+    confetti({
+      particleCount: 40,
+      spread: 60,
+      origin: { y: 0.8 },
+      colors: ['#0284c7', '#8b5cf6', '#10b981']
+    });
+    setTimeout(() => setExportedToStudio(false), 3000);
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       
@@ -278,10 +328,10 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold font-serif text-slate-900 dark:text-white">
-                  Academic Talent & Reviewer Discovery Studio
+                  Academic Talent &amp; Reviewer Discovery Studio
                 </h2>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                  OpenAlex & PubMed REST
+                  OpenAlex &amp; PubMed REST
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-sans mt-0.5">
@@ -290,17 +340,30 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
             </div>
           </div>
 
-          {/* Roster Drawer Trigger */}
-          <button
-            onClick={() => setIsRosterOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold shadow-2xs transition cursor-pointer"
-          >
-            <Bookmark className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-            <span>Shortlist Roster</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-blue-900 text-white font-mono text-[10px]">
-              {shortlistedIds.size}
-            </span>
-          </button>
+          <div className="flex items-center gap-2">
+            {onNavigateToStudio && (
+              <button
+                type="button"
+                onClick={onNavigateToStudio}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Open Manuscript Studio</span>
+              </button>
+            )}
+
+            {/* Roster Drawer Trigger */}
+            <button
+              onClick={() => setIsRosterOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold shadow-2xs transition cursor-pointer"
+            >
+              <Bookmark className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+              <span>Shortlist Roster</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-blue-900 text-white font-mono text-[10px]">
+                {shortlistedIds.size}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Sub-Navigation Switcher */}
@@ -415,6 +478,35 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
         <div className="space-y-4 pt-2">
           
 
+
+          {/* Quick Presets Bar */}
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span className="flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>1-Click Presets for Reviewer / Talent Discovery:</span>
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {SCHOLAR_PRESETS.map((p, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setQuery({
+                      ...query,
+                      title: p.title,
+                      keywords: p.keywords
+                    });
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-slate-700 cursor-pointer transition flex items-center gap-1"
+                >
+                  <span className="font-bold text-blue-900 dark:text-blue-300">{p.topic}:</span>
+                  <span className="truncate max-w-[190px]">{p.title}</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* 1-Click DOI / PMID Ingest Bar */}
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -680,24 +772,38 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
               </button>
             </div>
 
-            {selectedIds.size > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-slate-500">{selectedIds.size} selected</span>
+            <div className="flex items-center gap-2">
+              {onSendToStudio && filteredCandidates.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setShortlistedIds(prev => {
-                      const next = new Set(prev);
-                      selectedIds.forEach(id => next.add(id));
-                      return next;
-                    });
-                  }}
-                  className="px-3 py-1 rounded-lg bg-blue-900 text-white font-semibold text-xs transition cursor-pointer"
+                  onClick={handleExportReviewersToStudio}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                  title="Insert top suggested peer reviewers into Manuscript Studio draft or cover letter"
                 >
-                  Add Selected to Roster
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{exportedToStudio ? '✓ Exported to Studio!' : 'Export Reviewers to Studio Draft'}</span>
                 </button>
-              </div>
-            )}
+              )}
+
+              {selectedIds.size > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500">{selectedIds.size} selected</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShortlistedIds(prev => {
+                        const next = new Set(prev);
+                        selectedIds.forEach(id => next.add(id));
+                        return next;
+                      });
+                    }}
+                    className="px-3 py-1 rounded-lg bg-blue-900 text-white font-semibold text-xs transition cursor-pointer"
+                  >
+                    Add Selected to Roster
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Candidates List */}

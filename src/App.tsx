@@ -962,6 +962,21 @@ export const App: React.FC = () => {
               llmConfig={llmConfig}
               initialBibliography={activeManuscript?.bibliography || activeManuscript?.rawText || inputText}
               sourceFilename={activeManuscript?.filename || uploadedDocName || undefined}
+              onUpdateBibliography={(newBib: string) => {
+                if (activeManuscript) {
+                  const updated: ActiveManuscriptContext = {
+                    ...activeManuscript,
+                    bibliography: newBib,
+                    detectedReferencesCount: newBib.split('\n\n').filter(Boolean).length || activeManuscript.detectedReferencesCount
+                  };
+                  setActiveManuscript(updated);
+                  saveActiveManuscriptToStorage(updated);
+                } else {
+                  handleManuscriptUpdate(inputText ? `${inputText}\n\n### References\n${newBib}` : `### References\n${newBib}`, 'working_manuscript.txt');
+                }
+              }}
+              onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onNavigateToJournalSentinel={() => { setActivePillar('journal'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
         )}
@@ -983,6 +998,7 @@ export const App: React.FC = () => {
                 handleManuscriptUpdate(inputText ? `${inputText}\n\n${declarationText}` : declarationText, activeManuscript?.filename);
               }}
               onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onNavigateToWordBudget={() => { setActivePillar('writing'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
         )}
@@ -994,6 +1010,12 @@ export const App: React.FC = () => {
               llmConfig={llmConfig}
               initialTitle={activeManuscript?.title || (inputText ? inputText.slice(0, 160) : '')}
               initialAbstract={activeManuscript?.abstract || (inputText && inputText.length > 160 ? inputText.slice(160, 1500) : '')}
+              onSendToStudio={(text) => {
+                handleManuscriptUpdate(inputText ? `${inputText}\n\n${text}` : text, activeManuscript?.filename);
+                setActivePillar('studio');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
           </div>
         )}

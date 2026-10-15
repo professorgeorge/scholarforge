@@ -16,8 +16,11 @@ import {
   Sparkles,
   ShieldAlert,
   FileText,
-  BookmarkPlus
+  BookmarkPlus,
+  BookOpen,
+  Zap
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import {
   verifyReferenceBatch,
   downloadVerificationWordDocument,
@@ -26,26 +29,51 @@ import {
   type CleanExportOptions
 } from '../services/referenceVerifierService';
 import { CITATION_STYLES } from '../services/citationFormatter';
-import type { CitationStyle } from '../types/citation';
-import { addPaperToCart } from '../services/cartService';
+import type { CitationStyle, AcademicPaper } from '../types/citation';
+import { addPaperToCart, addMultiplePapersToCart } from '../services/cartService';
 import { DoiResolverTab } from './DoiResolverTab';
 import type { LLMConfig } from '../services/llmService';
 import { DEFAULT_LLM_CONFIG } from '../services/llmService';
 import { analyzeCitationForensics, isLlmConfigured, type CitationForensicReport } from '../services/aiScholarExtensions';
 import { Wand2 } from 'lucide-react';
 
-interface VerifierPaneProps {
+const VERIFIER_PRESETS = [
+  {
+    label: 'Canonical Benchmark (High-Impact)',
+    badge: '2 Verified Classic Papers',
+    text: `Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention is all you need. Advances in Neural Information Processing Systems, 30.
+
+Perkovic, V., Jardine, M. J., Neal, B., Bompoint, S., Heerspink, H. J., Charytan, D. M., Edwards, R., Agarwal, R., Bakris, G., Bull, S., Cannon, C. P., Capuano, G., Chu, P. L., de Zeeuw, D., Djurdjev, O., Levin, A., Pollock, C., Wheeler, D. C., Yavin, Y., & CREDENCE Collaborative Group. (2019). Canagliflozin and renal outcomes in type 2 diabetes and nephropathy. New England Journal of Medicine, 380(24), 2295-2306.`
+  },
+  {
+    label: 'Discrepancy & Hallucination Test',
+    badge: '1 Typo Auto-Fixed + 1 Unindexed Citation',
+    text: `George, B., & Henderson, K. (2025). Longitudinal neural architectures in clinical diagnosis. Nature Machine Intelligence, 5(2), 120-134. https://doi.org/10.1038/s42256-023-00000-0
+
+NonexistentAuthor, X., & HallucinationWriter, Y. (2024). Hallucinated empirical study on quantum memory consolidation. Journal of Nonexistent Science, 99(1), 1-15.`
+  }
+];
+
+export interface VerifierPaneProps {
   onAddPaperToCart?: (paper: any) => void;
   llmConfig?: LLMConfig;
   initialBibliography?: string;
   sourceFilename?: string;
+  onUpdateBibliography?: (newBib: string) => void;
+  onNavigateToStudio?: () => void;
+  onNavigateToJournalSentinel?: () => void;
 }
 
 export const VerifierPane: React.FC<VerifierPaneProps> = ({
   llmConfig = DEFAULT_LLM_CONFIG,
   initialBibliography = '',
-  sourceFilename
+  sourceFilename,
+  onUpdateBibliography,
+  onNavigateToStudio,
+  onNavigateToJournalSentinel
 }) => {
+  const [bibSaved, setBibSaved] = useState<boolean>(false);
+  const [cartBatchSaved, setCartBatchSaved] = useState<boolean>(false);
   const [subTab, setSubTab] = useState<'batch' | 'single'>('batch');
   const [rawBibliography, setRawBibliography] = useState<string>(() => {
     if (initialBibliography.trim()) {
@@ -248,6 +276,59 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
     handleCopyText(correctedList.join('\n\n'), 'applied');
   };
 
+  const handleSaveVerifiedToManuscript = () => {
+    if (!report || !onUpdateBibliography) return;
+    const correctedList = report.results.map((r, idx) => {
+      const formatted = r.correctedCitations[selectedOutputStyle] || r.correctedCitations.apa || r.raw;
+      const isIeee = selectedOutputStyle === 'ieee';
+      return isIeee ? `[${idx + 1}] ${formatted}` : formatted;
+    });
+    const bibText = correctedList.join('\n\n');
+    onUpdateBibliography(bibText);
+    setBibSaved(true);
+    confetti({
+      particleCount: 40,
+      spread: 60,
+      origin: { y: 0.8 },
+      colors: ['#059669', '#10b981', '#3b82f6']
+    });
+    setTimeout(() => setBibSaved(false), 3000);
+  };
+
+  const handleAddAllVerifiedToCart = () => {
+    if (!report) return;
+    const verifiedPapers: AcademicPaper[] = [];
+    report.results.forEach(r => {
+      if (r.verifiedPaper) {
+        verifiedPapers.push({
+          id: r.verifiedPaper.doi || r.verifiedPaper.id || `verified-${Date.now()}-${Math.random()}`,
+          title: r.verifiedPaper.title,
+          authors: r.verifiedPaper.authors.map(a => ({ name: a.name || `${a.givenName || ''} ${a.familyName || ''}`.trim() })),
+          venue: r.verifiedPaper.venue || 'Verified Academic Journal',
+          year: r.verifiedPaper.year || 2024,
+          citationCount: r.verifiedPaper.citationCount || 0,
+          doi: r.verifiedPaper.doi || '',
+          abstract: r.verifiedPaper.abstract || '',
+          openAccess: false,
+          source: 'crossref',
+          url: r.verifiedPaper.doi ? `https://doi.org/${r.verifiedPaper.doi}` : ''
+        });
+      }
+    });
+
+    if (verifiedPapers.length > 0) {
+      addMultiplePapersToCart(verifiedPapers);
+      setCartBatchSaved(true);
+      confetti({
+        particleCount: 45,
+        spread: 65,
+        origin: { y: 0.8 },
+        colors: ['#0284c7', '#38bdf8', '#c084fc']
+      });
+      setTimeout(() => setCartBatchSaved(false), 3000);
+    }
+  };
+
   const handleSortAlphabetically = () => {
     if (!report) return;
     const sorted = [...report.results].sort((a, b) => {
@@ -401,6 +482,35 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
               </div>
             </div>
           )}
+
+          {/* 1-Click Test Sets Bar */}
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 shadow-2xs">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span className="flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>1-Click Verification Test Sets:</span>
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {VERIFIER_PRESETS.map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setRawBibliography(preset.text);
+                    setTransmittedDocName(null);
+                    setFullTransmittedText(null);
+                    setWasExtracted(false);
+                    setDetectedReferenceCount(preset.text.split('\n\n').filter(Boolean).length);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium border border-slate-200 dark:border-slate-700 cursor-pointer transition flex items-center gap-1.5"
+                >
+                  <span className="font-semibold text-blue-900 dark:text-blue-300">{preset.label}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">({preset.badge})</span>
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
@@ -648,15 +758,60 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <button
                     onClick={handleApplyCorrections}
-                    className="px-3 py-1.5 rounded-lg bg-blue-900 dark:bg-blue-800 hover:bg-blue-800 dark:hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer border border-slate-200 dark:border-slate-700 transition"
                     title="Overwrite input with verified and corrected citations"
                   >
-                    {copiedKey === 'applied' ? <Check className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5 text-amber-300" />}
-                    <span>{copiedKey === 'applied' ? 'Applied!' : 'Apply Auto-Fix'}</span>
+                    {copiedKey === 'applied' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
+                    <span>{copiedKey === 'applied' ? 'Auto-Fixed!' : 'Apply Auto-Fix'}</span>
                   </button>
+
+                  {onUpdateBibliography && (
+                    <button
+                      type="button"
+                      onClick={handleSaveVerifiedToManuscript}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                      title="Sync verified and corrected bibliography directly into active Manuscript Studio draft"
+                    >
+                      <BookmarkPlus className="w-3.5 h-3.5" />
+                      <span>{bibSaved ? '✓ Saved to Studio!' : 'Save to Manuscript'}</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleAddAllVerifiedToCart}
+                    className="px-2.5 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                    title="Save all verified papers to the universal Research Cart"
+                  >
+                    <BookmarkPlus className="w-3.5 h-3.5" />
+                    <span>{cartBatchSaved ? '✓ Added to Cart!' : 'Add to Cart'}</span>
+                  </button>
+
+                  {onNavigateToJournalSentinel && (
+                    <button
+                      type="button"
+                      onClick={onNavigateToJournalSentinel}
+                      className="px-2.5 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 text-purple-900 dark:text-purple-300 text-xs font-semibold flex items-center gap-1 border border-purple-200 dark:border-purple-800 cursor-pointer transition"
+                      title="Test journal fit and desk-rejection risk"
+                    >
+                      <span>Check Journal Fit →</span>
+                    </button>
+                  )}
+
+                  {onNavigateToStudio && (
+                    <button
+                      type="button"
+                      onClick={onNavigateToStudio}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 cursor-pointer transition"
+                      title="Return to Manuscript Studio"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Studio Draft</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
