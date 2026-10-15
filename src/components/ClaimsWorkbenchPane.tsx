@@ -18,10 +18,11 @@ import {
   ShieldCheck,
   Flame
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import type { Claim, AcademicPaper } from '../types/citation';
 import { extractClaimsFromText } from '../services/claimExtractor';
 import { executeFederatedSearch } from '../services/federatedSearchEngine';
-import { addPaperToCart } from '../services/cartService';
+import { addPaperToCart, addMultiplePapersToCart } from '../services/cartService';
 import type { LLMConfig } from '../services/llmService';
 import { DEFAULT_LLM_CONFIG } from '../services/llmService';
 import { 
@@ -32,6 +33,40 @@ import {
 } from '../services/aiScholarExtensions';
 
 import type { CitationOptions } from '../types/citation';
+
+export interface SampleClaim {
+  id: string;
+  category: string;
+  badge: string;
+  text: string;
+}
+
+export const SAMPLE_CLAIMS: SampleClaim[] = [
+  {
+    id: 'sample_cardio',
+    category: 'Clinical Medicine',
+    badge: 'Cardiology',
+    text: 'SGLT2 inhibitors significantly reduce all-cause mortality and heart failure hospitalization in patients with reduced ejection fraction.'
+  },
+  {
+    id: 'sample_ai',
+    category: 'Computer Science',
+    badge: 'Generative AI',
+    text: 'Generative AI writing assistants enhance student analytical reasoning while increasing risks of citation hallucination.'
+  },
+  {
+    id: 'sample_ob',
+    category: 'Organizational Behavior',
+    badge: 'Management',
+    text: 'Psychological safety positively moderates the relationship between employee job autonomy and innovative work performance.'
+  },
+  {
+    id: 'sample_materials',
+    category: 'Energy & Materials',
+    badge: 'Renewables',
+    text: 'Perovskite-silicon tandem solar cells achieve laboratory power conversion efficiencies exceeding 30% under standard AM1.5G conditions.'
+  }
+];
 
 interface ClaimsWorkbenchPaneProps {
   onSendToStudio?: (draft: string, claims: Claim[]) => void;
@@ -64,6 +99,9 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
   const [isAnalyzingConsensus, setIsAnalyzingConsensus] = useState(false);
   const [consensusNotice, setConsensusNotice] = useState<string | null>(null);
   const [copiedConsensusId, setCopiedConsensusId] = useState<string | null>(null);
+  const [copiedDraft, setCopiedDraft] = useState(false);
+  const [cartSavedAll, setCartSavedAll] = useState(false);
+  const [studioInserted, setStudioInserted] = useState(false);
   const [counterEvidenceMap, setCounterEvidenceMap] = useState<Record<string, { counterClaim: string; papers: AcademicPaper[] }>>({});
   const [isTestingCounter, setIsTestingCounter] = useState(false);
 
@@ -76,8 +114,8 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
     }
   }, [initialText]);
 
-  const handleTestClaim = async () => {
-    if (!claimInput.trim()) {
+  const executeVerification = async (textToVerify: string, mode: 'single_claim' | 'paragraph_extract') => {
+    if (!textToVerify.trim()) {
       setErrorMsg('Please enter a claim or thesis to verify.');
       return;
     }
@@ -85,8 +123,8 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
     setIsVerifying(true);
 
     try {
-      if (evidenceMode === 'single_claim') {
-        const result = await executeFederatedSearch(claimInput, {
+      if (mode === 'single_claim') {
+        const result = await executeFederatedSearch(textToVerify, {
           limitPerSource: 12,
           searchScope: 'default',
           excludePreprints: options?.excludePreprints,
@@ -94,15 +132,15 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
 
         const newClaim: Claim = {
           id: `claim-${Date.now()}`,
-          text: claimInput.trim(),
-          rawSentence: claimInput.trim(),
+          text: textToVerify.trim(),
+          rawSentence: textToVerify.trim(),
           paragraphIndex: 0,
           sentenceIndex: 0,
           startIndex: 0,
-          endIndex: claimInput.length,
+          endIndex: textToVerify.length,
           confidence: result.papers.length >= 3 ? 'high' : result.papers.length > 0 ? 'medium' : 'low',
-          keywords: [claimInput.trim().slice(0, 30)],
-          searchQueries: [claimInput.trim()],
+          keywords: [textToVerify.trim().slice(0, 30)],
+          searchQueries: [textToVerify.trim()],
           candidatePapers: result.papers,
           selectedPaper: result.papers[0] || null,
           status: result.papers.length > 0 ? 'found' : 'not_found',
@@ -112,9 +150,14 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
 
         setTestedClaims([newClaim, ...testedClaims]);
         setSelectedClaimIndex(0);
+        confetti({
+          particleCount: 45,
+          spread: 60,
+          origin: { y: 0.8 },
+          colors: ['#0284c7', '#38bdf8', '#10b981']
+        });
       } else {
-        // Paragraph extract mode: uses active sensitivity setting!
-        const extracted = extractClaimsFromText(claimInput, sensitivity);
+        const extracted = extractClaimsFromText(textToVerify, sensitivity);
         if (extracted.length === 0) {
           setErrorMsg('No empirical claims detected in the pasted text under current sensitivity. Try selecting "Thorough" sensitivity or pasting a complete abstract.');
           setIsVerifying(false);
@@ -140,12 +183,111 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
 
         setTestedClaims([...batchClaims, ...testedClaims]);
         setSelectedClaimIndex(0);
+        confetti({
+          particleCount: 55,
+          spread: 70,
+          origin: { y: 0.8 },
+          colors: ['#0284c7', '#8b5cf6', '#10b981']
+        });
       }
     } catch (err: any) {
       setErrorMsg(`Claim verification failed: ${err.message}`);
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const handleTestClaim = () => {
+    executeVerification(claimInput, evidenceMode);
+  };
+
+  const handleApplySampleClaim = (sample: SampleClaim) => {
+    setEvidenceMode('single_claim');
+    setClaimInput(sample.text);
+    executeVerification(sample.text, 'single_claim');
+  };
+
+  const generateGroundedDraftText = (claims: Claim[]): string => {
+    const allSelectedPapers: AcademicPaper[] = [];
+    const paperKeyMap = new Map<string, number>();
+
+    claims.forEach((c) => {
+      const paper = c.selectedPaper || c.candidatePapers[0];
+      if (paper && !paperKeyMap.has(paper.id)) {
+        allSelectedPapers.push(paper);
+        paperKeyMap.set(paper.id, allSelectedPapers.length);
+      }
+    });
+
+    let groundedBody = '';
+
+    if (evidenceMode === 'paragraph_extract' && claimInput.trim()) {
+      let runningText = claimInput;
+      claims.forEach((c) => {
+        const paper = c.selectedPaper || c.candidatePapers[0];
+        if (paper) {
+          const citNum = paperKeyMap.get(paper.id) || 1;
+          const authorYear = paper.authors[0] 
+            ? `(${paper.authors[0].name.split(/\s+/).pop() || 'Author'} et al., ${paper.year || 2024})`
+            : `[${citNum}]`;
+          
+          if (runningText.includes(c.text)) {
+            runningText = runningText.replace(c.text, `${c.text} ${authorYear}`);
+          }
+        }
+      });
+      groundedBody = runningText;
+    } else {
+      groundedBody = claims.map((c) => {
+        const paper = c.selectedPaper || c.candidatePapers[0];
+        if (paper) {
+          const citNum = paperKeyMap.get(paper.id) || 1;
+          const authorYear = paper.authors[0]
+            ? `(${paper.authors[0].name.split(/\s+/).pop() || 'Author'} et al., ${paper.year || 2024})`
+            : `[${citNum}]`;
+          return `${c.text} ${authorYear}`;
+        }
+        return c.text;
+      }).join('\n\n');
+    }
+
+    const bibSection = allSelectedPapers.length > 0
+      ? `\n\n### References\n` + allSelectedPapers.map((p, idx) => {
+          const authors = p.authors.length > 0 
+            ? p.authors.map(a => a.name).join(', ') 
+            : 'Unknown Author';
+          const doiStr = p.doi ? ` https://doi.org/${p.doi}` : '';
+          return `[${idx + 1}] ${authors} (${p.year || 'n.d.'}). ${p.title}. *${p.venue || 'Academic Source'}*.${doiStr}`;
+        }).join('\n')
+      : '';
+
+    return `${groundedBody}${bibSection}`;
+  };
+
+  const handleSaveAllToCart = () => {
+    const allPapers: AcademicPaper[] = [];
+    testedClaims.forEach(c => {
+      if (c.selectedPaper) allPapers.push(c.selectedPaper);
+      else if (c.candidatePapers.length > 0) allPapers.push(c.candidatePapers[0]);
+    });
+    if (allPapers.length > 0) {
+      addMultiplePapersToCart(allPapers);
+      setCartSavedAll(true);
+      confetti({
+        particleCount: 45,
+        spread: 60,
+        origin: { y: 0.8 },
+        colors: ['#0284c7', '#10b981', '#a855f7']
+      });
+      setTimeout(() => setCartSavedAll(false), 3000);
+    }
+  };
+
+  const handleInsertGroundedToStudio = () => {
+    if (!onSendToStudio) return;
+    const grounded = generateGroundedDraftText(testedClaims);
+    onSendToStudio(grounded, testedClaims);
+    setStudioInserted(true);
   };
 
   const handleRunConsensusAnalysis = async () => {
@@ -364,6 +506,32 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
           </div>
         )}
 
+        {/* 1-Click Sample Scientific Hypotheses */}
+        <div className="pt-1.5">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>Sample Scientific Hypotheses (1-Click Test):</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {SAMPLE_CLAIMS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => handleApplySampleClaim(s)}
+                className="p-2.5 rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-slate-50/70 dark:bg-slate-950/70 text-left hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/50 transition cursor-pointer text-xs group"
+              >
+                <div className="flex items-center justify-between text-[10px] font-bold text-blue-700 dark:text-blue-400 mb-1">
+                  <span>{s.category}</span>
+                  <span className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-[9px] font-mono">{s.badge}</span>
+                </div>
+                <p className="text-[11px] text-slate-700 dark:text-slate-300 font-serif line-clamp-2 leading-snug group-hover:text-blue-900 dark:group-hover:text-blue-200">
+                  "{s.text}"
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {errorMsg && (
           <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-800 dark:text-rose-300">
             {errorMsg}
@@ -469,18 +637,43 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
               <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               <span>Verified Claims ({testedClaims.length})</span>
             </h3>
-            {onSendToStudio && (
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                onClick={() => {
-                  const draftText = testedClaims.map((c) => c.text).join('\n\n');
-                  onSendToStudio(draftText, testedClaims);
-                }}
-                className="px-3 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                type="button"
+                onClick={handleSaveAllToCart}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs"
+                title="Save every verified paper across all claims into the Research Cart"
               >
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>Open in Manuscript Studio</span>
+                <BookmarkPlus className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>{cartSavedAll ? '✓ Saved to Cart!' : 'Save All Papers to Cart'}</span>
               </button>
-            )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  const text = generateGroundedDraftText(testedClaims);
+                  navigator.clipboard.writeText(text);
+                  setCopiedDraft(true);
+                  setTimeout(() => setCopiedDraft(false), 2500);
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs"
+                title="Copy manuscript text with in-text citations and references"
+              >
+                {copiedDraft ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedDraft ? 'Copied' : 'Copy Grounded Draft'}</span>
+              </button>
+
+              {onSendToStudio && (
+                <button
+                  type="button"
+                  onClick={handleInsertGroundedToStudio}
+                  className="px-3.5 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition active:scale-95"
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>{studioInserted ? '✓ Grounded Draft Sent!' : 'Insert Grounded Draft into Studio →'}</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

@@ -913,6 +913,37 @@ export const App: React.FC = () => {
               initialTitle={activeManuscript?.title || ''}
               initialAbstract={activeManuscript?.abstract || ''}
               initialBibtex={activeManuscript?.bibliography || ''}
+              activeDraftWordCount={activeManuscript?.wordCount || (inputText ? inputText.trim().split(/\s+/).length : 0)}
+              onUpdateTitle={(newTitle: string) => {
+                if (activeManuscript) {
+                  const updated: ActiveManuscriptContext = {
+                    ...activeManuscript,
+                    title: newTitle,
+                  };
+                  setActiveManuscript(updated);
+                  saveActiveManuscriptToStorage(updated);
+                } else {
+                  handleManuscriptUpdate(`# ${newTitle}\n\n${inputText || ''}`, 'working_manuscript.txt');
+                }
+              }}
+              onUpdateBibliography={(newBib: string) => {
+                if (activeManuscript) {
+                  const updated: ActiveManuscriptContext = {
+                    ...activeManuscript,
+                    bibliography: newBib,
+                    detectedReferencesCount: newBib.split('@').filter(Boolean).length || activeManuscript.detectedReferencesCount
+                  };
+                  setActiveManuscript(updated);
+                  saveActiveManuscriptToStorage(updated);
+                } else {
+                  const initialText = inputText ? `${inputText}\n\n### References\n${newBib}` : `### References\n${newBib}`;
+                  handleManuscriptUpdate(initialText, 'working_manuscript.txt');
+                }
+              }}
+              onNavigateToVerifier={() => {
+                setActivePillar('verify');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
               onSendToStudio={(text) => {
                 handleManuscriptUpdate(inputText ? `${inputText}\n\n${text}` : text, activeManuscript?.filename);
                 setActivePillar('studio');
