@@ -132,6 +132,7 @@ export const SyntheticDataForgePane: React.FC<SyntheticDataForgePaneProps> = ({
 
   // Copy state
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [studioInsertSuccess, setStudioInsertSuccess] = useState<string | null>(null);
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -149,6 +150,58 @@ export const SyntheticDataForgePane: React.FC<SyntheticDataForgePaneProps> = ({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const generateQuantitativeMethodsText = (ds: GeneratedDataset): string => {
+    return `### Methodological Simulation & Data Generation Protocol
+
+#### Model Specification & Research Design
+The empirical framework was modeled as a **${ds.modelType.replace(/_/g, ' ').toUpperCase()}** architecture with a simulated empirical sample of $N = ${ds.sampleSize}$ observations.
+
+#### Variable Definitions & Operationalization
+${ds.variables.map(v => `- **${v.name}** (${v.role.toUpperCase()}): ${v.description} [Type: ${v.type}${v.mean !== undefined ? `, Mean = ${v.mean}, SD = ${v.sd}` : ''}]`).join('\n')}
+
+#### Data Generation Mechanics & Integrity Controls
+Monte Carlo variates were generated via standard Gaussian transformations (Box-Muller method) with specified structural path coefficients. Realism constraints were enforced through:
+- **Predictor Centering:** ${meanCenterPredictors ? 'Predictors mean-centered prior to interaction computation (Aiken & West, 1991).' : 'Raw uncentered scaling.'}
+- **Missingness Mechanism:** ${missingMechanism.toUpperCase()} at a rate of ${missingRate}%.
+- **Statistical Power:** Estimated statistical power for focal effect detection is ${Math.round((ds.assumptionAudit?.statisticalPower.currentPower ?? 0.85) * 100)}% at $\\alpha = 0.05$.`;
+  };
+
+  const generateQuantitativeResultsText = (ds: GeneratedDataset): string => {
+    return `### Quantitative Results & Hypothesis Verification
+
+#### Descriptive Statistics & Bivariate Correlations
+${Object.entries(ds.descriptives).map(([name, d]) => `- **${name}:** Mean = ${d.mean}, SD = ${d.sd}, Skewness = ${d.skewness}, Kurtosis = ${d.kurtosis}`).join('\n')}
+
+#### Statistical Model Estimation (APA 7th Format)
+${ds.apaResultsProse || `Hypothesis evaluation yielded a focal path coefficient of b = ${ds.hypothesisVerification.focalCoefficient.toFixed(3)} (SE = ${ds.hypothesisVerification.standardError.toFixed(3)}, t = ${ds.hypothesisVerification.tOrZValue.toFixed(2)}, p = ${ds.hypothesisVerification.pValue <= 0.001 ? '< .001' : ds.hypothesisVerification.pValue.toFixed(3)}), confirming the hypothesized empirical relationship.`}
+
+${ds.simpleSlopes ? `#### Conditional Simple Slopes Decomposition
+- **Low Moderator (-1 SD):** b = ${ds.simpleSlopes.slopes.find(s => s.condition.includes('Low'))?.slope.toFixed(3)} (p = ${ds.simpleSlopes.slopes.find(s => s.condition.includes('Low'))?.pValue})
+- **Mean Moderator:** b = ${ds.simpleSlopes.slopes.find(s => s.condition.includes('Mean'))?.slope.toFixed(3)} (p = ${ds.simpleSlopes.slopes.find(s => s.condition.includes('Mean'))?.pValue})
+- **High Moderator (+1 SD):** b = ${ds.simpleSlopes.slopes.find(s => s.condition.includes('High'))?.slope.toFixed(3)} (p = ${ds.simpleSlopes.slopes.find(s => s.condition.includes('High'))?.pValue})` : ''}`;
+  };
+
+  const generateQualitativeManuscriptText = (pkg: GeneratedQualitativePackage): string => {
+    return `### Qualitative Thematic Findings & Informant Discourse
+
+#### Study Informant Demographics (N = ${pkg.participants.length})
+Data were generated across ${pkg.participants.length} purposive participant informants (${pkg.type.replace(/_/g, ' ')}). 
+Informants represented diverse professional tenure ranging from ${Math.min(...pkg.participants.map(p => p.experienceYears))} to ${Math.max(...pkg.participants.map(p => p.experienceYears))} years of domain experience.
+
+#### Thematic Codebook Matrix & Exemplar Discourse
+Inductive thematic analysis following Braun and Clarke's (2006, 2021) 6-phase reflexive framework identified the following master themes:
+
+${pkg.thematicCodebook.map((cb, idx) => `##### Theme ${idx + 1}: ${cb.theme} (${cb.subTheme})
+**Operational Definition:** ${cb.definition}
+
+> "${cb.representativeQuotes[0]?.quote || ''}"  
+> — *${cb.representativeQuotes[0]?.participantPseudonym || 'Informant'}*
+`).join('\n\n')}
+
+#### Methodological Rigor & Trustworthiness
+In accordance with Lincoln and Guba's evaluative criteria for qualitative trustworthiness, credibility was supported through iterative peer debriefing and verbatim member reflections; transferability was anchored via dense contextual description; and dependability was documented through an exhaustive audit trail.`;
   };
 
   // Generate Quantitative Dataset Handler
@@ -882,14 +935,44 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
               </div>
 
               {onNavigateToStudio && (
-                <button
-                  onClick={() => onNavigateToStudio(`Empirical simulation of ${dataset.name}: ${dataset.hypothesisVerification.summaryNotes}`)}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
-                  title="Forward empirical hypothesis and findings to Manuscript Studio"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Send to Manuscript Studio &rarr;</span>
-                </button>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    onClick={() => {
+                      onNavigateToStudio(generateQuantitativeMethodsText(dataset));
+                      setStudioInsertSuccess('methods');
+                      setTimeout(() => setStudioInsertSuccess(null), 3000);
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    title="Insert simulation parameters, variables and power into Methods section"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{studioInsertSuccess === 'methods' ? '✓ Methods Sent!' : '+ Methods Protocol'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onNavigateToStudio(generateQuantitativeResultsText(dataset));
+                      setStudioInsertSuccess('results');
+                      setTimeout(() => setStudioInsertSuccess(null), 3000);
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    title="Insert APA 7th prose and hypothesis verification into Results section"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{studioInsertSuccess === 'results' ? '✓ Results Sent!' : '+ APA Results Draft'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const fullText = `${generateQuantitativeMethodsText(dataset)}\n\n${generateQuantitativeResultsText(dataset)}\n\n${generateCodebookMarkdown(dataset)}`;
+                      onNavigateToStudio(fullText);
+                      setStudioInsertSuccess('full');
+                      setTimeout(() => setStudioInsertSuccess(null), 3000);
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                    title="Insert complete replication package (Methods + Results + Codebook)"
+                  >
+                    <span>{studioInsertSuccess === 'full' ? '✓ Package Sent!' : '+ Full Replication'}</span>
+                  </button>
+                </div>
               )}
 
               {/* Sub-Tabs for Results Deck */}
@@ -1878,17 +1961,31 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
                     Generated {qualitativePackage.participants.length} purposive informant transcripts with Braun &amp; Clarke thematic matrix.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {onNavigateToStudio && (
+                    <button
+                      onClick={() => {
+                        onNavigateToStudio(generateQualitativeManuscriptText(qualitativePackage));
+                        setStudioInsertSuccess('qualitative');
+                        setTimeout(() => setStudioInsertSuccess(null), 3000);
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                      title="Insert qualitative themes, definitions and exemplar quotes into Manuscript Studio"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{studioInsertSuccess === 'qualitative' ? '✓ Thematic Findings Sent!' : 'Insert Findings into Manuscript Studio →'}</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDownload(qualitativePackage.rawMarkdownExport, 'qualitative_transcripts.md', 'text/markdown')}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer hover:bg-slate-50"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Download Markdown</span>
+                    <span>Markdown</span>
                   </button>
                   <button
                     onClick={() => handleDownload(qualitativePackage.rawMarkdownExport, 'qualitative_transcripts.doc', 'application/msword')}
-                    className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-700 text-indigo-900 dark:text-indigo-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer hover:bg-slate-50"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Word (.doc)</span>

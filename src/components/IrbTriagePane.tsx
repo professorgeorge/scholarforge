@@ -13,8 +13,13 @@ import {
   ExternalLink,
   Clock,
   RotateCcw,
-  Quote
+  Quote,
+  Sparkles,
+  Download,
+  FileCheck,
+  ClipboardCheck
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import {
   type IrbJurisdiction,
   type IrbTriageState,
@@ -26,11 +31,15 @@ import {
   type IrbChangeRisk,
   IRB_COMMON_DEFICIENCIES,
   IRB_FOUNDATIONAL_DOCUMENTS,
+  IRB_PRESETS,
+  type IrbPreset,
   assessIrbTriage,
   computeSubmissionAudit,
   buildIrbDocuments,
   buildJurisdictionNotes,
-  generateFormalEthicsStatement
+  generateFormalEthicsStatement,
+  generateInformedConsentDocument,
+  generateExemptionMemo
 } from '../services/irbTriageService';
 
 interface IrbTriagePaneProps {
@@ -60,12 +69,16 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
   const [state, setState] = useState<IrbTriageState>(DEFAULT_STATE);
   const [institutionName, setInstitutionName] = useState<string>('');
   const [protocolId, setProtocolId] = useState<string>('');
+  const [studyTitle, setStudyTitle] = useState<string>('Investigating Contemporary Empirical & Methodological Workflows');
+  const [investigatorName, setInvestigatorName] = useState<string>('Principal Investigator');
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [activeOutputTab, setActiveOutputTab] = useState<'statement' | 'consent' | 'memo'>('statement');
   
   const [defSearch, setDefSearch] = useState<string>('');
   
   // Copy state
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [appendedToStudio, setAppendedToStudio] = useState<boolean>(false);
+  const [appendedToStudio, setAppendedToStudio] = useState<string | null>(null);
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -73,11 +86,24 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
+  const handleDownload = (content: string, filename: string, mime: string = 'text/markdown') => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Evaluation
   const assessment = useMemo(() => assessIrbTriage(state), [state]);
   const audit = useMemo(() => computeSubmissionAudit(state), [state]);
   const requiredDocs = useMemo(() => buildIrbDocuments(state), [state]);
   const jurisdictionNotes = useMemo(() => buildJurisdictionNotes(state.jurisdiction), [state.jurisdiction]);
+  
   const formalStatement = useMemo(
     () => generateFormalEthicsStatement(
       state, 
@@ -85,6 +111,26 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
       protocolId.trim() || '[IRB Protocol #]'
     ), 
     [state, institutionName, protocolId]
+  );
+
+  const informedConsentDoc = useMemo(
+    () => generateInformedConsentDocument(
+      state,
+      institutionName.trim() || '[Name of University / Institutional Ethics Body]',
+      studyTitle.trim() || 'Investigating Contemporary Empirical & Methodological Workflows',
+      investigatorName.trim() || 'Principal Investigator'
+    ),
+    [state, institutionName, studyTitle, investigatorName]
+  );
+
+  const exemptionMemoDoc = useMemo(
+    () => generateExemptionMemo(
+      state,
+      institutionName.trim() || '[Name of University / Institutional Ethics Body]',
+      protocolId.trim() || '[IRB Protocol #]',
+      studyTitle.trim() || 'Investigating Contemporary Empirical & Methodological Workflows'
+    ),
+    [state, institutionName, protocolId, studyTitle]
   );
 
   // Filtered Deficiencies
@@ -98,7 +144,19 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
     );
   }, [defSearch]);
 
-
+  const handleApplyPreset = (preset: IrbPreset) => {
+    setSelectedPresetId(preset.id);
+    setState(prev => ({
+      ...prev,
+      ...preset.state
+    } as IrbTriageState));
+    confetti({
+      particleCount: 45,
+      spread: 60,
+      origin: { y: 0.8 },
+      colors: ['#0284c7', '#10b981', '#6366f1']
+    });
+  };
 
   const handleToggleActivity = (act: IrbActivity) => {
     setState(prev => {
@@ -127,11 +185,27 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
     });
   };
 
-  const handleSendToStudio = () => {
+  const handleSendStatementToStudio = () => {
     if (onAppendToDraft) {
       onAppendToDraft(`\n\n### Institutional Ethics & Compliance Declaration\n${formalStatement}\n`);
-      setAppendedToStudio(true);
-      setTimeout(() => setAppendedToStudio(false), 3000);
+      setAppendedToStudio('statement');
+      setTimeout(() => setAppendedToStudio(null), 3000);
+    }
+  };
+
+  const handleSendConsentToStudio = () => {
+    if (onAppendToDraft) {
+      onAppendToDraft(`\n\n${informedConsentDoc}\n`);
+      setAppendedToStudio('consent');
+      setTimeout(() => setAppendedToStudio(null), 3000);
+    }
+  };
+
+  const handleSendMemoToStudio = () => {
+    if (onAppendToDraft) {
+      onAppendToDraft(`\n\n${exemptionMemoDoc}\n`);
+      setAppendedToStudio('memo');
+      setTimeout(() => setAppendedToStudio(null), 3000);
     }
   };
 
@@ -196,12 +270,62 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
         </div>
 
         <button
-          onClick={() => setState(DEFAULT_STATE)}
+          onClick={() => { setState(DEFAULT_STATE); setSelectedPresetId(null); }}
           className="relative z-10 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-semibold flex items-center gap-2 transition cursor-pointer border border-white/15 shadow-sm self-start md:self-auto shrink-0 backdrop-blur-xs"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Reset Triage Answers</span>
         </button>
+      </div>
+
+      {/* 1-Click Canonical Protocol Presets */}
+      <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              Canonical Protocol Presets (1-Click Triage Setup)
+            </h3>
+          </div>
+          <span className="text-[11px] text-slate-500">
+            Instant scenario configuration calibrated to 45 CFR 46 &amp; Helsinki
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
+          {IRB_PRESETS.map((p) => {
+            const isSelected = selectedPresetId === p.id;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handleApplyPreset(p)}
+                className={`p-3 rounded-2xl border text-left transition-all duration-150 cursor-pointer flex flex-col justify-between ${
+                  isSelected
+                    ? 'bg-blue-50/90 dark:bg-blue-950/70 border-blue-600 dark:border-blue-500 ring-2 ring-blue-500/20 shadow-xs'
+                    : 'bg-slate-50/70 dark:bg-slate-950/70 border-slate-200/90 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100/70'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200">
+                      {p.badge}
+                    </span>
+                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
+                  </div>
+                  <h5 className="font-bold text-xs text-slate-900 dark:text-white leading-tight mt-1">
+                    {p.title}
+                  </h5>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-snug">
+                    {p.description}
+                  </p>
+                </div>
+                <div className="mt-2 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                  {isSelected ? '✓ Active Preset' : 'Apply Preset →'}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Role / Mode Switcher */}
@@ -851,22 +975,50 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
               </ul>
             </div>
 
-            {/* Formal Ethics Declaration Generator */}
-            <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/90 dark:border-blue-900/90 space-y-3 shadow-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-200">
-                  <ShieldCheck className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-                  <span>Formal Ethics Statement Generator</span>
-                </div>
+            {/* Multi-Artifact Ethics & Compliance Generator */}
+            <div className="p-5 rounded-3xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/90 dark:border-blue-900/90 space-y-4 shadow-xs">
+              
+              {/* Output Sub-Tabs */}
+              <div className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900 rounded-xl border border-blue-200/80 dark:border-blue-900/80">
                 <button
-                  onClick={() => handleCopy(formalStatement, 'statement')}
-                  className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
+                  type="button"
+                  onClick={() => setActiveOutputTab('statement')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    activeOutputTab === 'statement'
+                      ? 'bg-blue-900 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
                 >
-                  {copiedKey === 'statement' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedKey === 'statement' ? 'Copied' : 'Copy'}</span>
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Ethics Statement</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveOutputTab('consent')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    activeOutputTab === 'consent'
+                      ? 'bg-blue-900 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <FileCheck className="w-3.5 h-3.5" />
+                  <span>Consent Form (PIS/ICF)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveOutputTab('memo')}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                    activeOutputTab === 'memo'
+                      ? 'bg-blue-900 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <ClipboardCheck className="w-3.5 h-3.5" />
+                  <span>IRB Memo</span>
                 </button>
               </div>
 
+              {/* Institutional & Study Metadata Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div>
                   <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Institution Body:</label>
@@ -888,30 +1040,179 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
                     className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-mono text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   />
                 </div>
-              </div>
-
-              <div className="relative p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-serif italic shadow-inner">
-                <Quote className="w-4 h-4 text-blue-400/30 absolute top-2 right-2 pointer-events-none" />
-                &ldquo;{formalStatement}&rdquo;
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  onClick={handleSendToStudio}
-                  className="flex-1 px-3 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 active:scale-[0.98] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{appendedToStudio ? 'Appended to Active Studio Draft!' : 'Send Declaration to Studio'}</span>
-                </button>
-                {onNavigateToStudio && (
-                  <button
-                    onClick={onNavigateToStudio}
-                    className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-300 font-bold text-xs transition cursor-pointer"
-                  >
-                    View Studio
-                  </button>
+                {(activeOutputTab === 'consent' || activeOutputTab === 'memo') && (
+                  <>
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Study Title:</label>
+                      <input
+                        type="text"
+                        value={studyTitle}
+                        onChange={e => setStudyTitle(e.target.value)}
+                        placeholder="e.g. Investigating Contemporary Empirical & Methodological Workflows"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">Principal Investigator:</label>
+                      <input
+                        type="text"
+                        value={investigatorName}
+                        onChange={e => setInvestigatorName(e.target.value)}
+                        placeholder="e.g. Dr. Jane Doe, Associate Professor"
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                      />
+                    </div>
+                  </>
                 )}
               </div>
+
+              {/* Tab 1: Formal Ethics Declaration */}
+              {activeOutputTab === 'statement' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">Manuscript Methods Section Statement:</span>
+                    <button
+                      onClick={() => handleCopy(formalStatement, 'statement')}
+                      className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
+                    >
+                      {copiedKey === 'statement' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedKey === 'statement' ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+
+                  <div className="relative p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-serif italic shadow-inner">
+                    <Quote className="w-4 h-4 text-blue-400/30 absolute top-2 right-2 pointer-events-none" />
+                    &ldquo;{formalStatement}&rdquo;
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={handleSendStatementToStudio}
+                      className="flex-1 px-3 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 active:scale-[0.98] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{appendedToStudio === 'statement' ? '✓ Appended to Manuscript Studio Draft!' : 'Insert Declaration into Studio Draft'}</span>
+                    </button>
+                    {onNavigateToStudio && (
+                      <button
+                        onClick={onNavigateToStudio}
+                        className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-300 font-bold text-xs transition cursor-pointer"
+                      >
+                        View Studio
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2: Participant Information Sheet & Consent Form */}
+              {activeOutputTab === 'consent' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">Complete PIS &amp; Consent Form (ICF):</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCopy(informedConsentDoc, 'consent')}
+                        className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
+                      >
+                        {copiedKey === 'consent' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedKey === 'consent' ? 'Copied' : 'Copy'}</span>
+                      </button>
+                      <button
+                        onClick={() => handleDownload(informedConsentDoc, 'participant_consent_form.md', 'text/markdown')}
+                        className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>.MD</span>
+                      </button>
+                      <button
+                        onClick={() => handleDownload(informedConsentDoc, 'participant_consent_form.doc', 'application/msword')}
+                        className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Word</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="relative p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 max-h-56 overflow-y-auto text-xs text-slate-800 dark:text-slate-200 font-mono shadow-inner leading-relaxed whitespace-pre-wrap">
+                    {informedConsentDoc}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={handleSendConsentToStudio}
+                      className="flex-1 px-3 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 active:scale-[0.98] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{appendedToStudio === 'consent' ? '✓ Consent Form Appended to Draft!' : 'Append Consent Form to Manuscript Appendix'}</span>
+                    </button>
+                    {onNavigateToStudio && (
+                      <button
+                        onClick={onNavigateToStudio}
+                        className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-300 font-bold text-xs transition cursor-pointer"
+                      >
+                        View Studio
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: Ethics Committee Memorandum */}
+              {activeOutputTab === 'memo' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-600 dark:text-slate-400">Formal IRB Determination Request Memo:</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCopy(exemptionMemoDoc, 'memo')}
+                        className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
+                      >
+                        {copiedKey === 'memo' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedKey === 'memo' ? 'Copied' : 'Copy'}</span>
+                      </button>
+                      <button
+                        onClick={() => handleDownload(exemptionMemoDoc, 'irb_submission_memo.md', 'text/markdown')}
+                        className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>.MD</span>
+                      </button>
+                      <button
+                        onClick={() => handleDownload(exemptionMemoDoc, 'irb_submission_memo.doc', 'application/msword')}
+                        className="text-[11px] font-bold text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer transition active:scale-95"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Word</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="relative p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 max-h-56 overflow-y-auto text-xs text-slate-800 dark:text-slate-200 font-mono shadow-inner leading-relaxed whitespace-pre-wrap">
+                    {exemptionMemoDoc}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      onClick={handleSendMemoToStudio}
+                      className="flex-1 px-3 py-2 rounded-xl bg-blue-900 hover:bg-blue-800 active:scale-[0.98] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>{appendedToStudio === 'memo' ? '✓ Memo Appended to Draft!' : 'Append Protocol Memo to Manuscript Studio'}</span>
+                    </button>
+                    {onNavigateToStudio && (
+                      <button
+                        onClick={onNavigateToStudio}
+                        className="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-[0.98] text-slate-700 dark:text-slate-300 font-bold text-xs transition cursor-pointer"
+                      >
+                        View Studio
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
             </div>
 
           </div>

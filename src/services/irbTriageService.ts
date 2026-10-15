@@ -1031,3 +1031,252 @@ export function generateFormalEthicsStatement(
 
   return `Ethical Approval: All procedures performed in studies involving human participants were in accordance with the ethical standards of the institutional and/or national research committee (${institutionName}, Approval Reference: ${protocolNumber}) and with the 1964 Helsinki Declaration and its later amendments or comparable ethical standards. Informed Consent: ${consentText}`;
 }
+
+export interface IrbPreset {
+  id: string;
+  title: string;
+  badge: string;
+  category: string;
+  description: string;
+  state: Partial<IrbTriageState>;
+}
+
+export const IRB_PRESETS: IrbPreset[] = [
+  {
+    id: 'preset_anonymous_survey',
+    title: 'Anonymous Online Survey',
+    badge: 'Exempt Track (Cat. 2)',
+    category: 'Social & Behavioral',
+    description: 'Adult participants completing anonymous questionnaires regarding attitudes, perceptions, or workplace dynamics.',
+    state: {
+      mode: 'researcher',
+      jurisdiction: 'us',
+      purpose: 'research',
+      dataSource: 'primary',
+      activities: ['survey', 'online_data'],
+      population: ['general'],
+      identifiability: 'anonymous',
+      sensitivity: ['none'],
+      risk: 'minimal'
+    }
+  },
+  {
+    id: 'preset_qual_interviews',
+    title: 'Healthcare Professional Interviews',
+    badge: 'Expedited Review (Cat. 7)',
+    category: 'Clinical / Qualitative',
+    description: 'In-depth audio-recorded semi-structured interviews with doctors and nurses exploring clinical workflows and burnout.',
+    state: {
+      mode: 'researcher',
+      jurisdiction: 'us',
+      purpose: 'research',
+      dataSource: 'primary',
+      activities: ['interview', 'recording'],
+      population: ['general'],
+      identifiability: 'coded',
+      sensitivity: ['mental_health'],
+      risk: 'minimal'
+    }
+  },
+  {
+    id: 'preset_secondary_public',
+    title: 'De-Identified Public Data Analysis',
+    badge: 'Not Human Subjects Research',
+    category: 'Data Science / Epidemiology',
+    description: 'Secondary analysis of publicly accessible or fully anonymized databases (e.g. NHANES, OpenAlex, MIMIC-III).',
+    state: {
+      mode: 'researcher',
+      jurisdiction: 'us',
+      purpose: 'research',
+      dataSource: 'existing',
+      activities: ['online_data'],
+      population: ['general'],
+      identifiability: 'public',
+      sensitivity: ['none'],
+      risk: 'minimal'
+    }
+  },
+  {
+    id: 'preset_clinical_trial',
+    title: 'Clinical Experimental Intervention',
+    badge: 'Full Board Review',
+    category: 'Biomedical / Clinical',
+    description: 'Prospective experimental drug or device administration with hospitalized clinical patients involving physical or physiological risk.',
+    state: {
+      mode: 'researcher',
+      jurisdiction: 'us',
+      purpose: 'research',
+      dataSource: 'primary',
+      activities: ['experiment', 'biomedical', 'biospecimens'],
+      population: ['patients', 'critically_ill'],
+      identifiability: 'direct',
+      sensitivity: ['stigmatized_health'],
+      risk: 'substantial'
+    }
+  },
+  {
+    id: 'preset_curriculum_qi',
+    title: 'Curricular Quality Improvement (QI)',
+    badge: 'QI Non-Research Waiver',
+    category: 'Higher Ed / Evaluation',
+    description: 'Assessment of internal educational teaching methods, student learning outcomes, and classroom program evaluation.',
+    state: {
+      mode: 'researcher',
+      jurisdiction: 'us',
+      purpose: 'qi',
+      dataSource: 'primary',
+      activities: ['survey', 'observation_public'],
+      population: ['own_students'],
+      identifiability: 'deidentified',
+      sensitivity: ['none'],
+      risk: 'minimal'
+    }
+  }
+];
+
+/**
+ * Generate a comprehensive Participant Information Sheet (PIS) & Informed Consent Form (ICF)
+ */
+export function generateInformedConsentDocument(
+  state: IrbTriageState,
+  institutionName: string = '[Name of University / Institutional Ethics Body]',
+  studyTitle: string = 'Investigating Contemporary Methodological and Empirical Phenomenologies',
+  investigatorName: string = 'Principal Investigator'
+): string {
+  const isAnonymous = state.identifiability === 'anonymous';
+  const isSurvey = state.activities.includes('survey');
+  const isInterview = state.activities.includes('interview');
+  const isAudioRecorded = state.activities.includes('recording');
+
+  const jurisdictionDataLaw: Record<IrbJurisdiction, string> = {
+    us: 'the Federal Policy for the Protection of Human Subjects (45 CFR 46) and HIPAA Security Rule standards',
+    uk: 'the UK General Data Protection Regulation (UK GDPR) and Data Protection Act 2018',
+    eu: 'the European Union General Data Protection Regulation (EU GDPR Art. 6 & Art. 9)',
+    ca: 'the Tri-Council Policy Statement (TCPS 2, 2022) and provincial health privacy legislation',
+    au: 'the Australian National Statement on Ethical Conduct in Human Research and Privacy Act 1988',
+    in: 'the ICMR National Ethical Guidelines (2017) and Digital Personal Data Protection Act (DPDPA 2023)',
+    cn: 'the NHC 2023 Measures for Ethical Review and Personal Information Protection Law (PIPL)',
+    br: 'Resolution CNS 466/2012 / CNS 510/2016 and Lei Geral de Proteção de Dados (LGPD)',
+    multi: 'applicable international human rights accords and relevant jurisdictional privacy frameworks',
+    other: 'the World Medical Association Declaration of Helsinki and international ethics standards'
+  };
+
+  const dataProtectionCite = jurisdictionDataLaw[state.jurisdiction] || jurisdictionDataLaw.other;
+
+  return `# PARTICIPANT INFORMATION SHEET & INFORMED CONSENT FORM
+
+**Study Title:** ${studyTitle}  
+**Institutional Ethics Review Body:** ${institutionName}  
+**Principal Investigator:** ${investigatorName}  
+**Protocol / Triage Classification:** ${state.risk === 'minimal' ? 'Minimal Risk Protocol' : 'Prospective Human Subjects Protocol'}  
+
+---
+
+### SECTION 1: PARTICIPANT INFORMATION SHEET (PIS)
+
+#### 1. Introduction and Study Purpose
+You are cordially invited to participate in a research study conducted under the auspices of **${institutionName}**. Before deciding whether to take part, it is essential that you comprehend why the investigation is being undertaken and what your participation will entail. Please take time to review the following disclosures carefully and discuss them with associates or the investigator if desired.
+
+The overarching objective of this inquiry is to examine core dynamics related to *${studyTitle}*. Your insights will contribute directly to scholarly knowledge and empirical understanding within the field.
+
+#### 2. Voluntary Participation & Right to Withdraw
+Your involvement in this investigation is **completely voluntary**. You have the unmitigated right to decline participation, refuse to answer any individual query, or discontinue your involvement at any juncture without providing a rationale and without any penalty, detriment, or loss of benefits to which you are otherwise entitled.
+
+#### 3. What Will Participation Involve?
+${isSurvey ? '- **Online Questionnaires:** You will be requested to complete a structured electronic questionnaire regarding your professional experiences and perceptions. This procedure will take approximately 12–18 minutes to conclude.\n' : ''}${isInterview ? '- **Semi-Structured Discussion:** You will engage in an in-depth conversation exploring specific workplace or empirical experiences. The discussion will last approximately 30–45 minutes.\n' : ''}${isAudioRecorded ? '- **Audio Recording:** With your explicit permission, the interview dialogue will be digitally recorded solely to ensure exact transcription fidelity. You may request the recording device be halted at any moment.\n' : ''}- **Time Horizon:** Your active engagement will be confined to the session delineated above; no long-term longitudinal obligations are entailed unless explicitly re-consented.
+
+#### 4. Foreseeable Risks and Inconveniences
+${state.risk === 'minimal' 
+  ? 'This study presents **minimal risk**, defined as risks no greater than those ordinarily encountered in daily life or during routine physical/psychological examinations. Potential inconveniences are restricted to the time invested in reviewing and answering inquiries.' 
+  : 'Participation carries potential risks which may include temporary psychological fatigue or mild emotional discomfort when reflecting on professional challenges. You may pause or terminate the session at any time.'}
+
+#### 5. Anticipated Benefits
+While there may be no direct personal or clinical benefit to you as an individual participant, the data collected will assist academic researchers in establishing robust evidence-based frameworks and recommendations that benefit the broader disciplinary community.
+
+#### 6. Confidentiality, Data Protection & Anonymity
+All information collected during the investigation will be handled strictly in accordance with **${dataProtectionCite}**.
+${isAnonymous 
+  ? '- **Complete Anonymity:** No personally identifying information (such as your name, email, IP address, or organizational employer) is captured or linked to your responses. Data are gathered in fully anonymized form.'
+  : '- **Coded Data Handling:** All identifiers will be stripped and replaced with an arbitrary alphanumeric code (pseudonym). The linking key linking participant identities to codes will be stored on an encrypted, password-protected institutional server accessible exclusively to the Principal Investigator and destroyed upon study completion.'}
+- **Data Archiving:** Aggregated, de-identified research findings will be retained for archival verification in compliance with open science and institutional repository guidelines for a statutory duration of 5 years.
+
+#### 7. Institutional Ethics and Contact Details
+If you have queries concerning this research project, contact:
+- **Principal Investigator:** ${investigatorName} (Email: \`pi-research@institution.edu\`)
+- **Institutional Ethics Office:** ${institutionName} (Email: \`ethics-committee@institution.edu\`)
+
+---
+
+### SECTION 2: INFORMED CONSENT DECLARATION
+
+Please check the respective boxes to indicate your informed consent:
+
+- [ ] **I confirm** that I have read and comprehended the Participant Information Sheet dated above for the study entitled *"${studyTitle}"*.
+- [ ] **I have had** the opportunity to consider the disclosures, formulate queries, and receive satisfactory resolutions.
+- [ ] **I understand** that my participation is entirely voluntary and that I remain free to withdraw at any stage without negative repercussions.
+- [ ] **I understand** that my data will be securely processed and protected in accordance with ${dataProtectionCite}.
+${isAudioRecorded ? '- [ ] **I consent** to the digital audio recording of my interview session on the condition that verbatim excerpts are attributed exclusively under pseudonyms.\n' : ''}- [ ] **I voluntarily agree** to participate in this study.
+
+---
+
+**Participant Signature / Electronic Confirmation:**  
+\`\`\`
+Participant Signature (or Electronic Consent Indicator): ___________________________
+Printed Name: __________________________________________________________________
+Date (DD/MM/YYYY): _____________________________________________________________
+\`\`\`
+
+**Investigator Countersignature:**  
+\`\`\`
+Investigator Signature: _________________________________________________________
+Date (DD/MM/YYYY): _____________________________________________________________
+\`\`\`
+`;
+}
+
+/**
+ * Generate a formal IRB Protocol Exemption / Expedited Review Request Memorandum
+ */
+export function generateExemptionMemo(
+  state: IrbTriageState,
+  institutionName: string = '[Name of University / Institutional Ethics Body]',
+  protocolNumber: string = '[IRB Protocol #]',
+  studyTitle: string = 'Investigating Contemporary Methodological and Empirical Phenomenologies'
+): string {
+  const result = assessIrbTriage(state);
+
+  return `# INSTITUTIONAL ETHICS COMMITTEE MEMORANDUM
+**MEMORANDUM FOR:** Chair & Reviewers, ${institutionName}  
+**FROM:** Principal Investigator  
+**DATE:** ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}  
+**SUBJECT:** Prospective Ethics Determination Request — ${result.headline}  
+**PROTOCOL REF:** ${protocolNumber}  
+**PROJECT TITLE:** ${studyTitle}  
+
+---
+
+### 1. REGULATORY JURISDICTION & PROPOSED TRACK
+- **Statutory Jurisdiction:** ${state.jurisdiction.toUpperCase()} Framework
+- **Primary Data Modality:** ${state.dataSource === 'primary' ? 'Primary Human Participant Collection' : state.dataSource === 'existing' ? 'Secondary Analysis of Existing Dataset' : 'Non-Human / Simulation Data'}
+- **Requested Review Track:** **${result.verdict.toUpperCase().replace('_', ' ')}** (${result.track || 'Deterministic Triage Assessment'})
+
+### 2. PROTOCOL METHODOLOGY SUMMARY
+The proposed investigation engages in ${state.activities.join(', ').replace(/_/g, ' ')} involving ${state.population.join(', ').replace(/_/g, ' ')} participants. All data acquisition procedures maintain ${state.identifiability || 'coded'} identifiability with a determined participant risk level of **${state.risk || 'minimal'} risk**.
+
+### 3. STATUTORY JUSTIFICATION FOR DETERMINATION
+The investigator respectfully submits that this study satisfies regulatory criteria for **${result.verdict.toUpperCase().replace('_', ' ')}** on the basis of the following factors:
+${result.reasons.map(r => `- **${r.kind.toUpperCase()}:** ${r.text}`).join('\n')}
+
+${result.flags.length > 0 ? `### 4. RISK MITIGATION & ESCALATION CONTROLS\nThe study protocol addresses the following escalated considerations:\n${result.flags.map(f => `- **${f.kind.toUpperCase()}:** ${f.text}`).join('\n')}\n` : ''}
+### 5. ATTACHED SUBMISSION DOSSIER
+The following required regulatory documentation is appended to this memorandum:
+- Complete Study Protocol & Operational Schedule
+- Participant Information Sheet & Informed Consent Form (ICF)
+- Full Survey / Semi-Structured Interview Schedule
+- Data Protection and Cryptographic Storage Plan
+
+Respectfully submitted,  
+**Principal Investigator**, Research Division  
+${institutionName}
+`;
+}

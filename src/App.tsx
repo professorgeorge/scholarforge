@@ -845,7 +845,8 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200 space-y-6">
             <IrbTriagePane
               onAppendToDraft={(declarationText) => {
-                setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
+                const combined = inputText ? `${inputText}\n\n${declarationText}` : declarationText;
+                handleManuscriptUpdate(combined, activeManuscript?.filename);
               }}
               onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             />
