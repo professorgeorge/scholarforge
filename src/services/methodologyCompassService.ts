@@ -72,6 +72,8 @@ export interface CoherenceDiagnostic {
   oe: number;
   methFit: boolean | null;
   anaFit: boolean | null;
+  methodFit?: boolean | null;
+  paradigmFit?: boolean | null;
   issues: string[];
 }
 
@@ -336,6 +338,8 @@ export function computeCoherence(stack: CompassStack): CoherenceDiagnostic {
   const epi = stack.epistemology;
   const meth = stack.methodology;
   const ana = stack.analysis;
+  const method = stack.method;
+  const paradigm = stack.paradigm;
 
   if (!onto || !epi) {
     return {
@@ -345,6 +349,8 @@ export function computeCoherence(stack: CompassStack): CoherenceDiagnostic {
       oe: 0,
       methFit: null,
       anaFit: null,
+      methodFit: null,
+      paradigmFit: null,
       issues: []
     };
   }
@@ -356,12 +362,21 @@ export function computeCoherence(stack: CompassStack): CoherenceDiagnostic {
   if (meth) methFit = (COMPAT.epiMeth[epi] || []).indexOf(meth) !== -1;
   let anaFit: boolean | null = null;
   if (ana && meth) anaFit = (COMPAT.methToAnalysis[meth] || []).indexOf(ana) !== -1;
+  let methodFit: boolean | null = null;
+  if (method && meth) methodFit = (COMPAT.methToMethods[meth] || []).indexOf(method) !== -1;
+  let paradigmFit: boolean | null = null;
+  if (paradigm && epi) {
+    const expectedParadigm = deriveParadigm(onto, epi);
+    paradigmFit = expectedParadigm ? paradigm === expectedParadigm : true;
+  }
 
-  let pct = ((oe + 1) / 2) * 70;
-  if (methFit === true) pct += 20;
+  let pct = ((oe + 1) / 2) * 60;
+  if (methFit === true) pct += 15;
   else if (methFit === false) pct -= 10;
-  if (anaFit === true) pct += 10;
+  if (anaFit === true) pct += 15;
   else if (anaFit === false) pct -= 5;
+  if (methodFit === true) pct += 10;
+  else if (methodFit === false) pct -= 8;
   pct = Math.max(0, Math.min(100, Math.round(pct)));
 
   let verdict: 'coherent' | 'tense' | 'incoherent';
@@ -380,10 +395,12 @@ export function computeCoherence(stack: CompassStack): CoherenceDiagnostic {
   const issues: string[] = [];
   if (oe < 0) issues.push('Your ontology and epistemology pull in opposing directions.');
   if (methFit === false) issues.push('Your methodology is uncommon for this epistemological stance.');
+  if (methodFit === false) issues.push('Your data collection method is rarely paired with this methodology.');
   if (anaFit === false) issues.push('Your analytic technique is rarely paired with this methodology.');
+  if (paradigmFit === false) issues.push('Your paradigm choice creates philosophical tension with your epistemological stance.');
   if (issues.length) note += ' ' + issues.join(' ');
 
-  return { pct, note, verdict, oe, methFit, anaFit, issues };
+  return { pct, note, verdict, oe, methFit, anaFit, methodFit, paradigmFit, issues };
 }
 
 function capitalize(s: string): string {
@@ -563,6 +580,41 @@ export interface AIMethodologyRecommendation {
 }
 
 /**
+ * Sanitizes and normalizes stack IDs from AI or legacy inputs to canonical Atlas IDs.
+ */
+export function sanitizeStackIds(stack: Record<string, any>): Record<string, any> {
+  const normalized = { ...stack };
+
+  // Ontology mapping
+  if (normalized.ontology === 'pragmatism') normalized.ontology = 'pragmatist';
+  if (normalized.ontology === 'empirical-realism') normalized.ontology = 'naive-realism';
+
+  // Epistemology mapping
+  if (normalized.epistemology === 'pragmatic-epistemology') normalized.epistemology = 'pragmatism';
+  if (normalized.epistemology === 'standpoint-epistemology') normalized.epistemology = 'critical';
+
+  // Methodology mapping
+  if (normalized.methodology === 'experiment' || normalized.methodology === 'rct') normalized.methodology = 'experimental';
+  if (normalized.methodology === 'quasi-experiment') normalized.methodology = 'quasi-experimental';
+
+  // Method mapping
+  if (normalized.method === 'experimental-task') normalized.method = 'experiment';
+  if (normalized.method === 'in-depth-interviews') normalized.method = 'in-depth-interview';
+  if (normalized.method === 'semi-structured-interviews') normalized.method = 'semi-structured-interview';
+  if (normalized.method === 'focus-groups') normalized.method = 'focus-group';
+  if (normalized.method === 'secondary-data-mining') normalized.method = 'secondary-data';
+
+  // Analysis mapping
+  if (normalized.analysis === 'ols-regression' || normalized.analysis === 'logistic-regression') normalized.analysis = 'regression';
+  if (normalized.analysis === 'anova' || normalized.analysis === 'ancova' || normalized.analysis === 't-test') normalized.analysis = 'inferential-stats';
+  if (normalized.analysis === 'multilevel-modeling') normalized.analysis = 'multilevel';
+  if (normalized.analysis === 'cfa' || normalized.analysis === 'structural-equation-modeling') normalized.analysis = 'sem';
+  if (normalized.analysis === 'grounded-theory') normalized.analysis = 'gt-coding';
+
+  return normalized;
+}
+
+/**
  * Intelligent deterministic fallback recommender when offline or built-in AI mode is active.
  */
 export function generateDeterministicRecommendation(
@@ -587,7 +639,7 @@ export function generateDeterministicRecommendation(
         methodologyName: 'Cross-Sectional Survey',
         method: 'survey-instrument',
         methodName: 'Structured Likert Instrument',
-        analysis: 'ols-regression',
+        analysis: 'regression',
         analysisName: 'Moderated Multiple Regression (OLS / PROCESS)'
       },
       designRationale: `Moderation inquiries require verifying conditional effects ($Y = \\beta_0 + \\beta_1 X + \\beta_2 W + \\beta_3 XW + \\epsilon$). A post-positivist survey methodology aligns with continuous psychological/behavioral constructs, while critical realism accommodates fallible measurement of generative mechanisms under varying boundary conditions.`,
@@ -691,11 +743,11 @@ export function generateDeterministicRecommendation(
         epistemologyName: 'Positivism',
         paradigm: 'functionalist',
         paradigmName: 'Functionalist Paradigm',
-        methodology: 'experiment',
+        methodology: 'experimental',
         methodologyName: 'Randomized Controlled Trial / Lab Experiment',
-        method: 'experimental-task',
+        method: 'experiment',
         methodName: 'Randomized Experimental Intervention & Baseline Covariate Assessment',
-        analysis: 'anova',
+        analysis: 'inferential-stats',
         analysisName: 'Factorial ANOVA / ANCOVA'
       },
       designRationale: `Experiments represent the gold standard for establishing causal precedence (X precedes Y, co-variation, and elimination of plausible rival explanations via true random assignment). Positivist epistemology is directly satisfied through manipulation and objective measurement.`,
@@ -729,9 +781,9 @@ export function generateDeterministicRecommendation(
         paradigmName: 'Functionalist Paradigm',
         methodology: 'survey',
         methodologyName: 'Secondary Registry / Cross-Sectional Cohort',
-        method: 'secondary-data-mining',
+        method: 'secondary-data',
         methodName: 'Archival Metric Extraction',
-        analysis: 'logistic-regression',
+        analysis: 'regression',
         analysisName: 'Binary Logistic Regression'
       },
       designRationale: `Linear regression violates boundary constraints and homoscedasticity when predicting a binary event (0/1). The logit link function ln(p / (1-p)) maps unbounded continuous predictors to a valid [0, 1] probability continuum.`,
@@ -767,7 +819,7 @@ export function generateDeterministicRecommendation(
         methodologyName: 'Longitudinal Panel Cohort',
         method: 'survey-instrument',
         methodName: 'Multi-Wave Repeated Measurements',
-        analysis: 'multilevel-modeling',
+        analysis: 'multilevel',
         analysisName: 'Multilevel Growth Curve / Mixed-Effects Modeling'
       },
       designRationale: `Repeated measurements within participants violate the assumption of independent observations. Mixed-effects models decompose variance into between-person (Level 2) and within-person (Level 1) components while accommodating missing waves under Missing at Random (MAR) assumptions.`,
@@ -800,7 +852,7 @@ export function generateDeterministicRecommendation(
       paradigmName: 'Interpretive Paradigm',
       methodology: 'case-study',
       methodologyName: 'Qualitative In-Depth Inquiry',
-      method: 'in-depth-interviews',
+      method: 'in-depth-interview',
       methodName: 'Semi-Structured In-Depth Qualitative Interviews',
       analysis: 'thematic-analysis',
       analysisName: 'Reflexive Thematic Analysis (Braun & Clarke)'
@@ -842,29 +894,29 @@ export async function recommendMethodologyAI(
 
   const systemPrompt = `You are a distinguished Professor of Research Methods, Applied Statistics, and Epistemology.
 A scholar has described their planned research inquiry and available data.
-Your goal is to provide a rigorous, publication-grade Methodological Architecture Recommendation aligned with the 6-layer epistemic framework:
-Layer 1: Ontology ('critical-realism', 'naive-realism', 'social-constructionism', 'pragmatism', 'relativism')
-Layer 2: Epistemology ('post-positivism', 'positivism', 'interpretivism', 'pragmatic-epistemology', 'standpoint-epistemology')
-Layer 3: Paradigm ('functionalist', 'interpretive', 'radical-humanist', 'radical-structuralist')
-Layer 4: Methodology ('survey', 'experiment', 'quasi-experiment', 'case-study', 'grounded-theory', 'phenomenology', 'mixed-methods')
-Layer 5: Method ('survey-instrument', 'in-depth-interviews', 'focus-groups', 'participant-observation', 'secondary-data-mining')
-Layer 6: Analysis ('ols-regression', 'sem', 'anova', 'thematic-analysis', 'content-analysis', 'discourse-analysis', 'logistic-regression', 'multilevel-modeling')
+Your goal is to provide a rigorous, publication-grade Methodological Architecture Recommendation aligned with the canonical 6-layer epistemic framework using EXACT Atlas IDs:
+Layer 1: Ontology ('critical-realism', 'naive-realism', 'social-constructionism', 'relativism', 'pragmatist', 'process-relational')
+Layer 2: Epistemology ('post-positivism', 'positivism', 'interpretivism', 'constructivism', 'critical', 'pragmatism', 'post-structural', 'participatory', 'indigenous-epistemologies')
+Layer 3: Paradigm ('functionalist', 'interpretive', 'radical-humanist', 'radical-structuralist', 'feminist', 'critical-race', 'pragmatist-paradigm')
+Layer 4: Methodology ('survey', 'experimental', 'quasi-experimental', 'case-study', 'grounded-theory', 'phenomenology', 'mixed-methods', 'ethnography', 'narrative-inquiry')
+Layer 5: Method ('survey-instrument', 'experiment', 'semi-structured-interview', 'in-depth-interview', 'focus-group', 'participant-observation', 'secondary-data', 'document-archival')
+Layer 6: Analysis ('regression', 'sem', 'inferential-stats', 'multilevel', 'longitudinal-models', 'thematic-analysis', 'content-analysis', 'ipa', 'gt-coding')
 
 You MUST respond strictly with a valid JSON object without markdown formatting, code fences or backticks:
 {
   "summary": "2-3 sentence strategic executive summary of recommended design",
   "recommendedStack": {
-    "ontology": "id",
+    "ontology": "canonical id",
     "ontologyName": "Human Readable Name",
-    "epistemology": "id",
+    "epistemology": "canonical id",
     "epistemologyName": "Human Readable Name",
-    "paradigm": "id",
+    "paradigm": "canonical id",
     "paradigmName": "Human Readable Name",
-    "methodology": "id",
+    "methodology": "canonical id",
     "methodologyName": "Human Readable Name",
-    "method": "id",
+    "method": "canonical id",
     "methodName": "Human Readable Name",
-    "analysis": "id",
+    "analysis": "canonical id",
     "analysisName": "Human Readable Name"
   },
   "designRationale": "In-depth scientific defense explaining why this design answers the question and respects data properties",
@@ -893,6 +945,7 @@ Analyze the methodological fit, statistical assumptions, and epistemic coherence
     const cleanJson = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleanJson);
     if (parsed.summary && parsed.recommendedStack && parsed.apaMethodologyProse) {
+      parsed.recommendedStack = sanitizeStackIds(parsed.recommendedStack);
       return parsed;
     }
   } catch (err) {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Database,
   Sliders,
@@ -46,6 +46,8 @@ import { callRawLLM } from '../services/llmService';
 interface SyntheticDataForgePaneProps {
   llmConfig: LLMConfig;
   onNavigateToStudio?: (seedText: string) => void;
+  initialPreset?: string;
+  onPresetApplied?: () => void;
 }
 
 type MainTab = 'quantitative' | 'qualitative' | 'ai_prompt';
@@ -53,7 +55,9 @@ type QuantitativeSubTab = 'data_table' | 'simple_slopes' | 'diagnostics' | 'assu
 
 export const SyntheticDataForgePane: React.FC<SyntheticDataForgePaneProps> = ({
   llmConfig,
-  onNavigateToStudio
+  onNavigateToStudio,
+  initialPreset,
+  onPresetApplied
 }) => {
   const [mainTab, setMainTab] = useState<MainTab>('quantitative');
   const [quantSubTab, setQuantSubTab] = useState<QuantitativeSubTab>('data_table');
@@ -239,6 +243,42 @@ export const SyntheticDataForgePane: React.FC<SyntheticDataForgePaneProps> = ({
       colors: ['#0284c7', '#8b5cf6', '#10b981']
     });
   };
+
+  // Synchronize incoming initial preset from Methodology Compass or external navigations
+  useEffect(() => {
+    if (!initialPreset) return;
+
+    if (initialPreset === 'semi_structured_interviews' || initialPreset === 'focus_group' || initialPreset === 'open_ended_survey') {
+      setMainTab('qualitative');
+      setQualType(initialPreset as QualitativeDataType);
+      onPresetApplied?.();
+      return;
+    }
+
+    const quantTypes: QuantitativeModelType[] = [
+      'moderation',
+      'mediation',
+      'sem_cfa',
+      'anova_factorial',
+      'logistic_regression',
+      'longitudinal'
+    ];
+
+    if (quantTypes.includes(initialPreset as QuantitativeModelType)) {
+      setMainTab('quantitative');
+      const targetModel = initialPreset as QuantitativeModelType;
+      setModelType(targetModel);
+
+      // Match canonical archetype if available
+      const matchingArch = DISCIPLINARY_ARCHETYPES.find((a) => a.modelType === targetModel);
+      if (matchingArch) {
+        handleLoadArchetype(matchingArch);
+      } else {
+        handleGenerateQuantitative();
+      }
+      onPresetApplied?.();
+    }
+  }, [initialPreset]);
 
   // Generate Qualitative Dataset Handler
   const handleGenerateQualitative = async () => {

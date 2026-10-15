@@ -208,6 +208,7 @@ export const App: React.FC = () => {
   const [literatureFocus, setLiteratureFocus] = useState('');
   const [literatureAutoSearch, setLiteratureAutoSearch] = useState(false);
   const [picoInitialQuestion, setPicoInitialQuestion] = useState('');
+  const [syntheticPreset, setSyntheticPreset] = useState<string | undefined>(undefined);
 
   // Keep options and sensitivity synchronized in localStorage
   useEffect(() => {
@@ -760,7 +761,11 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200 space-y-6">
             <MethodologyCompassPane 
               llmConfig={llmConfig}
-              onNavigateToSynthetic={() => { setActivePillar('synthetic'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+              onNavigateToSynthetic={(preset) => { 
+                setSyntheticPreset(preset);
+                setActivePillar('synthetic'); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+              }} 
               onNavigateToStudio={() => { setActivePillar('studio'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
               onAppendToDraft={(declarationText) => {
                 setInputText(prev => prev ? `${prev}\n\n${declarationText}` : declarationText);
@@ -807,6 +812,8 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200 space-y-6">
             <SyntheticDataForgePane
               llmConfig={llmConfig}
+              initialPreset={syntheticPreset}
+              onPresetApplied={() => setSyntheticPreset(undefined)}
               onNavigateToStudio={(seedText) => {
                 const combined = inputText ? `${inputText}\n\n${seedText}` : seedText;
                 handleManuscriptUpdate(combined, activeManuscript?.filename);

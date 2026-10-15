@@ -22,11 +22,13 @@ import {
   CheckCheck,
   Terminal,
   Loader2,
-  ShieldCheck
+  ShieldCheck,
+  FileText
 } from 'lucide-react';
 import { IrbTriagePane } from './IrbTriagePane';
 import {
   ATLAS,
+  COMPAT,
   QUESTIONS,
   GLOSSARY,
   EXEMPLARS,
@@ -36,6 +38,8 @@ import {
   QUICK_ANALYSIS_GUIDES,
   computeStack,
   computeCoherence,
+  deriveParadigm,
+  sanitizeStackIds,
   generateMethodsParagraph,
   generateMarkdown,
   getAtlasEntry,
@@ -98,6 +102,17 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
   const [copiedParagraph, setCopiedParagraph] = useState(false);
   const [copiedMarkdown, setCopiedMarkdown] = useState(false);
   const [copiedSyntax, setCopiedSyntax] = useState<string | null>(null);
+  const [insertedDraft, setInsertedDraft] = useState<string | null>(null);
+  const [savedCustomToBinder, setSavedCustomToBinder] = useState(false);
+
+  // Draft Insertion Helper
+  const handleInsertDraft = (text: string, key: string) => {
+    if (onAppendToDraft) {
+      onAppendToDraft(text);
+      setInsertedDraft(key);
+      setTimeout(() => setInsertedDraft(null), 2500);
+    }
+  };
 
   // AI Advisor State
   const [aiObjective, setAiObjective] = useState('');
@@ -130,13 +145,14 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
   };
 
   const handleApplyAIToStack = (rec: AIMethodologyRecommendation) => {
+    const cleanStack = sanitizeStackIds(rec.recommendedStack);
     setCustomStack({
-      ontology: rec.recommendedStack.ontology,
-      epistemology: rec.recommendedStack.epistemology,
-      paradigm: rec.recommendedStack.paradigm,
-      methodology: rec.recommendedStack.methodology,
-      method: rec.recommendedStack.method,
-      analysis: rec.recommendedStack.analysis,
+      ontology: cleanStack.ontology || 'critical-realism',
+      epistemology: cleanStack.epistemology || 'post-positivism',
+      paradigm: cleanStack.paradigm || 'functionalist',
+      methodology: cleanStack.methodology || 'survey',
+      method: cleanStack.method || 'survey-instrument',
+      analysis: cleanStack.analysis || 'regression',
     });
     setActiveTab('coherence');
   };
@@ -154,6 +170,28 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
     });
     setSavedAiToBinder(true);
     setTimeout(() => setSavedAiToBinder(false), 2500);
+  };
+
+  const handleSaveCustomToBinder = () => {
+    const o = customStack.ontology ? getAtlasEntry('ontology', customStack.ontology) : null;
+    const e = customStack.epistemology ? getAtlasEntry('epistemology', customStack.epistemology) : null;
+    const m = customStack.methodology ? getAtlasEntry('methodology', customStack.methodology) : null;
+    const meth = customStack.method ? getAtlasEntry('method', customStack.method) : null;
+    const a = customStack.analysis ? getAtlasEntry('analysis', customStack.analysis) : null;
+    const prose = generateMethodsParagraph(customStack);
+
+    addBinderItem({
+      type: 'stat',
+      title: `Research Architecture: ${m?.name || 'Custom Stack'} (${customCoherence.pct}% Coherence)`,
+      snippet: `${prose}\n\nOntology: ${o?.name || customStack.ontology} | Epistemology: ${e?.name || customStack.epistemology} | Method: ${meth?.name || customStack.method} | Analysis: ${a?.name || customStack.analysis}`,
+      sourcePillar: 'Methodology Compass (Coherence Matrix)',
+      metadata: {
+        stack: customStack,
+        coherence: customCoherence
+      }
+    });
+    setSavedCustomToBinder(true);
+    setTimeout(() => setSavedCustomToBinder(false), 2500);
   };
 
   // Compute guided stack & coherence
@@ -816,7 +854,27 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
                       <span className="text-[11px] text-slate-400">
                         Ready to integrate into Chapter 3 or journal manuscript.
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {onAppendToDraft && (
+                          <button
+                            type="button"
+                            onClick={() => handleInsertDraft(aiRecommendation.apaMethodologyProse, 'ai_methods')}
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+                            title="Insert this APA methodology section directly into your Manuscript Studio draft"
+                          >
+                            {insertedDraft === 'ai_methods' ? (
+                              <>
+                                <CheckCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Inserted into Draft!</span>
+                              </>
+                            ) : (
+                              <>
+                                <FileText className="w-3.5 h-3.5 text-purple-700 dark:text-purple-400" />
+                                <span>Insert into Manuscript Studio</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => setActiveTab('irb_ethics')}
@@ -963,28 +1021,88 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
                     </span>
                     <button
                       onClick={() => {
-                        // Apply directly to stack
-                        if (selectedGuide.category === 'quantitative') {
-                          setManualOverrides((prev) => ({
-                            ...prev,
+                        let targetStack: Partial<CompassStack> = {};
+                        if (selectedGuide.id === 'compare-two-groups' || selectedGuide.id === 'compare-three-plus-groups') {
+                          targetStack = {
+                            ontology: 'naive-realism',
+                            epistemology: 'positivism',
+                            paradigm: 'functionalist',
+                            methodology: 'experimental',
+                            method: 'experiment',
+                            analysis: 'inferential-stats'
+                          };
+                        } else if (selectedGuide.id === 'predict-continuous-dv') {
+                          targetStack = {
                             ontology: 'critical-realism',
                             epistemology: 'post-positivism',
-                            analysis: selectedGuide.id.includes('sem') ? 'sem' : 'regression'
-                          }));
-                        } else {
-                          setManualOverrides((prev) => ({
-                            ...prev,
+                            paradigm: 'functionalist',
+                            methodology: 'survey',
+                            method: 'survey-instrument',
+                            analysis: 'regression'
+                          };
+                        } else if (selectedGuide.id === 'predict-binary-dv') {
+                          targetStack = {
+                            ontology: 'critical-realism',
+                            epistemology: 'post-positivism',
+                            paradigm: 'functionalist',
+                            methodology: 'survey',
+                            method: 'secondary-data',
+                            analysis: 'regression'
+                          };
+                        } else if (selectedGuide.id === 'latent-variables-sem') {
+                          targetStack = {
+                            ontology: 'critical-realism',
+                            epistemology: 'post-positivism',
+                            paradigm: 'functionalist',
+                            methodology: 'survey',
+                            method: 'survey-instrument',
+                            analysis: 'sem'
+                          };
+                        } else if (selectedGuide.id === 'thematic-analysis') {
+                          targetStack = {
                             ontology: 'social-constructionism',
                             epistemology: 'interpretivism',
-                            analysis: selectedGuide.id.includes('thematic') ? 'thematic-analysis' : 'ipa'
-                          }));
+                            paradigm: 'interpretive',
+                            methodology: 'case-study',
+                            method: 'in-depth-interview',
+                            analysis: 'thematic-analysis'
+                          };
+                        } else if (selectedGuide.id === 'phenomenology-ipa') {
+                          targetStack = {
+                            ontology: 'social-constructionism',
+                            epistemology: 'interpretivism',
+                            paradigm: 'interpretive',
+                            methodology: 'phenomenology',
+                            method: 'in-depth-interview',
+                            analysis: 'ipa'
+                          };
+                        } else if (selectedGuide.id === 'grounded-theory') {
+                          targetStack = {
+                            ontology: 'social-constructionism',
+                            epistemology: 'constructivism',
+                            paradigm: 'interpretive',
+                            methodology: 'grounded-theory',
+                            method: 'in-depth-interview',
+                            analysis: 'gt-coding'
+                          };
+                        } else {
+                          targetStack = {
+                            ontology: selectedGuide.category === 'quantitative' ? 'critical-realism' : 'social-constructionism',
+                            epistemology: selectedGuide.category === 'quantitative' ? 'post-positivism' : 'interpretivism',
+                            paradigm: selectedGuide.category === 'quantitative' ? 'functionalist' : 'interpretive',
+                            methodology: selectedGuide.category === 'quantitative' ? 'survey' : 'case-study',
+                            method: selectedGuide.category === 'quantitative' ? 'survey-instrument' : 'in-depth-interview',
+                            analysis: selectedGuide.category === 'quantitative' ? 'regression' : 'thematic-analysis'
+                          };
                         }
+                        setManualOverrides((prev) => ({ ...prev, ...targetStack }));
+                        setCustomStack((prev) => ({ ...prev, ...targetStack } as CompassStack));
                         setActiveTab('guided');
                       }}
-                      className="text-xs font-medium text-red-700 dark:text-red-400 hover:underline flex items-center gap-1"
+                      className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/40 transition flex items-center gap-1.5 cursor-pointer"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Adopt into Guided Stack
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Adopt into Guided Stack &rarr;</span>
                     </button>
                   </div>
                   <h3 className="text-xl font-serif font-bold text-slate-900 dark:text-slate-100 mt-2">
@@ -1097,18 +1215,39 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
 
                 {/* APA Publication Reporting Template */}
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-[11px] font-bold text-red-800 dark:text-red-400 uppercase tracking-wider flex items-center gap-1">
                       <BookOpen className="w-3.5 h-3.5" />
                       APA 7th Edition Reporting Template
                     </span>
-                    <button
-                      onClick={() => handleCopySyntax(selectedGuide.reportingTemplate, 'apa')}
-                      className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1"
-                    >
-                      {copiedSyntax === 'apa' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                      Copy Template
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {onAppendToDraft && (
+                        <button
+                          type="button"
+                          onClick={() => handleInsertDraft(selectedGuide.reportingTemplate, `apa_guide_${selectedGuide.id}`)}
+                          className="text-xs font-medium px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1 cursor-pointer"
+                        >
+                          {insertedDraft === `apa_guide_${selectedGuide.id}` ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-600" />
+                              <span>Inserted into Draft!</span>
+                            </>
+                          ) : (
+                            <>
+                              <FileText className="w-3 h-3 text-purple-600" />
+                              <span>Insert into Draft</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleCopySyntax(selectedGuide.reportingTemplate, 'apa')}
+                        className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedSyntax === 'apa' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                        Copy Template
+                      </button>
+                    </div>
                   </div>
                   <p className="text-xs font-serif italic text-slate-800 dark:text-slate-200 leading-relaxed border-l-2 border-red-700 pl-3">
                     &ldquo;{selectedGuide.reportingTemplate}&rdquo;
@@ -1332,13 +1471,25 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
               <div className="p-3.5 rounded-xl bg-red-50/40 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-red-800 dark:text-red-400">
                   <span>Draft Methods Paragraph</span>
-                  <button
-                    onClick={handleCopyParagraph}
-                    className="hover:underline flex items-center gap-1 text-[11px] cursor-pointer"
-                  >
-                    <Copy className="w-3 h-3" />
-                    Copy
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {onAppendToDraft && (
+                      <button
+                        onClick={() => handleInsertDraft(methodsParagraph, 'guided_methods')}
+                        className="hover:underline flex items-center gap-1 text-[11px] cursor-pointer text-purple-700 dark:text-purple-400 font-semibold"
+                        title="Insert into Manuscript Studio draft"
+                      >
+                        {insertedDraft === 'guided_methods' ? <Check className="w-3 h-3 text-emerald-600" /> : <FileText className="w-3 h-3" />}
+                        {insertedDraft === 'guided_methods' ? 'Inserted!' : 'Insert to Draft'}
+                      </button>
+                    )}
+                    <button
+                      onClick={handleCopyParagraph}
+                      className="hover:underline flex items-center gap-1 text-[11px] cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copy
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs font-serif italic text-slate-700 dark:text-slate-300 leading-relaxed">
                   &ldquo;{methodsParagraph}&rdquo;
@@ -1392,15 +1543,24 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
               </p>
             </div>
 
-            {/* Interactive Dropdowns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+            {/* Interactive 6-Layer Architecture Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
+              {/* 1. Ontology */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   1. Ontology
                 </label>
                 <select
                   value={customStack.ontology || ''}
-                  onChange={(e) => setCustomStack({ ...customStack, ontology: e.target.value })}
+                  onChange={(e) => {
+                    const newOnto = e.target.value;
+                    const autoP = deriveParadigm(newOnto, customStack.epistemology);
+                    setCustomStack((prev) => ({
+                      ...prev,
+                      ontology: newOnto,
+                      paradigm: autoP || prev.paradigm
+                    }));
+                  }}
                   className="w-full text-xs font-medium p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 >
                   {(ATLAS.ontology || []).map((o) => (
@@ -1411,13 +1571,22 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+              {/* 2. Epistemology */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   2. Epistemology
                 </label>
                 <select
                   value={customStack.epistemology || ''}
-                  onChange={(e) => setCustomStack({ ...customStack, epistemology: e.target.value })}
+                  onChange={(e) => {
+                    const newEpi = e.target.value;
+                    const autoP = deriveParadigm(customStack.ontology, newEpi);
+                    setCustomStack((prev) => ({
+                      ...prev,
+                      epistemology: newEpi,
+                      paradigm: autoP || prev.paradigm
+                    }));
+                  }}
                   className="w-full text-xs font-medium p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 >
                   {(ATLAS.epistemology || []).map((e) => (
@@ -1428,13 +1597,49 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  3. Methodology
+              {/* 3. Paradigm */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    3. Paradigm
+                  </label>
+                  {deriveParadigm(customStack.ontology, customStack.epistemology) === customStack.paradigm && (
+                    <span className="text-[9px] font-bold px-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                      Auto
+                    </span>
+                  )}
+                </div>
+                <select
+                  value={customStack.paradigm || ''}
+                  onChange={(e) => setCustomStack({ ...customStack, paradigm: e.target.value })}
+                  className="w-full text-xs font-medium p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                >
+                  {(ATLAS.paradigm || []).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 4. Methodology */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  4. Methodology
                 </label>
                 <select
                   value={customStack.methodology || ''}
-                  onChange={(e) => setCustomStack({ ...customStack, methodology: e.target.value })}
+                  onChange={(e) => {
+                    const newMeth = e.target.value;
+                    const validMethods = COMPAT.methToMethods[newMeth] || [];
+                    const validAnalyses = COMPAT.methToAnalysis[newMeth] || [];
+                    setCustomStack((prev) => ({
+                      ...prev,
+                      methodology: newMeth,
+                      method: prev.method && validMethods.includes(prev.method) ? prev.method : (validMethods[0] || prev.method),
+                      analysis: prev.analysis && validAnalyses.includes(prev.analysis) ? prev.analysis : (validAnalyses[0] || prev.analysis)
+                    }));
+                  }}
                   className="w-full text-xs font-medium p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 >
                   {(ATLAS.methodology || []).map((m) => (
@@ -1445,20 +1650,45 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  4. Analytical Strategy
+              {/* 5. Method (Data Collection) */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  5. Method
+                </label>
+                <select
+                  value={customStack.method || ''}
+                  onChange={(e) => setCustomStack({ ...customStack, method: e.target.value })}
+                  className="w-full text-xs font-medium p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                >
+                  {(ATLAS.method || []).map((m) => {
+                    const isCanonical = customStack.methodology ? (COMPAT.methToMethods[customStack.methodology] || []).includes(m.id) : false;
+                    return (
+                      <option key={m.id} value={m.id}>
+                        {isCanonical ? `✓ ${m.name}` : m.name}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* 6. Analytical Strategy */}
+              <div className="space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  6. Analysis
                 </label>
                 <select
                   value={customStack.analysis || ''}
                   onChange={(e) => setCustomStack({ ...customStack, analysis: e.target.value })}
                   className="w-full text-xs font-medium p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 >
-                  {(ATLAS.analysis || []).map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
+                  {(ATLAS.analysis || []).map((a) => {
+                    const isCanonical = customStack.methodology ? (COMPAT.methToAnalysis[customStack.methodology] || []).includes(a.id) : false;
+                    return (
+                      <option key={a.id} value={a.id}>
+                        {isCanonical ? `✓ ${a.name}` : a.name}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
@@ -1514,9 +1744,62 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
               </div>
 
               {/* Draft Paragraph for Custom Stack */}
-              <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
-                <div className="text-[11px] font-bold text-red-800 dark:text-red-400 uppercase tracking-wider">
-                  Generated Justification Paragraph
+              <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-[11px] font-bold text-red-800 dark:text-red-400 uppercase tracking-wider">
+                    Generated Justification Paragraph
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {onAppendToDraft && (
+                      <button
+                        type="button"
+                        onClick={() => handleInsertDraft(generateMethodsParagraph(customStack), 'custom_coherence_methods')}
+                        className="text-xs font-medium px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1 cursor-pointer"
+                        title="Insert this methodology paragraph into Manuscript Studio draft"
+                      >
+                        {insertedDraft === 'custom_coherence_methods' ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            <span>Inserted into Draft!</span>
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="w-3 h-3 text-purple-600" />
+                            <span>Insert to Draft</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleCopySyntax(generateMethodsParagraph(customStack), 'custom_coherence_copy')}
+                      className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
+                    >
+                      {copiedSyntax === 'custom_coherence_copy' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      Copy Paragraph
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveCustomToBinder}
+                      className={`text-xs font-medium px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition ${
+                        savedCustomToBinder
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                      }`}
+                    >
+                      {savedCustomToBinder ? (
+                        <>
+                          <Check className="w-3 h-3" />
+                          <span>Saved to Binder!</span>
+                        </>
+                      ) : (
+                        <>
+                          <FolderKanban className="w-3 h-3 text-blue-700 dark:text-blue-400" />
+                          <span>Clip to Binder</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs font-serif italic text-slate-800 dark:text-slate-200 leading-relaxed">
                   &ldquo;{generateMethodsParagraph(customStack)}&rdquo;
