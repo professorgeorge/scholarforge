@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useMemo } from 'react';
 import {
   FileText,
@@ -102,18 +103,18 @@ export const WritingToolbeltPane: React.FC<WritingToolbeltPaneProps> = ({
   const [bibtexSaved, setBibtexSaved] = useState<boolean>(false);
 
   // 1. Title Polisher State
-  const [topicInput, setTopicInput] = useState<string>(initialTitle);
-  const [selectedLens, setSelectedLens] = useState<DisciplinaryLens>('all');
+  const [topicInput, setTopicInput] = useProjectState<string>('WritingToolbeltPane.topicInput', initialTitle);
+  const [selectedLens, setSelectedLens] = useProjectState<DisciplinaryLens>('WritingToolbeltPane.selectedLens', 'all');
 
   // 2. Word Budget State
-  const [budgetTitle, setBudgetTitle] = useState<string>(initialTitle);
-  const [budgetRunningHead, setBudgetRunningHead] = useState<string>('');
-  const [budgetAbstract, setBudgetAbstract] = useState<string>(initialAbstract);
-  const [budgetHighlights, setBudgetHighlights] = useState<string>('');
-  const [selectedJournalTier, setSelectedJournalTier] = useState<'nature' | 'lancet' | 'ieee' | 'hbr' | 'plos' | 'apa'>('apa');
+  const [budgetTitle, setBudgetTitle] = useProjectState<string>('WritingToolbeltPane.budgetTitle', initialTitle);
+  const [budgetRunningHead, setBudgetRunningHead] = useProjectState<string>('WritingToolbeltPane.budgetRunningHead', '');
+  const [budgetAbstract, setBudgetAbstract] = useProjectState<string>('WritingToolbeltPane.budgetAbstract', initialAbstract);
+  const [budgetHighlights, setBudgetHighlights] = useProjectState<string>('WritingToolbeltPane.budgetHighlights', '');
+  const [selectedJournalTier, setSelectedJournalTier] = useProjectState<'nature' | 'lancet' | 'ieee' | 'hbr' | 'plos' | 'apa'>('WritingToolbeltPane.selectedJournalTier', 'apa');
 
   // 3. BibTeX Cleaner State
-  const [bibtexInput, setBibtexInput] = useState<string>(initialBibtex);
+  const [bibtexInput, setBibtexInput] = useProjectState<string>('WritingToolbeltPane.bibtexInput', initialBibtex);
 
   // Sync props when active manuscript changes
   React.useEffect(() => {

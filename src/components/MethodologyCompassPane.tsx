@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useMemo } from 'react';
 import {
   Compass,
@@ -70,9 +71,9 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
   const [activeTab, setActiveTab] = useState<ActiveCompassTab>('ai_advisor');
 
   // Guided pathway state
-  const [currentQuestionIdx, setCurrentQuestionIdx] = useState<number>(0);
-  const [answers, setAnswers] = useState<(number | null)[]>(new Array(QUESTIONS.length).fill(null));
-  const [manualOverrides, setManualOverrides] = useState<Record<string, string | null>>({});
+  const [currentQuestionIdx, setCurrentQuestionIdx] = useProjectState<number>('MethodologyCompassPane.currentQuestionIdx', 0);
+  const [answers, setAnswers] = useProjectState<(number | null)[]>('MethodologyCompassPane.answers', new Array(QUESTIONS.length).fill(null));
+  const [manualOverrides, setManualOverrides] = useProjectState<Record<string, string | null>>('MethodologyCompassPane.manualOverrides', {});
 
   // Quick analysis selector state
   const [analysisFilter, setAnalysisFilter] = useState<'all' | 'quantitative' | 'qualitative'>('all');
@@ -80,7 +81,7 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
   const [selectedGuide, setSelectedGuide] = useState<QuickAnalysisGuide | null>(QUICK_ANALYSIS_GUIDES[0]);
 
   // Coherence matrix custom selection
-  const [customStack, setCustomStack] = useState<CompassStack>({
+  const [customStack, setCustomStack] = useProjectState<CompassStack>('MethodologyCompassPane.customStack', {
     ontology: 'critical-realism',
     epistemology: 'post-positivism',
     paradigm: 'functionalist',
@@ -115,11 +116,11 @@ export const MethodologyCompassPane: React.FC<MethodologyCompassPaneProps> = ({
   };
 
   // AI Advisor State
-  const [aiObjective, setAiObjective] = useState('');
-  const [aiDataDesc, setAiDataDesc] = useState('');
-  const [aiDiscipline, setAiDiscipline] = useState('Business & Social Sciences');
+  const [aiObjective, setAiObjective] = useProjectState('MethodologyCompassPane.aiObjective', '');
+  const [aiDataDesc, setAiDataDesc] = useProjectState('MethodologyCompassPane.aiDataDesc', '');
+  const [aiDiscipline, setAiDiscipline] = useProjectState('MethodologyCompassPane.aiDiscipline', 'Business & Social Sciences');
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
-  const [aiRecommendation, setAiRecommendation] = useState<AIMethodologyRecommendation | null>(null);
+  const [aiRecommendation, setAiRecommendation] = useProjectState<AIMethodologyRecommendation | null>('MethodologyCompassPane.aiRecommendation', null);
   const [activeCodeLang, setActiveCodeLang] = useState<'r' | 'python' | 'spssOrStata'>('r');
   const [copiedAiProse, setCopiedAiProse] = useState(false);
   const [copiedAiCode, setCopiedAiCode] = useState(false);

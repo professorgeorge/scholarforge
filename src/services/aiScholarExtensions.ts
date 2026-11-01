@@ -8,7 +8,7 @@ import type { JournalCandidate } from './journalMatchmakerService';
 export interface ClaimConsensusAnalysis {
   verdict: 'strong_consensus' | 'emerging' | 'conflicting' | 'unsubstantiated';
   verdictLabel: string;
-  gradeRating: 'High' | 'Moderate' | 'Low' | 'Very Low';
+  gradeRating: 'High' | 'Moderate' | 'Low' | 'Very Low' | 'Not assessed';
   gradeRationale: string;
   synthesisParagraph: string;
   keyCaveats: string[];
@@ -80,54 +80,13 @@ export function generateDeterministicConsensus(
   claimText: string,
   papers: AcademicPaper[]
 ): ClaimConsensusAnalysis {
-  const paperCount = papers.length;
-  const recentPapers = papers.filter(p => p.year && p.year >= 2020).length;
-  const topVenues = papers.filter(p => p.venue && p.venue.trim().length > 3).map(p => p.venue).slice(0, 3);
-
-  let verdict: 'strong_consensus' | 'emerging' | 'conflicting' | 'unsubstantiated' = 'emerging';
-  let verdictLabel = 'Empirically Supported';
-  let gradeRating: 'High' | 'Moderate' | 'Low' | 'Very Low' = 'Moderate';
-
-  if (paperCount >= 4) {
-    verdict = 'strong_consensus';
-    verdictLabel = 'Substantial Literature Indexing';
-    gradeRating = recentPapers >= 2 ? 'High' : 'Moderate';
-  } else if (paperCount >= 2) {
-    verdict = 'emerging';
-    verdictLabel = 'Emerging Positive Evidence';
-    gradeRating = 'Moderate';
-  } else if (paperCount === 1) {
-    verdict = 'unsubstantiated';
-    verdictLabel = 'Preliminary Exploratory Evidence';
-    gradeRating = 'Low';
-  } else {
-    verdict = 'unsubstantiated';
-    verdictLabel = 'Unsubstantiated in Primary Registries';
-    gradeRating = 'Very Low';
-  }
-
-  const citationsSummary = papers.slice(0, 3).map((p, idx) => {
-    const authorStr = p.authors && p.authors.length > 0 ? p.authors[0].name : 'Primary researchers';
-    return `[Study ${idx + 1}] (${authorStr}, ${p.year || 'n.d.'})`;
-  }).join(', ');
-
-  const synthesisParagraph = paperCount > 0
-    ? `Published literature retrieved across OpenAlex and Crossref evaluates the proposition regarding "${claimText.slice(0, 85).trim()}...". Empirical findings synthesized from ${citationsSummary} ${paperCount >= 3 ? 'demonstrate consistent corroboration across multiple independent publication venues' : 'provide preliminary corroboration, though broader randomized replication remains necessary'}.`
-    : `No directly indexed peer-reviewed studies were matched for this specific assertion under standard registry search scopes.`;
-
-  const keyCaveats = [
-    `Synthesized across ${paperCount} verified peer-reviewed registry ${paperCount === 1 ? 'record' : 'records'}.`,
-    recentPapers > 0 ? `${recentPapers} of ${paperCount} studies published within the last 5 years.` : 'Longitudinal meta-analytic replication recommended.',
-    topVenues.length > 0 ? `Indexed in: ${topVenues.join(', ')}.` : 'Generalizability across broader populations requires continued trial validation.'
-  ];
-
   return {
-    verdict,
-    verdictLabel,
-    gradeRating,
-    gradeRationale: `Empirically assessed from ${paperCount} verified peer-reviewed registry publications (${recentPapers} recent cohorts).`,
-    synthesisParagraph,
-    keyCaveats
+    verdict: 'unsubstantiated',
+    verdictLabel: papers.length ? 'Potentially relevant records retrieved' : 'No records retrieved',
+    gradeRating: 'Not assessed',
+    gradeRationale: 'Retrieval counts, citation counts, and publication dates do not establish evidence certainty. Formal appraisal has not been performed.',
+    synthesisParagraph: `${papers.length} potentially relevant records were retrieved for "${claimText}". Their relevance, direction of findings, study independence, and risk of bias require assessment before drawing a conclusion.`,
+    keyCaveats: ['Registry matching does not verify peer review or support for a claim.', 'No formal GRADE assessment has been performed.', 'Missing records or unavailable services do not establish absence of evidence.']
   };
 }
 
@@ -151,13 +110,13 @@ export async function synthesizeClaimConsensus(
     return `[Study ${i + 1}] Title: "${p.title}" (${p.year}, ${p.venue})\nAbstract: ${p.abstract ? p.abstract.slice(0, 400) : 'No abstract provided'}`;
   }).join('\n\n');
 
-  const systemPrompt = `You are a Cochrane systematic review editor and GRADE framework expert.
+  const systemPrompt = `You are a research assistant producing a provisional abstract-based evidence summary. Do not claim institutional affiliation or a formal GRADE assessment.
 Evaluate whether the empirical evidence in the provided peer-reviewed papers supports, contradicts, or qualifies the given Assertion.
 
 Return a valid JSON object with the following keys:
 - "verdict": one of ["strong_consensus", "emerging", "conflicting", "unsubstantiated"]
 - "verdictLabel": short title string (e.g. "Broad Empirical Consensus", "Emerging Positive Evidence", "Equivocal / Inconclusive Findings", "Empirically Contradicted")
-- "gradeRating": one of ["High", "Moderate", "Low", "Very Low"]
+- "gradeRating": "Not assessed" (formal certainty appraisal requires outcome-level evidence and human review)
 - "gradeRationale": 1-2 sentence explanation of the GRADE rating based on study design, sample consistency, and precision.
 - "synthesisParagraph": a rigorous, publication-grade academic paragraph (3-5 sentences) synthesizing the evidence, citing [Study 1], [Study 2], etc.
 - "keyCaveats": an array of 2-3 specific limitations, boundary conditions, or populations where the claim does not hold.
@@ -174,11 +133,11 @@ CRITICAL RULES:
     const parsed = JSON.parse(cleaned);
 
     return {
-      verdict: parsed.verdict || 'emerging',
-      verdictLabel: parsed.verdictLabel || 'Empirically Supported',
-      gradeRating: parsed.gradeRating || 'Moderate',
-      gradeRationale: parsed.gradeRationale || 'Evidence derived from multiple peer-reviewed publications with consistent findings.',
-      synthesisParagraph: parsed.synthesisParagraph || 'Published literature confirms the proposed empirical assertion across evaluated cohorts.',
+      verdict: ['strong_consensus', 'emerging', 'conflicting', 'unsubstantiated'].includes(parsed.verdict) ? parsed.verdict : 'unsubstantiated',
+      verdictLabel: 'Provisional AI summary: ' + (parsed.verdictLabel || 'Needs review'),
+      gradeRating: 'Not assessed',
+      gradeRationale: 'Abstract-based AI interpretation, not formal GRADE. Verify each statement against the full text and appraise each outcome.',
+      synthesisParagraph: typeof parsed.synthesisParagraph === 'string' ? parsed.synthesisParagraph : 'No usable synthesis returned. Review the retrieved sources.',
       keyCaveats: Array.isArray(parsed.keyCaveats) ? parsed.keyCaveats : ['Generalizability across diverse clinical settings requires ongoing validation.'],
     };
   } catch (err) {
@@ -305,10 +264,16 @@ export async function analyzeCitationForensics(
   discrepancies: string[],
   config: LLMConfig = DEFAULT_LLM_CONFIG
 ): Promise<CitationForensicReport | null> {
+  if (!verifiedPaper) return {
+    isLikelyHallucination: false,
+    verdictTitle: 'Reference not located; authenticity unresolved',
+    diagnosticExplanation: 'No matching record was returned. Coverage, parsing, and service availability can affect matching. This does not establish fabrication or AI authorship.',
+    recommendedAction: 'Check the original source, identifier, and publisher catalogue. Correct the record only after verification.'
+  };
   if (!isLlmConfigured(config)) return null;
 
   const systemPrompt = `You are a forensic academic publishing auditor and bibliography detective.
-Analyze the provided citation to determine if it is:
+Assess metadata differences against the provided matched record. Do not infer fabrication or AI authorship from missing or mismatched metadata. The following are possibilities to investigate, not determinations:
 1. A genuine publication with minor typographical errors (year typo, author misspelling, journal abbreviation difference).
 2. A fabricated AI hallucination (plausible-sounding title that does not exist, mismatched authors, or phantom DOI).
 
@@ -330,8 +295,8 @@ CRITICAL RULES:
     const parsed = JSON.parse(cleaned);
 
     return {
-      isLikelyHallucination: Boolean(parsed.isLikelyHallucination),
-      verdictTitle: parsed.verdictTitle || 'Bibliographic Forensic Analysis',
+      isLikelyHallucination: false,
+      verdictTitle: 'Provisional metadata review',
       diagnosticExplanation: parsed.diagnosticExplanation || 'Reference analyzed against publisher records.',
       recommendedAction: parsed.recommendedAction || 'Verify citation against primary publisher database.',
     };
@@ -538,12 +503,12 @@ Recommend the top 6-9 tailored academic journals in JSON format:`;
       tier: item.tier || 'Target (Core Fit)',
       isOa: Boolean(item.isOa),
       oaType: item.oaType || (item.isOa ? 'Gold OA' : 'Hybrid'),
-      apcUsd: typeof item.apcUsd === 'number' ? item.apcUsd : null,
-      citeScore: typeof item.citeScore === 'number' ? item.citeScore : 5.0,
+      apcUsd: null,
+      citeScore: null, metricSource: 'AI suggestion; journal identity and policies require verification', retrievedAt: new Date().toISOString(),
       hIndex: typeof item.hIndex === 'number' ? item.hIndex : 65,
-      scopusQuartile: item.scopusQuartile || 'Q1',
-      reviewSpeedWeeks: item.reviewSpeedWeeks || '5 to 7 weeks',
-      acceptanceRateEstimated: item.acceptanceRateEstimated || '25% to 35%',
+      scopusQuartile: 'Unknown',
+      reviewSpeedWeeks: 'Unknown',
+      acceptanceRateEstimated: 'Unknown',
       matchScore: typeof item.matchScore === 'number' ? item.matchScore : 88,
       matchRationale: item.matchRationale || 'Thematic and methodological scope matches manuscript objectives.',
       aimsScopeAlignment: item.aimsScopeAlignment || 'Emphasize methodological rigor and reproducibility in the cover letter.',

@@ -591,7 +591,7 @@ export async function verifySingleReference(rawCitation: string): Promise<Verifi
       discrepancies: [
         {
           field: 'record',
-          message: 'No matching academic publication found in OpenAlex or Crossref. Likely a fabricated or AI-hallucinated reference.',
+          message: 'No matching academic publication found in OpenAlex or Crossref. Not located in these registries. Check parsing, source coverage, and service availability; this does not establish fabrication.',
         },
       ],
       scholarUrl,

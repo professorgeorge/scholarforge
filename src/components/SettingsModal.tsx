@@ -480,7 +480,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <span className="text-[11px] text-slate-500 block">
                     {tempLLMConfig.provider === 'gemini' 
                       ? 'Get a free API key from aistudio.google.com. ScholarForge defaults to Gemini 2.5 Flash for free-tier compatibility.' 
-                      : 'Stored securely in your local browser storage.'}
+                      : 'Stored in this browser. Other scripts on this origin can access browser storage; use a restricted key.'}
                   </span>
                 </div>
               )}
@@ -566,7 +566,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
                     <span className="font-bold text-slate-800 dark:text-slate-200">Local-First Storage</span>
                     <p className="text-slate-500 dark:text-slate-400">
-                      Drafts, bibliographies, and session settings reside in your browser’s local storage. ScholarForge operates with no central database or document harvesting.
+                      Projects and source texts are stored in IndexedDB with a browser-storage mirror where space permits. Provider settings remain in browser storage. ScholarForge operates with no central database or document harvesting.
                     </p>
                   </div>
                   <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">

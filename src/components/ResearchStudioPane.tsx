@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useRef } from 'react';
 import { 
   BookOpen, 
@@ -50,31 +51,31 @@ export const ResearchStudioPane: React.FC<ResearchStudioPaneProps> = ({
   isGrounding,
 }) => {
   const [synthesisStyle, setSynthesisStyle] = useState<'evidence_first' | 'draft_synthesis'>('evidence_first');
-  const [topic, setTopic] = useState('');
-  const [focus, setFocus] = useState('');
+  const [topic, setTopic] = useProjectState('ResearchStudioPane.topic', '');
+  const [focus, setFocus] = useProjectState('ResearchStudioPane.focus', '');
   const [targetCitationCount, setTargetCitationCount] = useState<number>(25);
   const [selectedTemplateId, setSelectedTemplateId] = useState(ACADEMIC_PROMPT_TEMPLATES[0].id);
 
   // Base Manuscript / Draft Text & File Ingestion (For Drafting & Infilling)
-  const [baseDraftText, setBaseDraftText] = useState<string>('');
+  const [baseDraftText, setBaseDraftText] = useProjectState<string>('ResearchStudioPane.baseDraftText', '');
   const [isImportingDocx, setIsImportingDocx] = useState<boolean>(false);
   const [importedDocxName, setImportedDocxName] = useState<string | null>(null);
   const docxInputRef = useRef<HTMLInputElement>(null);
 
   // Secondary Data Query State
   const [includeSecondaryData, setIncludeSecondaryData] = useState<boolean>(true);
-  const [discoveredSecondaryData, setDiscoveredSecondaryData] = useState<SecondaryDataRecord[]>([]);
+  const [discoveredSecondaryData, setDiscoveredSecondaryData] = useProjectState<SecondaryDataRecord[]>('ResearchStudioPane.discoveredSecondaryData', []);
 
   // Primary Data Upload / Input State & Expandable Panel
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [primaryDataText, setPrimaryDataText] = useState('');
+  const [primaryDataText, setPrimaryDataText] = useProjectState('ResearchStudioPane.primaryDataText', '');
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Evidence-First state
   const [isSearching, setIsSearching] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
-  const [discoveredPapers, setDiscoveredPapers] = useState<AcademicPaper[]>([]);
+  const [discoveredPapers, setDiscoveredPapers] = useProjectState<AcademicPaper[]>('ResearchStudioPane.discoveredPapers', []);
   const [selectedPaperIds, setSelectedPaperIds] = useState<Set<string>>(new Set());
   const [expandedAbstractId, setExpandedAbstractId] = useState<string | null>(null);
   const [customKeyword, setCustomKeyword] = useState('');
@@ -241,13 +242,12 @@ export const ResearchStudioPane: React.FC<ResearchStudioPaneProps> = ({
       const extractedClaims = extractClaimsFromText(manuscript, 'all');
 
       const claims: Claim[] = extractedClaims.map((claim, idx) => {
-        const assignedPaper = selectedPapers[idx % selectedPapers.length];
         return {
           ...claim,
           candidatePapers: selectedPapers,
-          selectedPaper: assignedPaper,
+          selectedPaper: null,
           status: 'found',
-          confidence: 'high',
+          confidence: 'low',
           isExcluded: false,
           citationNumber: idx + 1,
         };

@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Compass,
@@ -83,9 +84,9 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   onNavigateToWordBudget
 }) => {
   // Input States
-  const [title, setTitle] = useState<string>(initialTitle);
-  const [abstract, setAbstract] = useState<string>(initialAbstract);
-  const [fullDraft, setFullDraft] = useState<string>(initialFullDraft);
+  const [title, setTitle] = useProjectState<string>('JournalSentinelPane.title', initialTitle);
+  const [abstract, setAbstract] = useProjectState<string>('JournalSentinelPane.abstract', initialAbstract);
+  const [fullDraft, setFullDraft] = useProjectState<string>('JournalSentinelPane.fullDraft', initialFullDraft);
   const [isInputExpanded, setIsInputExpanded] = useState<boolean>(!initialTitle && !initialAbstract);
 
   // Active Sub-Tab & View
@@ -93,7 +94,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   const [activeSentinelTab, setActiveSentinelTab] = useState<'editorial' | 'structural'>('editorial');
 
   // Filter States for Matchmaker
-  const [filters, setFilters] = useState<JournalFilterCriteria>({
+  const [filters, setFilters] = useProjectState<JournalFilterCriteria>('JournalSentinelPane.filters', {
     searchQuery: '',
     oaModel: 'all',
     maxApc: null,
@@ -102,8 +103,8 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   });
 
   // Data & Results States
-  const [journals, setJournals] = useState<JournalCandidate[]>(BASELINE_JOURNALS_REGISTRY);
-  const [auditReport, setAuditReport] = useState<PreFlightAuditReport | null>(null);
+  const [journals, setJournals] = useProjectState<JournalCandidate[]>('JournalSentinelPane.journals', BASELINE_JOURNALS_REGISTRY);
+  const [auditReport, setAuditReport] = useProjectState<PreFlightAuditReport | null>('JournalSentinelPane.auditReport', null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Copy Feedback States
@@ -112,7 +113,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
 
   // AI Editorial Triage & Semantic Matching States
   const hasLlm = isLlmConfigured(llmConfig);
-  const [aiReport, setAiReport] = useState<AIDeskRejectionReport | null>(null);
+  const [aiReport, setAiReport] = useProjectState<AIDeskRejectionReport | null>('JournalSentinelPane.aiReport', null);
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [isCoverLetterModalOpen, setIsCoverLetterModalOpen] = useState<boolean>(false);
   const [appliedAbstractSuccess, setAppliedAbstractSuccess] = useState<boolean>(false);
@@ -256,7 +257,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
             </h2>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-              Match your manuscript against Scopus Q1-Q4 journals, filter by APC budgets (including $0 Diamond OA),
+              Discover candidate journals using open metadata, filter by APC budgets (including $0 Diamond OA),
               and audit 7 mission-critical integrity signals before submission to prevent instantaneous desk rejections.
             </p>
 
@@ -264,7 +265,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
             <div className="pt-1.5 flex flex-wrap items-center gap-3 text-xs text-slate-300">
               <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
                 <Award className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Scopus Q1-Q4 Quartile Indexing</span>
+                <span>Source-attributed Journal Metadata</span>
               </div>
               <div className="flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700 text-[11px]">
                 <DollarSign className="w-3.5 h-3.5 text-teal-400" />
@@ -293,7 +294,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
         <div className="mt-3.5 pt-3 border-t border-slate-700/60 text-[11px] text-slate-400 flex items-start gap-2">
           <Info className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
           <span className="leading-relaxed">
-            <strong>Nominative Fair Use &amp; Metric Notice:</strong> Quartile ratings (Q1–Q4) and CiteScore estimates are heuristic scientometric approximations computed from open bibliographic records (OpenAlex CC0) for comparative research guidance. Scopus&reg; and CiteScore&trade; are registered trademarks of Elsevier B.V.; Web of Science&trade; is a trademark of Clarivate Analytics. ScholarForge is an independent scholarly tool and is not affiliated with, sponsored by, or endorsed by Elsevier B.V. or Clarivate.
+            <strong>Nominative Fair Use &amp; Metric Notice:</strong> CiteScore, Scopus quartiles, acceptance rates, and turnaround times are shown as unknown unless an authoritative source is available. OpenAlex citedness is a separate metric. Scopus&reg; and CiteScore&trade; are registered trademarks of Elsevier B.V.; Web of Science&trade; is a trademark of Clarivate Analytics. ScholarForge is an independent scholarly tool and is not affiliated with, sponsored by, or endorsed by Elsevier B.V. or Clarivate.
           </span>
         </div>
       </div>
@@ -656,6 +657,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
               {journals.map((journal) => {
               const isDiamond = journal.oaType === 'Diamond OA ($0 APC)';
               const quartileColors = {
+                Unknown: 'bg-slate-100 text-slate-700 border-slate-200',
                 Q1: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800',
                 Q2: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/80 dark:text-blue-300 dark:border-blue-800',
                 Q3: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800',
@@ -688,7 +690,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
                           )}
 
                           <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${quartileColors[journal.scopusQuartile]}`}>
-                            Scopus {journal.scopusQuartile}
+                            Quartile: {journal.scopusQuartile}
                           </span>
                           {isDiamond ? (
                             <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-800 flex items-center gap-1">
@@ -738,7 +740,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
                         </div>
                         <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 flex items-center justify-center gap-1">
                           <TrendingUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                          <span>{journal.citeScore}</span>
+                          <span>{journal.citeScore ?? 'Unknown'}</span>
                         </div>
                       </div>
 
@@ -765,7 +767,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
                     {/* Topics & Match Rationale */}
                     <div className="mt-3 space-y-2">
                       <p className="text-xs text-slate-600 dark:text-slate-300 italic">
-                        {journal.matchRationale}
+                        {journal.matchRationale} {journal.metricSource} {journal.retrievedAt ? `Retrieved ${new Date(journal.retrievedAt).toLocaleDateString()}.` : ''}
                       </p>
 
                       {journal.aimsScopeAlignment && (

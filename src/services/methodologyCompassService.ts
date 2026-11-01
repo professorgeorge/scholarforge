@@ -649,7 +649,7 @@ export function generateDeterministicRecommendation(
         'Mean-centering of continuous predictor and moderator to reduce non-essential multicollinearity (VIF < 5.0)',
         'Homoscedasticity of error variance (checked via Breusch-Pagan / Koenker test)'
       ],
-      sampleSizeGuidance: `Statistical power simulations (G*Power 3.1) indicate a minimum sample size of N = 180 to 250 is required to detect small-to-medium interaction effects (f² = 0.05 - 0.10) with 80% power at α = .05.`,
+      sampleSizeGuidance: `Calculate sample size for the specified effect, number of predictors, measurement reliability, attrition, and design. No project-specific power calculation has been performed. Use the project planning laboratory to explore assumptions.`,
       softwareSyntax: {
         r: `# R syntax using 'interactions' and 'processr'\nlibrary(interactions)\nmodel <- lm(outcome ~ predictor * moderator + control1, data = df)\nsummary(model)\nsim_slopes(model, pred = predictor, modx = moderator, jn = TRUE)`,
         python: `# Python statsmodels OLS with interaction\nimport statsmodels.formula.api as smf\nmodel = smf.ols('outcome ~ predictor * moderator + control1', data=df).fit()\nprint(model.summary())`,

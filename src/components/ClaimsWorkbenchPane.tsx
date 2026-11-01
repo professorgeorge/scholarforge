@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, 
@@ -87,15 +88,15 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
   setOptions,
   initialText = ''
 }) => {
-  const [claimInput, setClaimInput] = useState(() => initialText || '');
+  const [claimInput, setClaimInput] = useProjectState('ClaimsWorkbenchPane.claimInput', initialText || '');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [testedClaims, setTestedClaims] = useState<Claim[]>([]);
+  const [testedClaims, setTestedClaims] = useProjectState<Claim[]>('ClaimsWorkbenchPane.testedClaims', []);
   const [selectedClaimIndex, setSelectedClaimIndex] = useState<number>(0);
   const [evidenceMode, setEvidenceMode] = useState<'single_claim' | 'paragraph_extract'>(() => {
     return initialText && initialText.split(/[.?!]\s+/).length > 1 ? 'paragraph_extract' : 'single_claim';
   });
   const [errorMsg, setErrorMsg] = useState('');
-  const [consensusAnalysisMap, setConsensusAnalysisMap] = useState<Record<string, ClaimConsensusAnalysis>>({});
+  const [consensusAnalysisMap, setConsensusAnalysisMap] = useProjectState<Record<string, ClaimConsensusAnalysis>>('ClaimsWorkbenchPane.consensusAnalysisMap', {});
   const [isAnalyzingConsensus, setIsAnalyzingConsensus] = useState(false);
   const [consensusNotice, setConsensusNotice] = useState<string | null>(null);
   const [copiedConsensusId, setCopiedConsensusId] = useState<string | null>(null);
@@ -138,11 +139,11 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
           sentenceIndex: 0,
           startIndex: 0,
           endIndex: textToVerify.length,
-          confidence: result.papers.length >= 3 ? 'high' : result.papers.length > 0 ? 'medium' : 'low',
+          confidence: 'low',
           keywords: [textToVerify.trim().slice(0, 30)],
           searchQueries: [textToVerify.trim()],
           candidatePapers: result.papers,
-          selectedPaper: result.papers[0] || null,
+          selectedPaper: null,
           status: result.papers.length > 0 ? 'found' : 'not_found',
           isExcluded: false,
           citationNumber: testedClaims.length + 1,
@@ -174,7 +175,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
             return {
               ...c,
               candidatePapers: result.papers,
-              selectedPaper: result.papers[0] || null,
+              selectedPaper: null,
               status: result.papers.length > 0 ? 'found' : 'not_found',
               citationNumber: idx + 1,
             };
@@ -212,7 +213,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
     const paperKeyMap = new Map<string, number>();
 
     claims.forEach((c) => {
-      const paper = c.selectedPaper || c.candidatePapers[0];
+      const paper = c.selectedPaper;
       if (paper && !paperKeyMap.has(paper.id)) {
         allSelectedPapers.push(paper);
         paperKeyMap.set(paper.id, allSelectedPapers.length);
@@ -224,11 +225,11 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
     if (evidenceMode === 'paragraph_extract' && claimInput.trim()) {
       let runningText = claimInput;
       claims.forEach((c) => {
-        const paper = c.selectedPaper || c.candidatePapers[0];
+        const paper = c.selectedPaper;
         if (paper) {
           const citNum = paperKeyMap.get(paper.id) || 1;
           const authorYear = paper.authors[0] 
-            ? `(${paper.authors[0].name.split(/\s+/).pop() || 'Author'} et al., ${paper.year || 2024})`
+            ? `(${paper.authors[0].name.split(/\s+/).pop() || 'Author'} et al., ${paper.year || 'n.d.'})`
             : `[${citNum}]`;
           
           if (runningText.includes(c.text)) {
@@ -239,11 +240,11 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
       groundedBody = runningText;
     } else {
       groundedBody = claims.map((c) => {
-        const paper = c.selectedPaper || c.candidatePapers[0];
+        const paper = c.selectedPaper;
         if (paper) {
           const citNum = paperKeyMap.get(paper.id) || 1;
           const authorYear = paper.authors[0]
-            ? `(${paper.authors[0].name.split(/\s+/).pop() || 'Author'} et al., ${paper.year || 2024})`
+            ? `(${paper.authors[0].name.split(/\s+/).pop() || 'Author'} et al., ${paper.year || 'n.d.'})`
             : `[${citNum}]`;
           return `${c.text} ${authorYear}`;
         }
@@ -301,7 +302,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
       if (res) {
         setConsensusAnalysisMap(prev => ({ ...prev, [activeClaim.id]: res }));
         if (!isLlmConfigured(llmConfig)) {
-          setConsensusNotice('Synthesized via Deterministic Registry Evidence. (Configure an AI model in Settings for deep neural GRADE reasoning).');
+          setConsensusNotice('Records retrieved. Support and certainty have not been assessed.');
         }
       } else {
         setConsensusNotice('Consensus analysis could not be completed.');
@@ -635,7 +636,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-slate-900 dark:text-white font-serif flex items-center gap-2">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              <span>Verified Claims ({testedClaims.length})</span>
+              <span>Claims to Assess ({testedClaims.length})</span>
             </h3>
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -764,7 +765,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                         <span className="text-xs font-bold text-purple-950 dark:text-purple-200 uppercase tracking-wider font-serif">
-                          AI Evidence Consensus &amp; GRADE Certainty Synthesis
+                          Provisional Evidence Summary
                         </span>
                       </div>
 
@@ -777,7 +778,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
                               ? 'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-950 dark:text-blue-300'
                               : 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-300'
                           }`}>
-                            GRADE: {consensusAnalysisMap[activeClaim.id].gradeRating} Certainty
+                            Certainty: {consensusAnalysisMap[activeClaim.id].gradeRating} Certainty
                           </span>
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
                             {consensusAnalysisMap[activeClaim.id].verdictLabel}
@@ -791,7 +792,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
                           className="btn-academic-primary px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-2xs"
                         >
                           {isAnalyzingConsensus ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <Wand2 className="w-3.5 h-3.5 text-amber-300" />}
-                          <span>Evaluate GRADE Consensus with AI</span>
+                          <span>Summarize Evidence for Review</span>
                         </button>
                       )}
                     </div>
@@ -957,6 +958,9 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
                           </button>
                         </div>
 
+                        <button type="button" className="text-xs text-blue-800 dark:text-blue-300 underline" onClick={() => setTestedClaims(prev => prev.map(c => c.id === activeClaim.id ? { ...c, selectedPaper: paper } : c))}>
+                          {activeClaim.selectedPaper?.id === paper.id ? 'Selected by researcher' : 'Use as citation after checking source support'}
+                        </button>
                         <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-x-2">
                           <span>{paper.authors.slice(0, 2).map((a) => a.name).join(', ') + (paper.authors.length > 2 ? ' et al.' : '')}</span>
                           <span>•</span>

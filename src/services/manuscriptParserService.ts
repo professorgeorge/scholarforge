@@ -1,3 +1,4 @@
+import { getToolState, setToolState, saveManuscriptVersion } from './projectService';
 /**
  * Manuscript Parsing & Session Memory Service
  * Provides automated extraction of academic manuscript components:
@@ -152,12 +153,7 @@ export function createEmptyManuscriptContext(): ActiveManuscriptContext {
  */
 export function loadActiveManuscriptFromStorage(): ActiveManuscriptContext | null {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return null;
-    const parsed = JSON.parse(stored);
-    if (parsed && parsed.rawText) {
-      return parsed as ActiveManuscriptContext;
-    }
+    return getToolState<ActiveManuscriptContext | null>(STORAGE_KEY, null);
   } catch (err) {
     console.warn('Failed to load active manuscript from storage', err);
   }
@@ -167,38 +163,9 @@ export function loadActiveManuscriptFromStorage(): ActiveManuscriptContext | nul
 /**
  * Saves the active manuscript context to persistent browser storage.
  */
-export function saveActiveManuscriptToStorage(context: ActiveManuscriptContext | null): void {
+export function saveActiveManuscriptToStorage(context: ActiveManuscriptContext | null, projectId?: string): void {
   try {
-    if (!context || !context.rawText) {
-      localStorage.removeItem(STORAGE_KEY);
-    } else {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(context));
-      } catch (storageErr: unknown) {
-        const errObj = storageErr as { name?: string; code?: number };
-        if (errObj?.name === 'QuotaExceededError' || errObj?.code === 22) {
-          // Fallback: save lightweight compact context to preserve essential draft without extraneous memory bloat
-          const compactContext: ActiveManuscriptContext = {
-            id: context.id || `ms-${Date.now()}`,
-            filename: context.filename,
-            title: context.title,
-            abstract: context.abstract,
-            keywords: context.keywords || [],
-            body: context.body,
-            bibliography: context.bibliography,
-            rawText: context.rawText,
-            wordCount: context.wordCount,
-            abstractWordCount: context.abstractWordCount || 0,
-            detectedReferencesCount: context.detectedReferencesCount,
-            uploadedAt: context.uploadedAt || Date.now()
-          };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(compactContext));
-        } else {
-          throw storageErr;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('Failed to save active manuscript to storage', err);
-  }
+    setToolState(STORAGE_KEY, context, projectId);
+    if (context?.rawText) saveManuscriptVersion(context.rawText, context.filename, projectId);
+  } catch (err) { console.warn('Manuscript could not be saved', err); }
 }

@@ -6,9 +6,12 @@ export interface JournalCandidate {
   isOa: boolean;
   oaType: 'Diamond OA ($0 APC)' | 'Gold OA' | 'Hybrid' | 'Subscription';
   apcUsd: number | null;
-  citeScore: number;
+  citeScore: number | null;
+  meanCitedness?: number;
+  metricSource?: string;
+  retrievedAt?: string;
   hIndex: number;
-  scopusQuartile: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+  scopusQuartile: 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'Unknown';
   reviewSpeedWeeks: string;
   acceptanceRateEstimated: string;
   topics: string[];
@@ -274,19 +277,10 @@ export async function matchJournalsForManuscript(
           const isOa = Boolean(src.is_oa);
           const isDoaj = Boolean(src.is_in_doaj);
 
-          // Estimate Quartile based on 2-year citedness and h-index
-          let scopusQuartile: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q3';
-          if (citedness >= 4.5 || hIndex >= 120) {
-            scopusQuartile = 'Q1';
-          } else if (citedness >= 2.4 || hIndex >= 60) {
-            scopusQuartile = 'Q2';
-          } else if (citedness < 1.1 && hIndex < 25) {
-            scopusQuartile = 'Q4';
-          }
-
+          const scopusQuartile = 'Unknown' as const;
           let oaType: 'Diamond OA ($0 APC)' | 'Gold OA' | 'Hybrid' | 'Subscription' = 'Subscription';
           if (isOa) {
-            if (apcUsd === 0 || (isDoaj && apcUsd === null)) {
+            if (apcUsd === 0) {
               oaType = 'Diamond OA ($0 APC)';
             } else {
               oaType = 'Gold OA';
@@ -307,11 +301,14 @@ export async function matchJournalsForManuscript(
             isOa,
             oaType,
             apcUsd: oaType === 'Diamond OA ($0 APC)' ? 0 : apcUsd,
-            citeScore: Number(citedness.toFixed(1)),
+            citeScore: null,
+            meanCitedness: citedness,
+            metricSource: 'OpenAlex source metadata; CiteScore and Scopus quartile unavailable',
+            retrievedAt: new Date().toISOString(),
             hIndex,
             scopusQuartile,
-            reviewSpeedWeeks: citedness > 10 ? '6 to 10 weeks' : '4 to 6 weeks',
-            acceptanceRateEstimated: citedness > 15 ? '12% to 18%' : citedness > 5 ? '25% to 35%' : '40% to 50%',
+            reviewSpeedWeeks: 'Unknown',
+            acceptanceRateEstimated: 'Unknown',
             topics: srcTopics.slice(0, 4),
             homepageUrl: src.homepage_url || `https://doi.org`,
             matchScore,
@@ -331,7 +328,7 @@ export async function matchJournalsForManuscript(
     if (!allCandidates.some(j => j.title.toLowerCase() === baseline.title.toLowerCase())) {
       const recalculatedScore = calculateMatchScore(combinedText, baseline.title, baseline.topics);
       allCandidates.push({
-        ...baseline,
+        ...baseline, citeScore: null, scopusQuartile: 'Unknown', reviewSpeedWeeks: 'Unknown', acceptanceRateEstimated: 'Unknown', apcUsd: null, metricSource: 'Directory suggestion; verify current policies with publisher',
         matchScore: recalculatedScore,
       });
     }
@@ -346,6 +343,7 @@ export async function matchJournalsForManuscript(
 
     // Max APC budget filter
     if (filters.maxApc !== null && filters.maxApc !== undefined) {
+      if (j.apcUsd === null) return false;
       if (j.apcUsd !== null && j.apcUsd > filters.maxApc) return false;
     }
 
@@ -486,7 +484,7 @@ export function auditManuscriptPreFlight(
       category: 'Ethics & Integrity',
       status: 'pass',
       message: 'Detected IRB, ethics committee, or institutional review clearance declarations.',
-      fixAdvice: 'Meets Committee on Publication Ethics (COPE) guidelines.',
+      fixAdvice: 'Text presence does not establish approval, consent, or guideline compliance. Confirm the actual procedure.',
     });
   } else if (isHumanOrClinical) {
     checks.push({
@@ -496,17 +494,17 @@ export function auditManuscriptPreFlight(
       status: 'fail',
       message: 'Human participants or clinical surveys detected without an ethics committee approval number or exemption notice.',
       fixAdvice: 'Provide the institutional review board name, protocol approval number, and consent method.',
-      autoFixContent: 'Ethical Approval: This study was approved by the Institutional Review Board of [Institution Name] (Protocol ID: [Approval Number]). Written informed consent was obtained from all participants prior to study inclusion.',
+      autoFixContent: 'Ethics and consent: [Describe the actual institutional determination, approval or waiver identifier, and consent procedure. Do not claim procedures that did not occur.]',
     });
   } else {
     checks.push({
       id: 'ethics_neutral',
       title: 'Ethics Exemption or Secondary Data Context',
       category: 'Ethics & Integrity',
-      status: 'pass',
+      status: 'warning',
       message: 'No primary human cohort detected. If this is pure theoretical or secondary literature work, explicitly state exemption.',
       fixAdvice: 'Add an explicit note: "Ethical approval was not required as this study analyzed publicly available secondary datasets."',
-      autoFixContent: 'Ethical Approval: Ethical approval was not required for this study as it relies exclusively on publicly available, anonymized secondary literature and open registry data.',
+      autoFixContent: 'Ethics review: [Record the applicable institutional determination and rationale for this study. Secondary data do not automatically establish exemption.]',
     });
   }
 
@@ -519,7 +517,7 @@ export function auditManuscriptPreFlight(
       category: 'Ethics & Integrity',
       status: 'pass',
       message: 'Authors have declared potential competing interests or stated absence of conflict.',
-      fixAdvice: 'Fulfills ICMJE and COPE transparency standards.',
+      fixAdvice: 'Confirm the declaration is accurate and meets the target journal requirements.',
     });
   } else {
     checks.push({
@@ -529,7 +527,7 @@ export function auditManuscriptPreFlight(
       status: 'fail',
       message: 'Every peer-reviewed journal requires an explicit statement confirming absence or disclosure of competing interests.',
       fixAdvice: 'Insert a standard declaration before the bibliography.',
-      autoFixContent: 'Conflict of Interest: The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.',
+      autoFixContent: 'Competing interests: [List the authors’ actual relevant interests, or explicitly confirm their absence.]',
     });
   }
 
@@ -554,7 +552,7 @@ export function auditManuscriptPreFlight(
       category: 'Ethics & Integrity',
       status: 'pass',
       message: 'Prospective registry identifier detected in manuscript text.',
-      fixAdvice: 'Ensures compliance with ICMJE clinical trial registration policies.',
+      fixAdvice: 'Verify the registry record, dates, outcomes, and applicable registration requirements.',
     });
   }
 
@@ -621,7 +619,7 @@ export function auditManuscriptPreFlight(
     generatedDeclarations: {
       dataAvailability: 'Data Availability Statement: The datasets generated during and/or analyzed during the current study are available in the public repository [Insert Repository Name / DOI] or are available from the corresponding author upon reasonable request.',
       conflictOfInterest: 'Conflict of Interest: The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.',
-      ethicalApproval: 'Ethical Approval: Ethical approval was obtained from the Institutional Review Board of [Institution Name] (Approval ID: [Number]). All participants provided written informed consent.',
+      ethicalApproval: 'Ethics and consent: [Record actual institutional approval, exemption, or waiver determination and the actual consent procedure. This template does not establish that any procedure occurred.]',
     },
   };
 }

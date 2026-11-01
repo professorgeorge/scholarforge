@@ -1,3 +1,6 @@
+import { useProjectState } from './components/useProjectState';
+import { ProjectWorkspace } from './components/ProjectWorkspace';
+import { getActiveProjectId } from './services/projectService';
 import React, { useState, useEffect } from 'react';
 import { Navbar, type AcademicPillar, type WorkflowLensId, WORKFLOW_LENSES } from './components/Navbar';
 import { ScholarLaunchpad } from './components/ScholarLaunchpad';
@@ -54,6 +57,7 @@ import confetti from 'canvas-confetti';
 import { addMultiplePapersToCart } from './services/cartService';
 
 export const App: React.FC = () => {
+  const [projectId] = useState(getActiveProjectId);
   const [activeManuscript, setActiveManuscript] = useState<ActiveManuscriptContext | null>(() => loadActiveManuscriptFromStorage());
   const [inputText, setInputText] = useState<string>(() => {
     const saved = loadActiveManuscriptFromStorage();
@@ -71,16 +75,16 @@ export const App: React.FC = () => {
     if (parsed.filename) {
       setUploadedDocName(parsed.filename);
     }
-    saveActiveManuscriptToStorage(parsed);
+    saveActiveManuscriptToStorage(parsed, projectId);
   };
 
   const handleClearManuscript = () => {
     setActiveManuscript(null);
     setInputText('');
     setUploadedDocName(null);
-    saveActiveManuscriptToStorage(null);
+    saveActiveManuscriptToStorage(null, projectId);
   };
-  const [claims, setClaims] = useState<Claim[]>([]);
+  const [claims, setClaims] = useProjectState<Claim[]>('App.claims', []);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const [sensitivity, setSensitivity] = useState<'all' | 'moderate' | 'high'>(() => {
@@ -172,8 +176,8 @@ export const App: React.FC = () => {
   }, []);
 
   // Peer-Review Rebuttal Package State
-  const [rebuttalPackage, setRebuttalPackage] = useState<PeerReviewOverhaulResult | null>(null);
-  const [originalPreRevisionText, setOriginalPreRevisionText] = useState<string>('');
+  const [rebuttalPackage, setRebuttalPackage] = useProjectState<PeerReviewOverhaulResult | null>('App.rebuttalPackage', null);
+  const [originalPreRevisionText, setOriginalPreRevisionText] = useProjectState<string>('App.originalPreRevisionText', '');
 
   const [options, setOptions] = useState<CitationOptions>(() => {
     const saved = localStorage.getItem('scholarforge_citation_options');
@@ -203,10 +207,10 @@ export const App: React.FC = () => {
   });
 
   // Cross-pillar literature and PICO search state
-  const [literatureTopic, setLiteratureTopic] = useState('');
-  const [literatureFocus, setLiteratureFocus] = useState('');
+  const [literatureTopic, setLiteratureTopic] = useProjectState('App.literatureTopic', '');
+  const [literatureFocus, setLiteratureFocus] = useProjectState('App.literatureFocus', '');
   const [literatureAutoSearch, setLiteratureAutoSearch] = useState(false);
-  const [picoInitialQuestion, setPicoInitialQuestion] = useState('');
+  const [picoInitialQuestion, setPicoInitialQuestion] = useProjectState('App.picoInitialQuestion', '');
   const [syntheticPreset, setSyntheticPreset] = useState<string | undefined>(undefined);
 
   // Keep options and sensitivity synchronized in localStorage
@@ -291,7 +295,7 @@ export const App: React.FC = () => {
               updatedClaims[globalIdx] = {
                 ...claim,
                 candidatePapers: papers,
-                selectedPaper: papers[0],
+                selectedPaper: null,
                 status: 'found',
               };
             } else {
@@ -358,7 +362,7 @@ export const App: React.FC = () => {
         const ranked = rankPapersByRelevance(candidatePool, claim.text, true);
         if (ranked.length > 0) {
           relevantCandidates = ranked;
-          selected = ranked[0];
+          selected = null;
         }
       } else if (selected) {
         relevantCandidates = [selected, ...candidatePool.filter((p) => p.id !== selected?.id)];
@@ -433,7 +437,7 @@ export const App: React.FC = () => {
         const ranked = rankPapersByRelevance(existingPapers, claim.text, true);
         if (ranked.length > 0) {
           relevantCandidates = ranked;
-          assigned = ranked[0];
+          assigned = null;
         }
       }
 
@@ -491,7 +495,7 @@ export const App: React.FC = () => {
             ? {
                 ...c,
                 candidatePapers: papers,
-                selectedPaper: papers.length > 0 ? papers[0] : null,
+                selectedPaper: null,
                 status: papers.length > 0 ? 'found' : 'not_found',
               }
             : c
@@ -573,6 +577,8 @@ export const App: React.FC = () => {
         activeLens={activeLens}
         onSelectLens={setActiveLens}
       />
+
+      <ProjectWorkspace navigate={setActivePillar} restoreManuscript={handleManuscriptUpdate} llmConfig={llmConfig} />
 
       {/* Active Manuscript Bar (Persistent Session Memory & 1-Click Handoffs) */}
       <ActiveManuscriptBar
