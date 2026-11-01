@@ -210,6 +210,11 @@ export const App: React.FC = () => {
   const [literatureTopic, setLiteratureTopic] = useProjectState('App.literatureTopic', '');
   const [literatureFocus, setLiteratureFocus] = useProjectState('App.literatureFocus', '');
   const [literatureAutoSearch, setLiteratureAutoSearch] = useState(false);
+  const [standaloneReferences, setStandaloneReferences] = useState<{ text: string; filename?: string } | null>(null);
+
+  useEffect(() => {
+    if (activePillar !== 'verify') setStandaloneReferences(null);
+  }, [activePillar]);
   const [picoInitialQuestion, setPicoInitialQuestion] = useProjectState('App.picoInitialQuestion', '');
   const [syntheticPreset, setSyntheticPreset] = useState<string | undefined>(undefined);
 
@@ -552,7 +557,7 @@ export const App: React.FC = () => {
   const groundedClaimsCount = claims.filter((c) => !c.isExcluded && c.selectedPaper).length;
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} transition-colors duration-200`}>
+    <div className={`sf-app min-h-screen ${isDarkMode ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} transition-colors duration-200`}>
       
       {/* Navigation Bar */}
       <Navbar
@@ -592,13 +597,13 @@ export const App: React.FC = () => {
       />
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-6">
+      <main className="sf-main w-full min-w-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         
         {/* Global Progress Bar when grounding */}
         {isProcessing && (
           <div className="p-4 rounded-xl bg-blue-50/80 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 animate-in fade-in duration-200">
             <div className="flex items-center justify-between text-xs font-semibold text-blue-950 dark:text-blue-200 mb-2">
-              <span className="flex items-center gap-2">
+              <span className="flex flex-wrap items-center gap-2">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-800 dark:text-blue-400" />
                 <span>Extracting empirical claims & hunting verified peer-reviewed articles...</span>
               </span>
@@ -636,18 +641,19 @@ export const App: React.FC = () => {
               onOpenSettings={() => setIsSettingsOpen(true)}
               onOpenCart={() => setIsCartOpen(true)}
               onOpenBinder={() => setIsBinderOpen(true)}
-              onInjectDraftText={(text, destination, filename) => {
-                handleManuscriptUpdate(text, filename);
-                if (destination === 'literature') {
-                  setLiteratureTopic(text);
+              onStartResearch={(request) => {
+                if (request.mode === 'topic') {
+                  setLiteratureTopic(request.text);
+                  setPicoInitialQuestion(request.text);
                   setLiteratureFocus('');
-                  setLiteratureAutoSearch(true);
+                  setLiteratureAutoSearch(false);
                   setActivePillar('literature');
-                } else if (destination === 'pico') {
-                  setPicoInitialQuestion(text);
-                  setActivePillar('pico');
-                } else if (destination && destination !== 'hub') {
-                  setActivePillar(destination);
+                } else if (request.mode === 'references') {
+                  setStandaloneReferences({ text: request.text, filename: request.filename });
+                  setActivePillar('verify');
+                } else {
+                  handleManuscriptUpdate(request.text, request.filename || 'Pasted draft');
+                  setActivePillar('studio');
                 }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
@@ -683,7 +689,7 @@ export const App: React.FC = () => {
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 <span className="font-bold text-slate-900 dark:text-white font-serif">Literature discovered?</span> Move to study design or start drafting:
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -729,7 +735,7 @@ export const App: React.FC = () => {
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 <span className="font-bold text-slate-900 dark:text-white font-serif">PICO strategy ready?</span> Move to study design or start drafting:
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -774,7 +780,7 @@ export const App: React.FC = () => {
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 <span className="font-bold text-slate-900 dark:text-white font-serif">Methodology specified?</span> Generate synthetic pilot data or triage ethics:
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setActivePillar('synthetic'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -824,7 +830,7 @@ export const App: React.FC = () => {
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 <span className="font-bold text-slate-900 dark:text-white font-serif">Synthetic dataset generated?</span> Check ethics protocol or proceed to manuscript drafting:
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setActivePillar('irb'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -862,7 +868,7 @@ export const App: React.FC = () => {
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 <span className="font-bold text-slate-900 dark:text-white font-serif">Ethics protocol triaged?</span> Append statement to manuscript or review methods:
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -934,6 +940,10 @@ export const App: React.FC = () => {
                 }
               }}
               onUpdateBibliography={(newBib: string) => {
+                if (standaloneReferences) {
+                  setStandaloneReferences({ ...standaloneReferences, text: newBib });
+                  return;
+                }
                 if (activeManuscript) {
                   const updated: ActiveManuscriptContext = {
                     ...activeManuscript,
@@ -967,9 +977,13 @@ export const App: React.FC = () => {
           <div className="py-2 animate-in fade-in duration-200">
             <VerifierPane
               llmConfig={llmConfig}
-              initialBibliography={activeManuscript?.bibliography || activeManuscript?.rawText || inputText}
-              sourceFilename={activeManuscript?.filename || uploadedDocName || undefined}
+              initialBibliography={standaloneReferences?.text ?? (activeManuscript?.bibliography || activeManuscript?.rawText || inputText)}
+              sourceFilename={standaloneReferences ? standaloneReferences.filename : (activeManuscript?.filename || uploadedDocName || undefined)}
               onUpdateBibliography={(newBib: string) => {
+                if (standaloneReferences) {
+                  setStandaloneReferences({ ...standaloneReferences, text: newBib });
+                  return;
+                }
                 if (activeManuscript) {
                   const updated: ActiveManuscriptContext = {
                     ...activeManuscript,
@@ -1086,7 +1100,7 @@ export const App: React.FC = () => {
                       <BookOpen className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-sm font-bold text-slate-900 dark:text-white font-serif">
                           Grounded Manuscript Workspace
                         </h3>

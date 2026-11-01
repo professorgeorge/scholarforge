@@ -69,7 +69,7 @@ export const RESEARCH_STAGES: StageDef[] = [
     icon: '🔍',
     defaultPillar: 'literature',
     tools: [
-      { id: 'literature', label: 'Federated Literature Search', icon: Search, description: 'Narrative & multi-source discovery across OpenAlex, Europe PMC, Crossref & Semantic Scholar' },
+      { id: 'literature', label: 'Federated Literature Search', icon: Search, description: 'Multi-source discovery with PubMed, DataCite, source status & reference imports' },
       { id: 'pico', label: 'PICO Systematic Strategy', icon: Compass, description: 'Clinical & PRISMA query formulator for PubMed, Cochrane, Scopus & Web of Science' },
     ]
   },
@@ -227,7 +227,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-xs">
       
       {/* ROW 1: Brand & Academic Command Utilities */}
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 lg:px-8 py-2.5">
+      <div className="sf-header-bar max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 lg:px-8 py-3">
         
         {/* Brand Logo & Academic Header */}
         <button
@@ -256,11 +256,13 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         {/* Right-Hand Controls & Selectors */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="sf-header-controls flex items-center gap-1.5 sm:gap-2">
 
           {/* Citation Style Selector Dropdown */}
           <div className="relative">
             <button
+              aria-label="Choose citation style"
+              aria-expanded={showStyleMenu}
               onClick={() => setShowStyleMenu(!showStyleMenu)}
               className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 text-white shadow-xs transition cursor-pointer"
             >
@@ -278,7 +280,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {showStyleMenu && (
               <div 
-                className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150"
+                className="sf-style-menu absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150"
               >
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
                   <span>Select Citation Style</span>
@@ -397,7 +399,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ROW 2: TIER 1 - The 4 Research Lifecycle Stages */}
       {onSelectPillar && (
         <div className="w-full border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/95 dark:bg-slate-950/90 backdrop-blur-sm px-3 sm:px-4 lg:px-8 py-2 overflow-x-auto no-scrollbar">
-          <div className="max-w-7xl mx-auto flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
+          <div className="sf-stage-nav max-w-7xl mx-auto flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-1">
             
             {/* Home Hub Button */}
             <button
@@ -408,6 +410,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   ? 'bg-blue-900 text-white shadow-xs font-bold ring-2 ring-blue-500/20'
                   : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 font-semibold'
               }`}
+              aria-current={activePillar === 'hub' ? 'page' : undefined}
               title="ScholarForge Home & Utilities Hub"
             >
               <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold shrink-0 ${
@@ -445,6 +448,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         ? 'bg-blue-900 text-white shadow-xs font-bold ring-2 ring-blue-500/20'
                         : 'bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 font-semibold'
                     }`}
+                    aria-current={isCurrentStage ? 'step' : undefined}
                     title={stage.tagline}
                   >
                     <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold shrink-0 ${
@@ -501,6 +505,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800 font-bold shadow-2xs ring-1 ring-blue-500/20'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80'
                     }`}
+                    aria-current={isSelected ? 'page' : undefined}
                     title={tool.description}
                   >
                     <IconComponent className={`w-3.5 h-3.5 ${

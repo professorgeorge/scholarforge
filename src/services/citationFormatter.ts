@@ -1,3 +1,4 @@
+import { generateRIS } from './risExporter';
 import type { 
   AcademicPaper, 
   Author, 
@@ -489,34 +490,18 @@ export function generateBibtexEntry(paper: AcademicPaper): string {
   const title = paper.title.replace(/[{}]/g, '');
   const venue = paper.venue.replace(/[{}]/g, '');
 
-  const entryType = paper.type === 'book' ? 'book' : paper.type === 'conference' ? 'inproceedings' : 'article';
-  const venueField = paper.type === 'conference' ? 'booktitle' : paper.type === 'book' ? 'publisher' : 'journal';
+  const entryType = paper.type === 'book' ? 'book' : paper.type === 'conference' ? 'inproceedings' : paper.type === 'report' ? 'techreport' : paper.type === 'thesis' || paper.type === 'preprint' ? 'misc' : 'article';
+  const venueField = paper.type === 'conference' ? 'booktitle' : paper.type === 'book' ? 'publisher' : paper.type === 'report' ? 'institution' : paper.type === 'thesis' || paper.type === 'preprint' ? 'howpublished' : 'journal';
   return `@${entryType}{${key},
   title = {${title}},
   author = {${authors}},
   ${venueField} = {${paper.type === 'book' ? paper.publisher || venue : venue}},
-  year = {${year}},${paper.volume ? `\n  volume = {${paper.volume}},` : ''}${paper.issue ? `\n  number = {${paper.issue}},` : ''}${paper.pages ? `\n  pages = {${paper.pages}},` : ''}${paper.doi ? `\n  doi = {${paper.doi}},` : ''}${paper.url ? `\n  url = {${paper.url}}` : ''}
+  year = {${year}},${paper.type === 'thesis' || paper.type === 'report' || paper.type === 'preprint' ? `\n  type = {${paper.type}},` : ''}${paper.volume ? `\n  volume = {${paper.volume}},` : ''}${paper.issue ? `\n  number = {${paper.issue}},` : ''}${paper.pages ? `\n  pages = {${paper.pages}},` : ''}${paper.doi ? `\n  doi = {${paper.doi}},` : ''}${paper.url ? `\n  url = {${paper.url}},` : ''}${paper.abstract ? `\n  abstract = {${paper.abstract.replace(/[{}]/g, '').replace(/\r?\n/g, ' ')}}` : ''}
 }`;
 }
 
 export function generateRisEntry(paper: AcademicPaper): string {
-  const lines: string[] = [
-    'TY  - JOUR',
-    `TI  - ${paper.title.replace(/\n+/g, ' ').trim()}`,
-  ];
-  for (const author of paper.authors) {
-    lines.push(`AU  - ${author.name}`);
-  }
-  lines.push(`PY  - ${paper.year || 2024}`);
-  lines.push(`JO  - ${paper.venue}`);
-  if (paper.volume) lines.push(`VL  - ${paper.volume}`);
-  if (paper.issue) lines.push(`IS  - ${paper.issue}`);
-  if (paper.pages) lines.push(`SP  - ${paper.pages}`);
-  if (paper.doi) lines.push(`DO  - ${paper.doi}`);
-  if (paper.url) lines.push(`UR  - ${paper.url}`);
-  if (paper.abstract) lines.push(`AB  - ${paper.abstract.replace(/\n+/g, ' ')}`);
-  lines.push('ER  - ');
-  return lines.join('\r\n');
+  return generateRIS([paper]);
 }
 
 export function exportToRis(papers: AcademicPaper[]): string {

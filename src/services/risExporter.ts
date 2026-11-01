@@ -8,9 +8,9 @@ export function generateRIS(papers: AcademicPaper[]): string {
 
   return papers
     .map((paper) => {
-      const isBook = paper.type === 'book';
+      const risType = paper.type === 'book' ? 'BOOK' : paper.type === 'thesis' ? 'THES' : paper.type === 'report' ? 'RPRT' : paper.type === 'conference' ? 'CPAPER' : paper.type === 'preprint' ? 'UNPB' : 'JOUR';
       const lines: string[] = [
-        `TY  - ${isBook ? 'BOOK' : 'JOUR'}`,
+        `TY  - ${risType}`,
         `TI  - ${paper.title}`,
       ];
 
@@ -64,6 +64,9 @@ export function generateRIS(papers: AcademicPaper[]): string {
         lines.push(`PB  - ${paper.publisher}`);
       }
 
+      lines.push(`DB  - ${paper.source}`);
+      lines.push(`M1  - ${paper.citationCount || 0}`);
+      if (paper.registryProvenance?.length) lines.push(`N1  - Retrieved from: ${[...new Set(paper.registryProvenance.map(item => item.registry))].join(', ')}`);
       lines.push('ER  - ');
       return lines.join('\r\n');
     })

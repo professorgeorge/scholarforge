@@ -144,9 +144,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
       setDetectedReferenceCount(res.referenceCount);
       setIsViewingFullManuscript(false);
     }
-    if (sourceFilename) {
-      setTransmittedDocName(sourceFilename);
-    }
+    setTransmittedDocName(sourceFilename || null);
   }, [initialBibliography, sourceFilename]);
 
   const handleToggleManuscriptView = () => {

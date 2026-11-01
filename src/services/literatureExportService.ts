@@ -2,7 +2,7 @@ import type { AcademicPaper, CitationStyle } from '../types/citation';
 import { calculateDatasetMetrics } from './datasetScientometrics';
 import { extractAcademicTags } from './academicTagger';
 import { formatReferenceEntryPlain } from './citationFormatter';
-import { generateBibtexKey } from './citationFormatter';
+import { generateBibtexEntry } from './citationFormatter';
 import { generateRIS } from './risExporter';
 
 export interface LiteratureExportOptions {
@@ -75,6 +75,9 @@ export function exportLiteratureToJson(
         isOpenAccess: Boolean(paper.openAccess),
         openAccessPdf: paper.openAccessPdf || null,
         sourceRegistry: paper.source || 'federated',
+        type: paper.type,
+        documentType: paper.documentType,
+        registryProvenance: paper.registryProvenance,
         keywordsAndTags: tags,
       };
     }),
@@ -459,7 +462,7 @@ export function exportLiteratureToWordHtml(
       <h1 class="main-title">${escapeHTML(documentTitle)}</h1>
       <p class="subtitle">
         ${topic ? `Inquiry / Topic: <strong>${escapeHTML(topic)}</strong> &bull; ` : ''}
-        ${papers.length} Peer-Reviewed Records &bull; Style: ${style.toUpperCase()} &bull; ${dateStr}
+        ${papers.length} Candidate Records &bull; Style: ${style.toUpperCase()} &bull; ${dateStr}
       </p>
 
       ${
@@ -478,7 +481,7 @@ export function exportLiteratureToWordHtml(
       ${recordsHtml}
 
       <p style="text-align: center; font-size: 9pt; color: #94a3b8; margin-top: 30pt;">
-        Curated and verified via ScholarForge Academic Intelligence Suite.
+        Retrieved or imported with ScholarForge. Publication status, metadata, and source support require independent review.
       </p>
     </body>
     </html>
@@ -490,24 +493,7 @@ export function exportLiteratureToWordHtml(
  * Full BibTeX collection including title, author, journal, year, doi, url, and full abstract.
  */
 export function exportLiteratureToBibtex(papers: AcademicPaper[]): string {
-  return papers
-    .map((paper) => {
-      const key = generateBibtexKey(paper);
-      const authors = paper.authors.map((a) => a.name).join(' and ') || 'Anonymous';
-      const year = paper.year || '2024';
-      const title = paper.title.replace(/[{}]/g, '');
-      const venue = (paper.venue || 'Journal').replace(/[{}]/g, '');
-      const cleanDoi = paper.doi ? paper.doi.replace(/^https?:\/\/(dx\.)?doi\.org\//i, '').trim() : '';
-      const abstractClean = paper.abstract ? paper.abstract.replace(/[{}]/g, '').replace(/\r?\n/g, ' ') : '';
-
-      return `@article{${key},
-  title = {${title}},
-  author = {${authors}},
-  journal = {${venue}},
-  year = {${year}},${paper.volume ? `\n  volume = {${paper.volume}},` : ''}${paper.issue ? `\n  number = {${paper.issue}},` : ''}${paper.pages ? `\n  pages = {${paper.pages}},` : ''}${cleanDoi ? `\n  doi = {${cleanDoi}},` : ''}${paper.url ? `\n  url = {${paper.url}},` : ''}${abstractClean ? `\n  abstract = {${abstractClean}}` : ''}
-}`;
-    })
-    .join('\n\n');
+  return papers.map(generateBibtexEntry).join('\n\n');
 }
 
 /**

@@ -510,7 +510,7 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
 
           {/* 1-Click DOI / PMID Ingest Bar */}
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 flex-1 min-w-[240px]">
+            <div className="flex items-center gap-2 flex-1 min-w-0 basis-60">
               <UploadCloud className="w-4 h-4 text-blue-800 dark:text-blue-400 shrink-0" />
               <input
                 type="text"

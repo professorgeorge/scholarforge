@@ -13,6 +13,8 @@ npm ci
 npm run dev
 ```
 
+**Start here** offers three explicit tasks: find literature, work on a manuscript, or check references. Material stays staged until you continue. Topics and standalone reference checks preserve the active manuscript; opening a draft in Manuscript Studio makes it the active manuscript. Searches and reference verification start only when you run them in their tools. Use **Find a tool** to search the separate utility catalog.
+
 Open **Project workspace** above the active manuscript to create or switch projects. Existing manuscript, cart, and binder content is copied into the first project. Legacy originals are retained.
 
 ## Project workbench
@@ -39,6 +41,16 @@ The suite retains twelve utilities organized in four stages:
 | Audit & Publish | Reference audit; journal discovery; anonymizer; scholar/reviewer finder |
 
 The command palette, research cart, binder, citation styles, and local or external model configuration remain available.
+
+## Scholarly sources and reference exchange
+
+Rapid discovery searches OpenAlex, Crossref, Europe PMC, PubMed, and DataCite independently. Semantic Scholar is optional and off by default; arXiv is optional when preprints are allowed. Source status remains visible after a search, including failures, rate limits, and returned-record counts. One failed source does not discard successful records. Semantic Scholar failures trigger a brief cooldown rather than repeated requests.
+
+PubMed adds direct NCBI metadata; its summary API does not provide abstracts or citation totals. DataCite adds repository papers, theses, and reports, including material that may not be peer reviewed. DOI registration is not verification of peer review. Duplicate records retain registry provenance; citation totals from different providers are never added together. Rapid discovery is bounded and may transform queries; the logged review-search workflow still supports OpenAlex, Crossref, and Europe PMC.
+
+The literature screen previews RIS, BibTeX, CSL-JSON, and Zotero library imports before merging them with results. Use RIS exports from Publish or Perish and compatible reference managers. Zotero user/group libraries are read only; private-library keys are request-only and are not saved. Live-search filters do not apply to imported references. Export RIS or BibTeX to bring records back to your reference manager. Google Scholar, Scopus, Lens, and Web of Science are not queried directly by this integration.
+
+Source API references: [PubMed E-utilities](https://www.ncbi.nlm.nih.gov/books/NBK25497/), [DataCite REST API](https://support.datacite.org/docs/api), [Semantic Scholar access and limits](https://www.semanticscholar.org/product/api/tutorial), [Zotero Web API](https://www.zotero.org/support/dev/web_api/v3/basics), and [Publish or Perish sources](https://harzing.com/resources/publish-or-perish/manual/using/data-sources).
 
 ## Interpretation and persistence
 

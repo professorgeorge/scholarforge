@@ -1,3 +1,4 @@
+import { scholarlySourceLabel } from '../services/scholarlySources';
 import React, { useState } from 'react';
 import { X, Copy, Check, FileText, ArrowDown, Database, Filter, CheckCircle2 } from 'lucide-react';
 import type { PrismaFlowStats } from '../services/federatedSearchEngine';
@@ -42,7 +43,7 @@ export const PrismaFlowModal: React.FC<PrismaFlowModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-serif font-bold text-lg text-slate-900 dark:text-white">
-                  PRISMA 2020 Flow Protocol &amp; Metrics
+                  Discovery Retrieval Summary
                 </h3>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300">
                   Systematic Standard
@@ -78,27 +79,8 @@ export const PrismaFlowModal: React.FC<PrismaFlowModalProps> = ({
                   {stats.identification.totalIdentified} Records Identified
                 </span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
-                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
-                  <span className="text-slate-400 block text-[10px]">OpenAlex</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{dbs.openalex}</span>
-                </div>
-                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
-                  <span className="text-slate-400 block text-[10px]">Europe PMC</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{dbs.europepmc}</span>
-                </div>
-                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
-                  <span className="text-slate-400 block text-[10px]">Crossref</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{dbs.crossref}</span>
-                </div>
-                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
-                  <span className="text-slate-400 block text-[10px]">Semantic Scholar</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{dbs.semanticscholar}</span>
-                </div>
-                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
-                  <span className="text-slate-400 block text-[10px]">arXiv</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{dbs.arxiv}</span>
-                </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                {Object.entries(dbs).map(([name, count]) => <div key={name} className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center"><span className="text-slate-400 block text-[10px]">{scholarlySourceLabel(name)}</span><span className="font-bold text-slate-800 dark:text-slate-200 font-mono">{count || 0}</span></div>)}
               </div>
               <div className="mt-2 text-[11px] text-blue-700 dark:text-blue-300">
                 Duplicates removed before screening: <strong>{stats.identification.duplicatesRemoved} records</strong>
@@ -129,6 +111,7 @@ export const PrismaFlowModal: React.FC<PrismaFlowModalProps> = ({
                   <span>Excluded below citation impact threshold:</span>
                   <strong className="font-mono">{stats.screening.excludedLowCitations}</strong>
                 </div>
+                <div className="flex justify-between"><span>Excluded by year, DOI, or open-access filters:</span><strong className="font-mono">{stats.screening.excludedOtherFilters || 0}</strong></div>
                 <div className="flex justify-between border-t border-amber-200 dark:border-amber-900 pt-1 font-bold">
                   <span>Total Excluded:</span>
                   <span className="font-mono">{stats.screening.totalExcluded}</span>

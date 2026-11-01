@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
@@ -61,8 +62,30 @@
   }
 
   html, body {
-    overflow-x: hidden;
-    max-width: 100vw;
+    min-width: 0;
+    width: 100%;
+  }
+
+  #root {
+    min-width: 0;
+  }
+
+  /* Let flex and grid items shrink around long titles, controls and tables. */
+  :where(.flex, .grid, .sf-grid, .sf-stack) > * {
+    min-width: 0;
+  }
+
+  :where(input, textarea, select, button) {
+    max-width: 100%;
+  }
+
+  :where(button, a, input, select, textarea, summary):focus-visible {
+    outline: 3px solid var(--accent-blue);
+    outline-offset: 3px;
+  }
+
+  :where(button) > svg {
+    flex-shrink: 0;
   }
 
   p, span, h1, h2, h3, h4, h5, h6, a, div, td, th, li, label, button, kbd {
@@ -79,17 +102,17 @@
   textarea::placeholder,
   ::placeholder {
     color: #94a3b8 !important;
-    opacity: 0.55 !important;
-    font-style: italic !important;
+    opacity: 1 !important;
+    font-style: normal !important;
     font-weight: 400 !important;
   }
 
   .dark input::placeholder,
   .dark textarea::placeholder,
   .dark ::placeholder {
-    color: #64748b !important;
-    opacity: 0.55 !important;
-    font-style: italic !important;
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+    font-style: normal !important;
     font-weight: 400 !important;
   }
 
@@ -228,4 +251,67 @@
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+/* Shared presentation and responsive boundaries. */
+.sf-app {
+  min-width: 0;
+}
+
+.sf-tool-card {
+  box-shadow: 0 2px 6px rgb(15 23 42 / 3%);
+}
+
+.sf-tool-card h3 {
+  line-height: 1.35;
+}
+
+.sf-dialog {
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 639px) {
+  /* Keep every header control reachable without squeezing the brand. */
+  .sf-header-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .sf-header-controls > :first-child {
+    margin-right: auto;
+  }
+
+  .sf-header-controls button {
+    min-height: 36px;
+  }
+
+  .sf-style-menu {
+    left: 0;
+    right: auto;
+  }
+
+  .sf-stage-nav {
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 transparent;
+  }
+
+  /* A tall sticky header would leave too little room for the actual task. */
+  .sf-app > header {
+    position: relative;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.sf-start-choice:focus-within {
+  outline: 3px solid var(--accent-blue);
+  outline-offset: 3px;
 }

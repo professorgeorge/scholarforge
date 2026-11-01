@@ -60,7 +60,7 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Sync initialQuestion if provided from Intelligent Scholarly Workbench
+  // Sync the research question supplied by the home-page task chooser
   React.useEffect(() => {
     if (initialQuestion && initialQuestion.trim() && !questionInput) {
       setQuestionInput(initialQuestion);

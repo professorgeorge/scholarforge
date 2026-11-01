@@ -26,7 +26,7 @@ function paper(
     venue: fields.venue || "",
     doi,
     url: fields.url || (doi ? `https://doi.org/${doi}` : ""),
-    citationCount: 0,
+    citationCount: Math.max(0, Number(fields.citationCount) || 0),
     abstract: fields.abstract || "",
     openAccess: false,
     source: "manual",
@@ -39,7 +39,7 @@ function paper(
         ? "book"
         : fields.type === "conference"
           ? "conference"
-          : "journal",
+          : fields.type === "thesis" ? "thesis" : fields.type === "report" ? "report" : fields.type === "preprint" ? "preprint" : "journal",
   };
 }
 
@@ -50,7 +50,7 @@ export function importReferences(
   let papers: AcademicPaper[] = [];
   if (format === "json") {
     const raw = JSON.parse(text);
-    const entries = Array.isArray(raw) ? raw : raw.items;
+    const entries = Array.isArray(raw) ? raw : raw.items || raw.records;
     if (!Array.isArray(entries))
       throw new Error("Expected a CSL-JSON or Zotero item array.");
     papers = entries
@@ -74,25 +74,29 @@ export function importReferences(
             familyName: a.family || a.lastName,
           }),
         );
-        return paper(
+        const imported = paper(
           {
             id: String(item.key || v.id || ""),
             title: String(v.title || ""),
             doi: v.DOI || v.doi || "",
             year: String(
-              v.issued?.["date-parts"]?.[0]?.[0] || v.date || v.year || "",
+              v.issued?.["date-parts"]?.[0]?.[0] || v.date || v.year || v.publicationYear || "",
             ),
-            venue: v["container-title"] || v.publicationTitle || v.venue || "",
+            venue: v["container-title"] || v.publicationTitle || v.venue || v.journalVenue || "",
             abstract: v.abstract || v.abstractNote || "",
             url: v.URL || v.url || "",
             volume: v.volume,
             issue: v.issue,
             pages: v.page || v.pages,
             publisher: v.publisher,
-            type: v.type || v.itemType,
+            citationCount: String(v.citationCount || "0"),
+            type: v.type === "thesis" || v.itemType === "thesis" ? "thesis" : v.type === "report" || v.itemType === "report" ? "report" : v.type === "book" || v.itemType === "book" ? "book" : v.type === "paper-conference" || v.itemType === "conferencePaper" ? "conference" : v.type || v.itemType,
           },
           authors,
         );
+        return { ...imported, openAccess: Boolean(v.isOpenAccess || v.openAccess), openAccessPdf: v.openAccessPdf || undefined,
+          registryProvenance: Array.isArray(v.registryProvenance) ? v.registryProvenance.filter((entry: any) => entry && typeof entry.registry === 'string' && typeof entry.recordId === 'string' && typeof entry.retrievedAt === 'string') : undefined,
+        };
       });
   } else if (format === "ris") {
     const blocks = text.split(/^ER\s{2}-.*$/m);
@@ -122,7 +126,11 @@ export function importReferences(
             issue: v("IS"),
             pages: [v("SP"), v("EP")].filter(Boolean).join("-"),
             publisher: v("PB"),
-            type: v("TY") === "BOOK" ? "book" : "journal",
+            type: v("TY") === "BOOK" ? "book" : v("TY") === "THES" ? "thesis" : v("TY") === "RPRT" ? "report" : ["CONF", "CPAPER"].includes(v("TY")) ? "conference" : v("TY") === "UNPB" ? "preprint" : "journal",
+            // Publish or Perish uses M1 for a numeric citation total. Only parse
+            // explicitly labelled totals in notes, never arbitrary note numbers.
+            citationCount: (fields.M1 || []).find(value => /^\d+$/.test(value.trim()))?.trim()
+              || (fields.N1 || []).map(value => value.match(/^(?:Times Cited|Citation count|Cites):\s*(\d+)/i)?.[1]).find(Boolean) || "0",
           },
           (fields.AU || fields.A1 || []).map(author),
         ),
@@ -203,7 +211,7 @@ export function importReferences(
                   ? "book"
                   : entry[1].toLowerCase() === "inproceedings"
                     ? "conference"
-                    : "journal",
+                    : entry[1].toLowerCase() === "techreport" ? "report" : /^(?:phdthesis|mastersthesis|thesis)$/.test(entry[1].toLowerCase()) ? "thesis" : fields.type === "thesis" || fields.type === "report" || fields.type === "preprint" ? fields.type : "journal",
             },
             (fields.author || "")
               .split(/\s+and\s+/i)
@@ -227,7 +235,7 @@ export function exportCslJson(papers: AcademicPaper[]): string {
           ? "book"
           : p.type === "conference"
             ? "paper-conference"
-            : "article-journal",
+            : p.type === "thesis" ? "thesis" : p.type === "report" ? "report" : p.type === "preprint" ? "article" : "article-journal",
       title: p.title,
       author: p.authors.map((a) =>
         a.familyName

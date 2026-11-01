@@ -22,7 +22,6 @@ import {
   Download
 } from 'lucide-react';
 import type { AcademicPaper, CitationOptions, Claim } from '../types/citation';
-import { huntAcademicPapers } from '../services/academicApi';
 import { executeFederatedSearch, type PrismaFlowStats } from '../services/federatedSearchEngine';
 import { extractClaimsFromText } from '../services/claimExtractor';
 import { rankPapersByRelevance } from '../services/relevanceScoringService';
@@ -38,6 +37,10 @@ import { generateCOinS } from '../services/coinsGenerator';
 import { addPaperToCart, addMultiplePapersToCart, isPaperInCart } from '../services/cartService';
 import { AcademicPromptsModal } from './AcademicPromptsModal';
 import { PrismaFlowModal } from './PrismaFlowModal';
+import { ReferenceImportPanel } from './ReferenceImportPanel';
+import { DEFAULT_SCHOLARLY_SOURCES, SCHOLARLY_SOURCES, scholarlySourceLabel, type ScholarlySourceId, type ScholarlySourceSelection } from '../services/scholarlySources';
+import { mergeDiscoveryPapers } from '../services/discoveryMergeService';
+import type { SearchRun } from '../services/projectService';
 import { LiteratureExportModal } from './LiteratureExportModal';
 import {
   downloadLiteratureWord,
@@ -98,14 +101,26 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [customKeyword, setCustomKeyword] = useState('');
   const [searchScope, setSearchScope] = useProjectState<'default' | 'title_only' | 'title_abstract'>('LiteratureFirstPane.searchScope', 'default');
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [enabledSources, setEnabledSources] = useProjectState('LiteratureFirstPane.enabledSources', {
-    openalex: true,
-    europepmc: true,
-    crossref: true,
-    semanticscholar: true,
-    arxiv: false,
-  });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(true);
+  const [enabledSources, setEnabledSources] = useProjectState<ScholarlySourceSelection>('LiteratureFirstPane.enabledSources.v2', DEFAULT_SCHOLARLY_SOURCES);
+  const [sourceStatuses, setSourceStatuses] = useProjectState<SearchRun['sources']>('LiteratureFirstPane.sourceStatuses', []);
+  const [importNotice, setImportNotice] = useState('');
+  const activeSources = (Object.entries(SCHOLARLY_SOURCES) as [ScholarlySourceId, typeof SCHOLARLY_SOURCES[ScholarlySourceId]][])
+    .filter(([id]) => enabledSources[id] && (id !== 'arxiv' || !options.excludePreprints));
+
+  const handleImport = (papers: AcademicPaper[], origin: string) => {
+    const retrievedAt = new Date().toISOString();
+    const annotated = papers.map(paper => ({ ...paper, registryProvenance: [...(paper.registryProvenance || []), { registry: origin, recordId: paper.id, retrievedAt, citationCount: paper.citationCount }] }));
+    const merged = mergeDiscoveryPapers([...discoveredPapers, ...annotated]);
+    const added = merged.papers.length - discoveredPapers.length;
+    setDiscoveredPapers(merged.papers);
+    setSelectedPaperIds(new Set(merged.papers.map(paper => paper.id)));
+    setHasSearched(true);
+    setPrismaStats(null);
+    setSourceStatuses([]);
+    setErrorMsg('');
+    setImportNotice(`${added} new records added from ${origin}; ${papers.length - added} duplicates merged. This combined list is not a live-search retrieval count. Review metadata before citing.`);
+  };
 
   const handleSelectAll = () => {
     setSelectedPaperIds(new Set(discoveredPapers.map((p) => p.id)));
@@ -127,9 +142,14 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       return;
     }
 
+    if (isSearching) return;
+    if (!Object.entries(enabledSources).some(([source, enabled]) => enabled && (source !== 'arxiv' || !options.excludePreprints))) { setErrorMsg('Select at least one usable source. arXiv requires preprints to be enabled.'); return; }
     setErrorMsg('');
+    setImportNotice('');
+    setSourceStatuses([]);
+    setPrismaStats(null);
     setIsSearching(true);
-    setSearchProgressMsg('Dispatching concurrent multi-source queries across OpenAlex, Europe PMC, Crossref, and Semantic Scholar...');
+    setSearchProgressMsg('Searching the selected scholarly sources independently…');
     setDiscoveredPapers([]);
     setSelectedPaperIds(new Set());
 
@@ -150,6 +170,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
         {
           limitPerSource: 35,
           excludePreprints: options.excludePreprints,
+          requireDoi: options.requireDoi,
           searchScope,
           enabledSources,
         },
@@ -157,13 +178,14 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       );
 
       setPrismaStats(result.prismaStats);
+      setSourceStatuses(result.sourceStatuses);
       setSearchProgressMsg(result.sourceStatuses.map(s => `${s.name}: ${s.status} (${s.count})`).join(' · '));
-      const incomplete = result.sourceStatuses.filter(s => /timed out|unavailable|failed/.test(s.status));
+      const incomplete = result.sourceStatuses.filter(s => /timed out|unavailable|failed|rate limited|paused/.test(s.status));
       if (incomplete.length) setErrorMsg('Search coverage may be incomplete: ' + incomplete.map(s => `${s.name}: ${s.status}`).join('; '));
       setHasSearched(true);
 
       if (result.papers.length === 0) {
-        setErrorMsg('No peer-reviewed papers found with DOIs for this exact topic across selected registries. Try broader search terms or removing Boolean operators.');
+        setErrorMsg(incomplete.length ? 'No candidate records were retained, and some selected sources were unavailable. Review the source status below, or import references from another search tool.' : 'No candidate records were retained under the selected sources and filters. Try broader terms or change the filters.');
       } else {
         setDiscoveredPapers(result.papers);
         // Auto-select ALL discovered papers by default for download and review
@@ -176,7 +198,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       setIsSearching(false);
       setSearchProgressMsg('');
     }
-  }, [topic, focus, options.excludePreprints, searchScope, enabledSources]);
+  }, [topic, focus, options.excludePreprints, options.requireDoi, searchScope, enabledSources, isSearching]);
 
   const hasAutoSearchedTopicRef = React.useRef<string>('');
   const lastSyncedTopicRef = React.useRef<string>(initialTopic);
@@ -203,24 +225,27 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
 
 
   const handleAddCustomKeywordSearch = async () => {
-    if (!customKeyword.trim()) return;
+    if (!customKeyword.trim() || isSearching) return;
     setIsSearching(true);
+    setErrorMsg('');
     try {
-      const extraPapers = await huntAcademicPapers([customKeyword], 15, options.excludePreprints);
-      const existingIds = new Set(discoveredPapers.map((p) => p.id));
-      const newUnique = extraPapers.filter((p) => !existingIds.has(p.id));
-      
-      setDiscoveredPapers((prev) => [...prev, ...newUnique]);
-      setSelectedPaperIds((prev) => {
-        const next = new Set(prev);
-        newUnique.forEach((p) => next.add(p.id));
-        return next;
-      });
+      const result = await executeFederatedSearch(customKeyword, { limitPerSource: 15, excludePreprints: options.excludePreprints, requireDoi: options.requireDoi, searchScope, enabledSources }, setSearchProgressMsg);
+      const merged = mergeDiscoveryPapers([...discoveredPapers, ...result.papers]);
+      const existingIds = new Set(discoveredPapers.map(paper => paper.id));
+      const added = merged.papers.filter(paper => !existingIds.has(paper.id));
+      setDiscoveredPapers(merged.papers);
+      setSelectedPaperIds(previous => new Set([...previous, ...added.map(paper => paper.id)]));
+      setPrismaStats(null);
+      setSourceStatuses(result.sourceStatuses);
+      setImportNotice(`${added.length} additional records merged. The source counts below describe only the latest keyword search, not this combined list.`);
+      const incomplete = result.sourceStatuses.filter(source => /timed out|unavailable|failed|rate limited|paused/.test(source.status));
+      if (incomplete.length) setErrorMsg('Some sources were unavailable. Available results have been kept; inspect the source status below.');
       setCustomKeyword('');
-    } catch (err: any) {
-      setErrorMsg(err.message);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : 'Additional keyword search failed.');
     } finally {
       setIsSearching(false);
+      setSearchProgressMsg('');
     }
   };
 
@@ -294,11 +319,14 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
               </span>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 font-sans">
-              Fetches genuine peer-reviewed literature from OpenAlex & Crossref <em>first</em>, then synthesizes a verified manuscript citing the authentic DOIs.
+              Search independent scholarly sources, import your reference library, and review candidate records before writing. Registry indexing and DOI registration do not establish peer review.
             </p>
           </div>
         </div>
       </div>
+
+      <ReferenceImportPanel disabled={isSearching || isSynthesizing} onImport={handleImport} />
+      {importNotice && <p role="status" className="rounded-xl border border-blue-200 dark:border-blue-800 p-3 text-xs text-blue-900 dark:text-blue-200">{importNotice}</p>}
 
       {/* Search Mode Strategy Selector */}
       <div className="p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
@@ -411,7 +439,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
               {isSearching ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-white shrink-0" />
-                  <span className="font-bold">Searching 4 Registries...</span>
+                  <span className="font-bold">Searching selected sources…</span>
                 </>
               ) : (
                 <>
@@ -428,7 +456,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
               <div className="flex items-center justify-between text-xs text-blue-900 dark:text-blue-300 font-semibold">
                 <span className="flex items-center gap-2">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span className="font-mono">{searchProgressMsg || 'Querying OpenAlex, Europe PMC, Crossref, and Semantic Scholar...'}</span>
+                  <span className="font-mono">{searchProgressMsg || 'Querying selected sources…'}</span>
                 </span>
                 <span className="text-[10px] font-mono uppercase bg-blue-200/70 dark:bg-blue-900 px-2 py-0.5 rounded-md border border-blue-300 dark:border-blue-700">
                   Federated IR Live
@@ -447,7 +475,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-blue-700 dark:text-blue-400 font-medium">
-                  ✦ <strong>Intelligent Academic IR Mode:</strong> Natural language question auto-synthesizing Boolean &amp; core concepts across 5 registries.
+                  ✦ <strong>Intelligent Academic IR Mode:</strong> Natural language questions are converted into source-specific search terms. Coverage and query syntax vary by provider.
                 </span>
               )}
             </div>
@@ -480,7 +508,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-800 dark:text-blue-400" />
-              <span>Literature Quality &amp; Peer-Review Filters:</span>
+              <span>Discovery Filters:</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-4">
@@ -501,7 +529,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                   onChange={(e) => setOptions((prev) => ({ ...prev, requireDoi: e.target.checked }))}
                   className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
                 />
-                <span>Require Verified Permanent DOI</span>
+                <span>Require DOI metadata</span>
               </label>
             </div>
           </div>
@@ -515,7 +543,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
             className="text-xs font-semibold text-blue-900 dark:text-blue-400 flex items-center gap-1.5 cursor-pointer hover:underline"
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>{showAdvancedFilters ? 'Hide Federated Registries & Scope' : '⚡ Configure Federated Registries & PRISMA Scope'}</span>
+            <span>{showAdvancedFilters ? 'Hide source selection & search scope' : 'Choose sources & search scope'}</span>
             <ChevronDown className={`w-3 h-3 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
           </button>
 
@@ -526,53 +554,14 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                   <span className="font-bold text-slate-700 dark:text-slate-300 block mb-1.5 uppercase tracking-wider text-[11px]">
                     Academic Registries:
                   </span>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={enabledSources.openalex}
-                        onChange={(e) => setEnabledSources({ ...enabledSources, openalex: e.target.checked })}
-                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
-                      />
-                      <span>OpenAlex</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={enabledSources.europepmc}
-                        onChange={(e) => setEnabledSources({ ...enabledSources, europepmc: e.target.checked })}
-                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
-                      />
-                      <span>Europe PMC / PubMed</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={enabledSources.crossref}
-                        onChange={(e) => setEnabledSources({ ...enabledSources, crossref: e.target.checked })}
-                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
-                      />
-                      <span>Crossref</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={enabledSources.semanticscholar}
-                        onChange={(e) => setEnabledSources({ ...enabledSources, semanticscholar: e.target.checked })}
-                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
-                      />
-                      <span>Semantic Scholar</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={enabledSources.arxiv}
-                        onChange={(e) => setEnabledSources({ ...enabledSources, arxiv: e.target.checked })}
-                        className="rounded border-slate-300 text-blue-800 focus:ring-blue-700 cursor-pointer"
-                      />
-                      <span>arXiv Preprints</span>
-                    </label>
-                  </div>
+                  <fieldset className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <legend className="sr-only">Choose scholarly sources</legend>
+                    {(Object.entries(SCHOLARLY_SOURCES) as [ScholarlySourceId, typeof SCHOLARLY_SOURCES[ScholarlySourceId]][]).map(([id, source]) => <label key={id} className="flex items-start gap-2 rounded-lg border border-slate-200 dark:border-slate-700 p-3 cursor-pointer">
+                      <input type="checkbox" checked={enabledSources[id]} disabled={isSearching || (id === 'arxiv' && options.excludePreprints)} onChange={event => setEnabledSources({ ...enabledSources, [id]: event.target.checked })} className="mt-0.5 shrink-0" />
+                      <span><span className="block font-semibold">{source.label}</span><span className="block mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">{source.description}</span></span>
+                    </label>)}
+                  </fieldset>
+                  <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">Semantic Scholar is off by default. Successful sources remain usable when another fails. Citation counts reflect the primary record provider and are never summed across sources.</p>
                 </div>
 
                 <div>
@@ -633,86 +622,20 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       {/* UNIVERSAL EVIDENCE & PRISMA WORKSPACE (Visible across both Narrative and PICO modes) */}
       <div ref={resultsRef} className="space-y-6 pt-2">
 
-      {/* HIGH-VISIBILITY LIVE SEARCH PROGRESS HUD */}
-      {isSearching && (
-        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 animate-in fade-in duration-200">
-          <div className="p-8 sm:p-10 rounded-2xl bg-gradient-to-b from-blue-50/90 via-white to-slate-50/90 dark:from-slate-900/95 dark:via-blue-950/30 dark:to-slate-900/95 border-2 border-blue-400 dark:border-blue-700 shadow-xl text-center space-y-6">
-            
-            {/* Visual Radar Pulse Animation */}
-            <div className="relative w-20 h-20 mx-auto flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping duration-1000" />
-              <div className="absolute inset-1 rounded-full border-2 border-blue-500/40 animate-spin border-t-transparent" />
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <Search className="w-7 h-7 animate-pulse" />
-              </div>
-            </div>
+      {isSearching && <div role="status" className="rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 p-5 text-sm text-blue-900 dark:text-blue-200">
+        <p className="flex items-center gap-2 font-semibold"><Loader2 className="w-4 h-4 animate-spin" />Searching {activeSources.length} selected sources</p>
+        <p className="mt-2 text-xs">{searchProgressMsg}</p>
+        <p className="mt-2 text-xs">{activeSources.map(([, source]) => source.label).join(' · ')}</p>
+      </div>}
 
-            <div className="space-y-2 max-w-lg mx-auto">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/80 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-800 text-xs font-bold tracking-wide uppercase font-mono shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-ping" />
-                <span>Federated Scholarly Search in Progress</span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold font-serif text-slate-900 dark:text-white">
-                Harvesting Peer-Reviewed Literature
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
-                Querying over 250 million scholarly publications across 4 live registries simultaneously, screening preprints, verifying DOIs, and compiling PRISMA 2020 attrition metrics.
-              </p>
-            </div>
-
-            {/* Live Progress Status Box */}
-            <div className="p-4 max-w-xl mx-auto rounded-xl bg-blue-500/10 dark:bg-blue-950/50 border border-blue-300 dark:border-blue-700 flex items-center justify-center gap-3 text-xs sm:text-sm text-blue-950 dark:text-blue-200 font-medium shadow-xs">
-              <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
-              <span className="font-mono text-left">{searchProgressMsg || 'Coordinating multi-source registry queries...'}</span>
-            </div>
-
-            {/* 4 Active Registries Ping Matrix */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto pt-1">
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shadow-2xs flex flex-col items-center text-center space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-blue-900 dark:text-blue-400 font-serif">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                  <span>OpenAlex</span>
-                </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">250M+ Works</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800 shadow-2xs flex flex-col items-center text-center space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-purple-900 dark:text-purple-400 font-serif">
-                  <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                  <span>Europe PMC</span>
-                </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">PubMed Central</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 shadow-2xs flex flex-col items-center text-center space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-400 font-serif">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Crossref</span>
-                </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">Publisher DOIs</span>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 shadow-2xs flex flex-col items-center text-center space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-400 font-serif">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                  <span>Semantic Scholar</span>
-                </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">AI Citation Graph</span>
-              </div>
-            </div>
-
-            {/* Indeterminate moving bar */}
-            <div className="w-full max-w-xl mx-auto h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 rounded-full animate-pulse w-full" />
-            </div>
-
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-              Auditing peer-reviewed status, screening preprints, resolving DOIs, and compiling PRISMA 2020 attrition statistics...
-            </p>
-
-          </div>
-        </div>
-      )}
+      {!isSearching && sourceStatuses.length > 0 && <section aria-label="Source availability and retrieval status" className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Last live search: source status</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">These are bounded retrieval counts before combined deduplication and final filters. A failed source does not mean it has no matching records.</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{sourceStatuses.map(source => <details key={source.name} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-xs text-slate-700 dark:text-slate-300">
+          <summary className="cursor-pointer"><strong>{scholarlySourceLabel(source.name)}</strong>: {source.status} · {source.count} records</summary>
+          <p className="mt-2 break-words">Query input: {source.query}</p><p className="mt-1">{source.detail}</p>
+        </details>)}</div>
+      </section>}
 
       {/* Search completed with 0 results */}
       {discoveredPapers.length === 0 && !isSearching && hasSearched && (
@@ -723,10 +646,10 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
             </div>
             <div className="space-y-1.5 max-w-md mx-auto">
               <h4 className="text-base font-bold text-amber-950 dark:text-amber-200 font-serif">
-                No Verified Peer-Reviewed Records Found
+                No Candidate Records Retained
               </h4>
               <p className="text-xs text-amber-900/80 dark:text-amber-300 font-sans">
-                The search produced 0 matches with verified DOIs across OpenAlex, Europe PMC, Crossref, and Semantic Scholar.
+                No candidate records remain under the selected sources and filters. Check source availability above; you can also import records from a reference manager.
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
@@ -769,44 +692,17 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                     Federated Literature Discovery &amp; PRISMA Search Engine
                   </h3>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                    4 Live Registries
+                    {activeSources.length} Selected Sources
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-sans">
-                  Query over 250 million open academic records across multiple global bibliographic registries simultaneously.
+                  Combine independent scholarly registries and imported references. Sources can overlap and have different coverage, licensing, and access limits.
                 </p>
               </div>
             </div>
 
-            {/* 4 Federated Registries */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-                <span className="text-xs font-bold text-blue-900 dark:text-blue-400 font-serif">OpenAlex</span>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
-                  250M+ open scholarly works, concept graphs, open access status, and citation network context.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-                <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400 font-serif">Crossref</span>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
-                  150M+ official publisher DOIs, registration metadata, license info, and cross-publisher indexing.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-                <span className="text-xs font-bold text-purple-900 dark:text-purple-400 font-serif">Europe PMC / PubMed</span>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
-                  35M+ biomedical and life science publications with indexed abstracts and open access full texts.
-                </p>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1">
-                <span className="text-xs font-bold text-amber-800 dark:text-amber-400 font-serif">Semantic Scholar</span>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans">
-                  AI-driven semantic matching, influential citation scoring, and automated TLDR findings.
-                </p>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {activeSources.map(([id, source]) => <div key={id} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4"><a href={source.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-900 dark:text-blue-300 hover:underline">{source.label}</a><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{source.description}</p></div>)}
             </div>
 
             {/* Academic Search Tips */}
@@ -825,7 +721,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                 <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
                   <span className="font-bold text-slate-800 dark:text-slate-200">2. Preprints Exclusion</span>
                   <p className="text-slate-500 dark:text-slate-400">
-                    Check "Exclude Preprints" to filter out un-refereed drafts (arXiv, bioRxiv) and focus exclusively on peer-reviewed articles.
+                    Exclude records identified as preprints. Other indexed records may still include unreviewed material; verify publication status at the source.
                   </p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
@@ -843,7 +739,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                 <Search className="w-4 h-4 text-blue-700 dark:text-blue-400 shrink-0" />
                 <span>Ready to explore. Enter a research topic or clinical question above and click Discover Literature.</span>
               </span>
-              <span className="font-mono text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400">Open Access Live</span>
+              <span className="font-mono text-[10px] uppercase font-bold text-blue-700 dark:text-blue-400">Source availability varies</span>
             </div>
           </div>
         </div>
@@ -857,9 +753,10 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white font-serif flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  <span>Verified Scholarly Corpus ({discoveredPapers.length} Peer-Reviewed Works)</span>
+                  <span>Candidate records ({discoveredPapers.length})</span>
                 </h3>
               </div>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Review publication status and metadata before citing. Citation counts vary by provider; zero may mean unavailable. Imported records are not independently verified.</p>
               <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-slate-500 dark:text-slate-400">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">
                   {selectedPaperIds.size} of {discoveredPapers.length} selected:
@@ -1058,8 +955,10 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                             {tier.label}
                           </span>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                            {paper.source === 'europepmc' ? 'Europe PMC / PubMed' : paper.source.toUpperCase()}
+                            {scholarlySourceLabel(paper.source)}
                           </span>
+                          {paper.documentType && <span className="text-[10px] text-slate-500 dark:text-slate-400">{paper.documentType}</span>}
+                          {paper.registryProvenance && paper.registryProvenance.length > 0 && <span className="text-[10px] text-slate-500 dark:text-slate-400" title="Registry provenance">Retrieved from: {[...new Set(paper.registryProvenance.map(item => scholarlySourceLabel(item.registry)))].join(' · ')}</span>}
                           {paper.isRetracted && (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 border border-red-300 dark:border-red-800 flex items-center gap-1 animate-pulse">
                               <ShieldAlert className="w-3 h-3 text-red-600" />
@@ -1163,7 +1062,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-blue-800 dark:text-blue-400 hover:underline flex items-center gap-1 font-semibold"
-                          title="View verified DOI"
+                          title="View DOI record"
                         >
                           <span>DOI</span>
                           <ExternalLink className="w-3.5 h-3.5" />

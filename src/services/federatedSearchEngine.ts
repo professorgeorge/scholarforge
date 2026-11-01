@@ -4,6 +4,10 @@ import { searchOpenAlex, searchCrossref } from './academicApi';
 import { searchEuropePmc } from './europePmcService';
 import { searchSemanticScholar } from './semanticScholarService';
 import { searchArxiv } from './arxivService';
+import { searchPubmed, searchDataCite } from './additionalScholarlySources';
+import { DEFAULT_SCHOLARLY_SOURCES, type ScholarlySourceId } from './scholarlySources';
+import { RegistryRequestError } from './registryRequestService';
+import { mergeDiscoveryPapers } from './discoveryMergeService';
 import { checkPaperRetraction } from './retractionSentinel';
 import { extractAcademicKeywords, synthesizeBooleanSearchStrategy } from './academicQueryParser';
 import { rankPapersByRelevance } from './relevanceScoringService';
@@ -15,14 +19,9 @@ export interface FederatedSearchOptions {
   toYear?: number;
   openAccessOnly?: boolean;
   minCitations?: number;
+  requireDoi?: boolean;
   searchScope?: 'default' | 'title_only' | 'title_abstract';
-  enabledSources?: {
-    openalex?: boolean;
-    europepmc?: boolean;
-    crossref?: boolean;
-    semanticscholar?: boolean;
-    arxiv?: boolean;
-  };
+  enabledSources?: Partial<Record<ScholarlySourceId, boolean>>;
 }
 
 export interface PrismaFlowStats {
@@ -34,6 +33,8 @@ export interface PrismaFlowStats {
       crossref: number;
       semanticscholar: number;
       arxiv: number;
+      pubmed?: number;
+      datacite?: number;
     };
     duplicatesRemoved: number;
   };
@@ -43,6 +44,7 @@ export interface PrismaFlowStats {
     excludedNoAbstract: number;
     excludedLowCitations: number;
     totalExcluded: number;
+    excludedOtherFilters?: number;
   };
   included: {
     totalIncluded: number;
@@ -54,17 +56,6 @@ export interface FederatedSearchResult {
   prismaStats: PrismaFlowStats;
   retractedCount: number;
   sourceStatuses: SearchRun['sources'];
-}
-
-/**
- * Normalizes title for deduplication comparison.
- */
-function cleanTitleForDedup(title: string): string {
-  return (title || '')
-    .toLowerCase()
-    .replace(/[^\w\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
 }
 
 /**
@@ -84,15 +75,13 @@ export async function executeFederatedSearch(
     toYear,
     openAccessOnly = false,
     minCitations = 0,
+    requireDoi = false,
     searchScope = 'default',
-    enabledSources = {
-      openalex: true,
-      europepmc: true,
-      crossref: true,
-      semanticscholar: true,
-      arxiv: false,
-    },
+    enabledSources: selectedSources,
   } = options;
+
+  const enabledSources = { ...DEFAULT_SCHOLARLY_SOURCES, ...selectedSources };
+  if (!Object.entries(enabledSources).some(([source, enabled]) => enabled && (source !== 'arxiv' || !excludePreprints))) throw new Error('Select at least one usable source. arXiv requires preprints to be enabled.');
 
   onProgress?.('Dispatching concurrent multi-source queries across scholarly registries...');
 
@@ -118,31 +107,30 @@ export async function executeFederatedSearch(
     fullTextKeywordQuery = strategy.coreKeywords;
   }
 
-  const accumulatedResults: { source: string; papers: AcademicPaper[] }[] = [];
 
   const wrapSource = async (
     sourceName: string,
     label: string,
-    promise: Promise<AcademicPaper[]>
+    promise: Promise<AcademicPaper[]>,
+    sourceQuery = fullTextKeywordQuery
   ): Promise<{ source: string; papers: AcademicPaper[] }> => {
+    let timerId: ReturnType<typeof setTimeout> | undefined;
     try {
-      // Enforce 4.5-second hard ceiling per source so slow APIs can never hang the search
-      let timerId: ReturnType<typeof setTimeout> | undefined;
+      // Bound discovery independently; one unavailable source cannot block successful results.
       let timedOut = false;
       const timeoutPromise = new Promise<AcademicPaper[]>((resolve) => {
         timerId = setTimeout(() => {
-          console.warn(`[Federated Engine] ${label} response timed out after 4.5s. Proceeding with other registries.`);
+          console.warn(`[Federated Engine] ${label} response timed out after 12s. Proceeding with other registries.`);
           timedOut = true;
           resolve([]);
-        }, 4500);
+        }, 12000);
       });
 
       const papers = await Promise.race([promise, timeoutPromise]);
       clearTimeout(timerId);
 
       const entry = { source: sourceName, papers: Array.isArray(papers) ? papers : [] };
-      accumulatedResults.push(entry);
-      sourceStatuses.push({ name: sourceName, query: sourceName === 'europepmc' ? europePmcQuery : fullTextKeywordQuery, status: timedOut ? 'timed out' : papers.length ? 'records returned (bounded discovery)' : 'empty or unavailable', count: entry.papers.length, detail: 'Discovery adapters may simplify or relax queries. Empty responses do not establish zero database matches. Use logged review search for explicit requests.' });
+      sourceStatuses.push({ name: sourceName, query: sourceQuery, status: timedOut ? 'timed out' : papers.length ? 'records returned (bounded discovery)' : ['pubmed', 'datacite', 'semanticscholar'].includes(sourceName) ? 'no records returned' : 'empty or unavailable', count: entry.papers.length, detail: 'Discovery adapters may simplify or relax queries. Empty responses do not establish zero database matches. Use logged review search for explicit requests.' });
 
       if (papers && papers.length > 0) {
         onProgress?.(`✓ ${label} returned ${papers.length} publications. Harmonizing...`);
@@ -150,10 +138,11 @@ export async function executeFederatedSearch(
       return entry;
     } catch (err: any) {
       console.warn(`[Federated Engine] ${label} failed:`, err?.message);
-      sourceStatuses.push({ name: sourceName, query: fullTextKeywordQuery, status: 'failed', count: 0, detail: err?.message });
+      sourceStatuses.push({ name: sourceName, query: sourceQuery, status: err instanceof RegistryRequestError && err.status === 429 ? 'rate limited' : /paused/i.test(err?.message || '') ? 'temporarily paused' : /timed out/i.test(err?.message || '') ? 'timed out' : 'failed', count: 0, detail: err?.message });
       const entry = { source: sourceName, papers: [] };
-      accumulatedResults.push(entry);
       return entry;
+    } finally {
+      clearTimeout(timerId);
     }
   };
 
@@ -180,7 +169,8 @@ export async function executeFederatedSearch(
           fromYear,
           openAccessOnly,
           searchScope,
-        })
+        }),
+        europePmcQuery
       )
     );
   }
@@ -193,6 +183,13 @@ export async function executeFederatedSearch(
         searchCrossref(fullTextKeywordQuery, limitPerSource, excludePreprints, fromYear)
       )
     );
+  }
+
+  if (enabledSources.pubmed) {
+    tasks.push(wrapSource('pubmed', 'PubMed', searchPubmed(fullTextKeywordQuery, { limit: limitPerSource, fromYear, toYear, excludePreprints, searchScope })));
+  }
+  if (enabledSources.datacite) {
+    tasks.push(wrapSource('datacite', 'DataCite', searchDataCite(fullTextKeywordQuery, { limit: limitPerSource, fromYear, toYear, excludePreprints, searchScope })));
   }
 
   if (enabledSources.semanticscholar) {
@@ -221,11 +218,8 @@ export async function executeFederatedSearch(
     );
   }
 
-  // Each source has its own bounded timeout; wait for all source statuses.
-  await Promise.allSettled(tasks);
-
-  // Use all successfully accumulated results - never wipe them out
-  const results = accumulatedResults;
+  // Promise.all retains source priority, independent of response arrival order.
+  const results = await Promise.all(tasks);
 
   // 2. PRISMA 2020 Identification metrics
   const databaseCounts = {
@@ -234,6 +228,8 @@ export async function executeFederatedSearch(
     crossref: 0,
     semanticscholar: 0,
     arxiv: 0,
+    pubmed: 0,
+    datacite: 0,
   };
 
   const rawCorpus: AcademicPaper[] = [];
@@ -243,41 +239,21 @@ export async function executeFederatedSearch(
       databaseCounts[res.source as keyof typeof databaseCounts] = count;
     }
     if (res.papers) {
-      rawCorpus.push(...res.papers);
+      rawCorpus.push(...res.papers.map(paper => ({ ...paper, registryProvenance: [{ registry: res.source, recordId: paper.id, retrievedAt: now(), query, citationCount: paper.citationCount }] })));
     }
   }
 
   const totalIdentified = rawCorpus.length;
   onProgress?.(`Retrieved ${totalIdentified} raw records. Deduplicating and auditing...`);
 
-  // 3. Deduplication via DOI and normalized title
-  const seenDois = new Set<string>();
-  const seenTitles = new Set<string>();
-  const deduped: AcademicPaper[] = [];
-  let duplicatesRemoved = 0;
-
-  for (const paper of rawCorpus) {
-    const doiClean = (paper.doi || '').toLowerCase().trim();
-    const titleNorm = cleanTitleForDedup(paper.title);
-
-    if (doiClean && seenDois.has(doiClean)) {
-      duplicatesRemoved++;
-      continue;
-    }
-    if (titleNorm && seenTitles.has(titleNorm)) {
-      duplicatesRemoved++;
-      continue;
-    }
-
-    if (doiClean) seenDois.add(doiClean);
-    if (titleNorm) seenTitles.add(titleNorm);
-    deduped.push(paper);
-  }
+  // Reconcile provider records without losing provenance or combining citation totals.
+  const { papers: deduped, duplicatesRemoved } = mergeDiscoveryPapers(rawCorpus);
 
   // 4. Screening Attrition filters
   let excludedPreprints = 0;
   let excludedNoAbstract = 0;
   let excludedLowCitations = 0;
+  let excludedOtherFilters = 0;
 
   const screened: AcademicPaper[] = [];
 
@@ -291,6 +267,10 @@ export async function executeFederatedSearch(
 
     if (excludePreprints && paper.type === 'preprint') {
       excludedPreprints++;
+      continue;
+    }
+    if ((fromYear && paper.year < fromYear) || (toYear && paper.year > toYear) || (openAccessOnly && !paper.openAccess) || (requireDoi && !paper.doi)) {
+      excludedOtherFilters++;
       continue;
     }
     if (minCitations > 0 && (paper.citationCount || 0) < minCitations) {
@@ -309,7 +289,7 @@ export async function executeFederatedSearch(
   // filterOffTopic=false keeps all papers but still sorts them — ensures zero result-count regression.
   const ranked = rankPapersByRelevance(screened, query, false);
 
-  const totalExcluded = excludedPreprints + excludedLowCitations;
+  const totalExcluded = excludedPreprints + excludedLowCitations + excludedOtherFilters;
   const retractedCount = ranked.filter((p) => p.isRetracted).length;
 
   const prismaStats: PrismaFlowStats = {
@@ -324,6 +304,7 @@ export async function executeFederatedSearch(
       excludedNoAbstract,
       excludedLowCitations,
       totalExcluded,
+      excludedOtherFilters,
     },
     included: {
       totalIncluded: ranked.length,
@@ -354,11 +335,13 @@ export function generatePrismaProse(query: string, stats: PrismaFlowStats): stri
   if (dbs.europepmc > 0) dbStrings.push(`Europe PMC / PubMed Central (n = ${dbs.europepmc})`);
   if (dbs.crossref > 0) dbStrings.push(`Crossref (n = ${dbs.crossref})`);
   if (dbs.semanticscholar > 0) dbStrings.push(`Semantic Scholar (n = ${dbs.semanticscholar})`);
+  if (dbs.pubmed) dbStrings.push(`PubMed (n = ${dbs.pubmed})`);
+  if (dbs.datacite) dbStrings.push(`DataCite (n = ${dbs.datacite})`);
   if (dbs.arxiv > 0) dbStrings.push(`arXiv (n = ${dbs.arxiv})`);
 
   return `### Discovery retrieval summary (not a completed systematic review)
 **Input query:** "${query}"
 **Returned records:** ${dbStrings.join(', ') || 'No records returned; services may be unavailable'}.
-${stats.identification.totalIdentified} records were returned within the configured source limits. ${stats.identification.duplicatesRemoved} duplicates were removed. ${stats.screening.excludedPreprints} preprints and ${stats.screening.excludedLowCitations} records below the optional citation filter were removed. ${stats.included.totalIncluded} candidate records remain.
+${stats.identification.totalIdentified} records were returned within the configured source limits. ${stats.identification.duplicatesRemoved} duplicates were removed. ${stats.screening.excludedPreprints} preprints and ${stats.screening.excludedLowCitations} records below the optional citation filter were removed. ${stats.screening.excludedOtherFilters || 0} records were excluded by year, DOI, or open-access filters. ${stats.included.totalIncluded} candidate records remain.
 These counts describe bounded discovery, not exhaustive database matches, peer-review verification, eligibility decisions, full-text appraisal, or completed synthesis. Citation-count filtering is a discovery preference, not a default systematic-review eligibility rule. Use the project screening ledger to record actual eligibility decisions and exclusion reasons. Consult the full PRISMA reporting guidance before reporting a systematic review.`;
 }

@@ -16,13 +16,14 @@ export interface AcademicPaper {
   abstract: string;
   openAccess: boolean;
   openAccessPdf?: string;
-  source: 'openalex' | 'crossref' | 'europepmc' | 'semanticscholar' | 'arxiv' | 'manual';
-  registryProvenance?: { registry: string; recordId: string; retrievedAt: string; query?: string }[];
+  source: 'openalex' | 'crossref' | 'europepmc' | 'semanticscholar' | 'arxiv' | 'pubmed' | 'datacite' | 'manual';
+  registryProvenance?: { registry: string; recordId: string; retrievedAt: string; query?: string; citationCount?: number }[];
   relevanceScore?: number;
   volume?: string;
   issue?: string;
   pages?: string;
-  type?: 'journal' | 'book' | 'conference' | 'preprint';
+  type?: 'journal' | 'book' | 'conference' | 'preprint' | 'thesis' | 'report';
+  documentType?: string;
   publisher?: string;
   isRetracted?: boolean;
   retractionDetails?: string;

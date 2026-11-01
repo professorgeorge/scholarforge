@@ -184,11 +184,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div 
-        className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-[calc(100dvh-2rem)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div className="shrink-0 px-4 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-lg bg-blue-900 text-white shadow-xs">
               <Cpu className="w-5 h-5" />
@@ -204,17 +204,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+            aria-label="Close settings"
+            className="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="px-6 pt-3 bg-slate-50/70 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 flex gap-2 overflow-x-auto text-xs">
+        <div className="shrink-0 px-4 sm:px-6 pt-3 bg-slate-50/70 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 flex gap-2 overflow-x-auto text-xs">
           <button
             onClick={() => setActiveTab('llm')}
-            className={`px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === 'llm'
                 ? 'border-blue-800 text-blue-900 dark:text-blue-300 bg-white dark:bg-slate-900'
                 : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -226,7 +227,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <button
             onClick={() => setActiveTab('quality')}
-            className={`px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === 'quality'
                 ? 'border-blue-800 text-blue-900 dark:text-blue-300 bg-white dark:bg-slate-900'
                 : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -238,7 +239,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <button
             onClick={() => setActiveTab('citation')}
-            className={`px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === 'citation'
                 ? 'border-blue-800 text-blue-900 dark:text-blue-300 bg-white dark:bg-slate-900'
                 : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -250,7 +251,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <button
             onClick={() => setActiveTab('claims')}
-            className={`px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === 'claims'
                 ? 'border-blue-800 text-blue-900 dark:text-blue-300 bg-white dark:bg-slate-900'
                 : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -262,7 +263,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <button
             onClick={() => { setActiveTab('data'); setResetStatus(null); setShowConfirmFactory(false); }}
-            className={`px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === 'data'
                 ? 'border-red-600 text-red-700 dark:text-red-400 bg-white dark:bg-slate-900'
                 : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900'
@@ -274,7 +275,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
           
           {/* TAB 1: LLM Engine & Privacy */}
           {activeTab === 'llm' && (
@@ -323,7 +324,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {tempLLMConfig.provider === 'webgpu' && (
                 <div className="p-4 rounded-xl bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 space-y-3.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Sparkles className="w-4 h-4 text-purple-700 dark:text-purple-400" />
                       <span className="text-xs font-bold text-purple-950 dark:text-purple-200 font-serif">
                         Client-Side WebGPU Neural Engine
@@ -556,7 +557,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* Privacy Architecture & Data Handling Disclosure */}
               <div className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-3 font-sans">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-blue-700 dark:text-blue-400 shrink-0" />
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white font-serif">
                     Privacy Architecture &amp; Data Handling Disclosure
@@ -774,7 +775,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 uppercase tracking-wide">
                           Option 1
                         </span>
@@ -809,7 +810,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-red-200 dark:bg-red-900 text-red-900 dark:text-red-200 uppercase tracking-wide">
                             Option 2
                           </span>
@@ -875,11 +876,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div className="shrink-0 gap-3 flex-wrap px-4 sm:px-6 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <span className="text-xs text-slate-500 font-sans">
             Settings saved locally in your browser
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={onClose}
               className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium cursor-pointer"

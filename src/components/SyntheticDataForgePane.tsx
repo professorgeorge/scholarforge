@@ -461,9 +461,9 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
       
       {/* Pillar Header & Academic Manifesto */}
       <div className="rounded-2xl p-6 bg-linear-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md relative overflow-hidden border border-blue-800/50">
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="relative z-10 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <span className="w-8 h-8 rounded-lg bg-blue-700/60 border border-blue-400/30 flex items-center justify-center text-white">
                 <Database className="w-4 h-4 text-blue-300" />
               </span>
@@ -486,7 +486,7 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
           </div>
 
           {/* Quick Mode Switcher */}
-          <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-xl border border-slate-700/60 shrink-0">
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-xl border border-slate-700/60 max-w-full xl:basis-72 xl:shrink-0">
             <button
               onClick={() => setMainTab('quantitative')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
