@@ -1,3 +1,4 @@
+import { getActiveProjectId, getProject, id, now, saveProject, type SearchRun } from './projectService';
 import type { AcademicPaper } from '../types/citation';
 import { searchOpenAlex, searchCrossref } from './academicApi';
 import { searchEuropePmc } from './europePmcService';
@@ -52,6 +53,7 @@ export interface FederatedSearchResult {
   papers: AcademicPaper[];
   prismaStats: PrismaFlowStats;
   retractedCount: number;
+  sourceStatuses: SearchRun['sources'];
 }
 
 /**
@@ -94,6 +96,8 @@ export async function executeFederatedSearch(
 
   onProgress?.('Dispatching concurrent multi-source queries across scholarly registries...');
 
+  const initiatingProjectId = getActiveProjectId();
+  const sourceStatuses: SearchRun['sources'] = [];
   const rawTrimmed = query.trim();
   const hasBooleanOrQuotes = /["\(\)]|\b(AND|OR|NOT)\b/i.test(rawTrimmed);
 
@@ -123,10 +127,12 @@ export async function executeFederatedSearch(
   ): Promise<{ source: string; papers: AcademicPaper[] }> => {
     try {
       // Enforce 4.5-second hard ceiling per source so slow APIs can never hang the search
-      let timerId: any;
+      let timerId: ReturnType<typeof setTimeout> | undefined;
+      let timedOut = false;
       const timeoutPromise = new Promise<AcademicPaper[]>((resolve) => {
         timerId = setTimeout(() => {
           console.warn(`[Federated Engine] ${label} response timed out after 4.5s. Proceeding with other registries.`);
+          timedOut = true;
           resolve([]);
         }, 4500);
       });
@@ -136,6 +142,7 @@ export async function executeFederatedSearch(
 
       const entry = { source: sourceName, papers: Array.isArray(papers) ? papers : [] };
       accumulatedResults.push(entry);
+      sourceStatuses.push({ name: sourceName, query: sourceName === 'europepmc' ? europePmcQuery : fullTextKeywordQuery, status: timedOut ? 'timed out' : papers.length ? 'records returned (bounded discovery)' : 'empty or unavailable', count: entry.papers.length, detail: 'Discovery adapters may simplify or relax queries. Empty responses do not establish zero database matches. Use logged review search for explicit requests.' });
 
       if (papers && papers.length > 0) {
         onProgress?.(`✓ ${label} returned ${papers.length} publications. Harmonizing...`);
@@ -143,6 +150,7 @@ export async function executeFederatedSearch(
       return entry;
     } catch (err: any) {
       console.warn(`[Federated Engine] ${label} failed:`, err?.message);
+      sourceStatuses.push({ name: sourceName, query: fullTextKeywordQuery, status: 'failed', count: 0, detail: err?.message });
       const entry = { source: sourceName, papers: [] };
       accumulatedResults.push(entry);
       return entry;
@@ -213,16 +221,8 @@ export async function executeFederatedSearch(
     );
   }
 
-  // Await either all tasks settling OR a 6-second global aggregation window
-  await Promise.race([
-    Promise.allSettled(tasks),
-    new Promise<void>((resolve) => {
-      setTimeout(() => {
-        onProgress?.('Aggregation window complete. Harmonizing harvested records...');
-        resolve();
-      }, 6000);
-    }),
-  ]);
+  // Each source has its own bounded timeout; wait for all source statuses.
+  await Promise.allSettled(tasks);
 
   // Use all successfully accumulated results - never wipe them out
   const results = accumulatedResults;
@@ -305,34 +305,6 @@ export async function executeFederatedSearch(
     screened.push(paper);
   }
 
-  // 5. Intelligent Query-Relaxation Fallback: If 0 papers passed, query OpenAlex & Crossref with core academic keywords
-  if (screened.length === 0) {
-    onProgress?.('Broadening search to capture related peer-reviewed studies...');
-    const fallbackTerms = extractAcademicKeywords(query).slice(0, 3).join(' ') || query.replace(/[^\w\s-]/g, ' ').trim();
-    if (fallbackTerms) {
-      try {
-        const fallbackTasks = [
-          searchOpenAlex(fallbackTerms, limitPerSource, excludePreprints, fromYear),
-          searchCrossref(fallbackTerms, limitPerSource, excludePreprints, fromYear),
-        ];
-        const fallbackSettled = await Promise.allSettled(fallbackTasks);
-        for (const res of fallbackSettled) {
-          if (res.status === 'fulfilled') {
-            for (const paper of res.value) {
-              const doiClean = (paper.doi || '').toLowerCase().trim();
-              if (doiClean && !seenDois.has(doiClean)) {
-                seenDois.add(doiClean);
-                screened.push(paper);
-              }
-            }
-          }
-        }
-      } catch (fbErr: any) {
-        console.warn('[Federated Engine] Fallback search failed:', fbErr?.message);
-      }
-    }
-  }
-
   // Sort and optionally filter off-topic papers using the shared verifier-grade relevance scorer.
   // filterOffTopic=false keeps all papers but still sorts them — ensures zero result-count regression.
   const ranked = rankPapersByRelevance(screened, query, false);
@@ -358,12 +330,17 @@ export async function executeFederatedSearch(
     },
   };
 
-  onProgress?.(`Systematic extraction complete: ${ranked.length} peer-reviewed studies included.`);
+  onProgress?.(`Discovery complete: ${ranked.length} candidate records retained. Eligibility and support require review.`);
+  const project = getProject(initiatingProjectId);
+  if (project) {
+    try { saveProject({ ...project, searches: [...project.searches, { id: id(), query, at: now(), mode: 'rapid discovery: bounded, query transformation possible', sources: sourceStatuses, count: ranked.length, options }] }); } catch { /* Workspace displays storage errors. */ }
+  }
 
   return {
     papers: ranked,
     prismaStats,
     retractedCount,
+    sourceStatuses,
   };
 }
 
@@ -379,16 +356,9 @@ export function generatePrismaProse(query: string, stats: PrismaFlowStats): stri
   if (dbs.semanticscholar > 0) dbStrings.push(`Semantic Scholar (n = ${dbs.semanticscholar})`);
   if (dbs.arxiv > 0) dbStrings.push(`arXiv (n = ${dbs.arxiv})`);
 
-  return `### PRISMA 2020 Systematic Literature Search Protocol
-**Search Query:** "${query}"
-**Databases Consulted:** ${dbStrings.join(', ')}.
-
-1. **Identification Phase:**
-   A total of ${stats.identification.totalIdentified} records were identified through federated multi-registry queries (${dbStrings.join(', ')}). Across the aggregated corpus, ${stats.identification.duplicatesRemoved} duplicate records were identified and removed based on DOI and normalized title matching.
-
-2. **Screening & Eligibility Phase:**
-   ${stats.screening.recordsScreened} distinct records were screened against peer-review eligibility criteria. A total of ${stats.screening.totalExcluded} records were excluded during screening (${stats.screening.excludedPreprints} non-peer-reviewed preprints, ${stats.screening.excludedLowCitations} records below impact citation thresholds).
-
-3. **Inclusion Phase:**
-   ${stats.included.totalIncluded} verified peer-reviewed empirical and theoretical studies met all inclusion criteria and were synthesized into the final review corpus.`;
+  return `### Discovery retrieval summary (not a completed systematic review)
+**Input query:** "${query}"
+**Returned records:** ${dbStrings.join(', ') || 'No records returned; services may be unavailable'}.
+${stats.identification.totalIdentified} records were returned within the configured source limits. ${stats.identification.duplicatesRemoved} duplicates were removed. ${stats.screening.excludedPreprints} preprints and ${stats.screening.excludedLowCitations} records below the optional citation filter were removed. ${stats.included.totalIncluded} candidate records remain.
+These counts describe bounded discovery, not exhaustive database matches, peer-review verification, eligibility decisions, full-text appraisal, or completed synthesis. Citation-count filtering is a discovery preference, not a default systematic-review eligibility rule. Use the project screening ledger to record actual eligibility decisions and exclusion reasons. Consult the full PRISMA reporting guidance before reporting a systematic review.`;
 }

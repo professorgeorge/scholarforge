@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   ShieldCheck,
@@ -33,7 +34,7 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
   onNavigateToStudio,
   initialText = ''
 }) => {
-  const [inputText, setInputText] = useState<string>(initialText);
+  const [inputText, setInputText] = useProjectState<string>('AnonymizerPane.inputText', initialText);
   const [copied, setCopied] = useState<boolean>(false);
   const [studioSent, setStudioSent] = useState<boolean>(false);
 

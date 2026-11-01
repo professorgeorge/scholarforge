@@ -484,15 +484,17 @@ export function generateBibtexKey(paper: AcademicPaper): string {
 
 export function generateBibtexEntry(paper: AcademicPaper): string {
   const key = generateBibtexKey(paper);
-  const authors = paper.authors.map((a) => a.name).join(' and ') || 'Anonymous';
-  const year = paper.year || '2024';
+  const authors = paper.authors.map((a) => a.familyName ? `${a.familyName}, ${a.givenName || ''}`.trim() : a.name).join(' and ');
+  const year = paper.year || '';
   const title = paper.title.replace(/[{}]/g, '');
   const venue = paper.venue.replace(/[{}]/g, '');
 
-  return `@article{${key},
+  const entryType = paper.type === 'book' ? 'book' : paper.type === 'conference' ? 'inproceedings' : 'article';
+  const venueField = paper.type === 'conference' ? 'booktitle' : paper.type === 'book' ? 'publisher' : 'journal';
+  return `@${entryType}{${key},
   title = {${title}},
   author = {${authors}},
-  journal = {${venue}},
+  ${venueField} = {${paper.type === 'book' ? paper.publisher || venue : venue}},
   year = {${year}},${paper.volume ? `\n  volume = {${paper.volume}},` : ''}${paper.issue ? `\n  number = {${paper.issue}},` : ''}${paper.pages ? `\n  pages = {${paper.pages}},` : ''}${paper.doi ? `\n  doi = {${paper.doi}},` : ''}${paper.url ? `\n  url = {${paper.url}}` : ''}
 }`;
 }

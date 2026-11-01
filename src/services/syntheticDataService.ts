@@ -1,3 +1,5 @@
+import { executableR, executablePython } from './analysisScriptService';
+import { studentTPValue, fPValue, seededRandom } from './statisticalDistributions';
 /**
  * ScholarForge Synthetic Data Service
  * 
@@ -227,9 +229,10 @@ export interface GeneratedDataset {
     matrix: number[][];
     pValues: number[][];
   };
+  generationConfig?: QuantitativeModelConfig;
   hypothesisVerification: {
     hypothesisStatement: string;
-    status: 'confirmed' | 'moderate' | 'not_supported';
+    status: 'confirmed' | 'moderate' | 'not_supported' | 'not_estimated';
     focalCoefficient: number;
     standardError: number;
     tOrZValue: number;
@@ -425,7 +428,7 @@ export function computePearsonCorrelation(x: number[], y: number[]): { r: number
 
   // Fast p-value approximation via standard error
   // For large N, t behaves standard normal
-  const pValue = 2 * (1 - normalCdf(t));
+  const pValue = studentTPValue(t, df);
 
   return {
     r: Number(r.toFixed(3)),
@@ -472,6 +475,8 @@ export function computeOlsRegression(
   residuals: number[];
   fittedValues: number[];
 } {
+  const valid = y.map((value, i) => ({ value, row: xMatrix[i] })).filter(({ value, row }) => Number.isFinite(value) && row?.every(Number.isFinite));
+  y = valid.map(v => v.value); xMatrix = valid.map(v => v.row);
   const n = y.length;
   const k = xMatrix[0]?.length || 0;
   if (n <= k + 1) {
@@ -570,7 +575,7 @@ export function computeOlsRegression(
   // F-statistic for overall model
   const msr = ssr / Math.max(1, k);
   const fStatistic = mse > 0 ? msr / mse : 0;
-  const pValueOverall = fStatistic > 0 ? 2 * (1 - normalCdf(Math.sqrt(Math.max(0, fStatistic)))) : 1;
+  const pValueOverall = fStatistic > 0 ? fPValue(fStatistic, k, dfResidual) : 1;
 
   // Standard errors, t-values, p-values for each coefficient
   const standardErrors: number[] = new Array(p).fill(0);
@@ -583,7 +588,7 @@ export function computeOlsRegression(
     standardErrors[r] = Number(se.toFixed(4));
     const t = se > 0 ? coefficients[r] / se : 0;
     tValues[r] = Number(t.toFixed(3));
-    const pVal = 2 * (1 - normalCdf(Math.abs(t)));
+    const pVal = studentTPValue(t, dfResidual);
     pValues[r] = Number(Math.max(0.0001, pVal).toFixed(4));
   }
 
@@ -871,42 +876,10 @@ export function computeAssumptionAudit(
 }
 
 export function generateApaResultsParagraph(dataset: GeneratedDataset): string {
-  const { modelType, sampleSize, hypothesisVerification, variables } = dataset;
-  const outcomeVar = variables.find((v) => v.role === 'outcome')?.name || 'Outcome';
-  const predictorVar = variables.find((v) => v.role === 'predictor')?.name || 'Predictor';
-  const moderatorVar = variables.find((v) => v.role === 'moderator')?.name || 'Moderator';
-  const mediatorVar = variables.find((v) => v.role === 'mediator')?.name || 'Mediator';
-
-  if (modelType === 'moderation') {
-    const sl = dataset.simpleSlopes;
-    const lowSlope = sl?.slopes.find((s) => s.condition.includes('Low'))?.slope ?? 0.08;
-    const highSlope = sl?.slopes.find((s) => s.condition.includes('High'))?.slope ?? 0.56;
-    const r2 = hypothesisVerification.rSquared ?? 0.32;
-    const bInt = hypothesisVerification.focalCoefficient;
-    const tInt = hypothesisVerification.tOrZValue;
-    const pInt = hypothesisVerification.pValue;
-    const pStr = pInt <= 0.001 ? 'p < .001' : `p = ${pInt.toFixed(3).replace(/^0/, '')}`;
-
-    return `A hierarchical multiple regression analysis was conducted on an empirical sample of N = ${sampleSize} participants to test the hypothesized moderating role of ${moderatorVar} on the relationship between ${predictorVar} and ${outcomeVar}. In Step 1, focal main effects and covariates were evaluated. In Step 2, the interaction term (${predictorVar} × ${moderatorVar}) was entered into the equation, accounting for a statistically significant increment in explained criterion variance (R² = ${r2.toFixed(3)}, b = ${bInt.toFixed(3)}, SE = ${hypothesisVerification.standardError.toFixed(3)}, t(${sampleSize - 4}) = ${tInt.toFixed(2)}, ${pStr}). To unpack the nature of this interaction, simple slopes analysis was performed in accordance with Aiken and West (1991). As hypothesized, the positive association between ${predictorVar} and ${outcomeVar} was pronounced at high levels (+1 SD) of ${moderatorVar} (simple slope b = ${highSlope.toFixed(3)}, p < .001), but was significantly attenuated at low levels (-1 SD) of ${moderatorVar} (simple slope b = ${lowSlope.toFixed(3)}). These findings provide empirical confirmation for the moderation hypothesis.`;
-  }
-
-  if (modelType === 'mediation') {
-    return `An ordinary least squares path-analytic mediation framework (Hayes Model 4) was estimated across N = ${sampleSize} observations. Results revealed that ${predictorVar} exerted a statistically significant positive effect on the hypothesized mediator ${mediatorVar} (Path a: b = 0.45, SE = 0.03, p < .001). Furthermore, ${mediatorVar} significantly predicted ${outcomeVar} while controlling for the focal predictor (Path b: b = 0.40, SE = 0.03, p < .001). The direct effect was c' = 0.15 (p = .042). The empirical indirect effect (ab = ${hypothesisVerification.focalCoefficient.toFixed(3)}) was statistically confirmed, demonstrating significant indirect mediation.`;
-  }
-
-  if (modelType === 'sem_cfa') {
-    return `A confirmatory factor analytic (CFA) measurement model was estimated across ${dataset.psychometrics?.scales.length || 3} latent constructs with manifest indicators. All standardized factor loadings were statistically significant (λ = 0.72 to 0.88, p < .001). Internal consistency was demonstrated with Cronbach's α values ranging between ${Math.min(...(dataset.psychometrics?.scales.map((s) => s.cronbachAlpha) || [0.82]))} and ${Math.max(...(dataset.psychometrics?.scales.map((s) => s.cronbachAlpha) || [0.89]))}, satisfying rigorous psychometric criteria for convergent validity and composite reliability.`;
-  }
-
-  if (modelType === 'anova_factorial') {
-    return `A 2 × 2 factorial analysis of covariance (ANCOVA) was performed on N = ${sampleSize} records to test the interaction between experimental treatment arms on ${outcomeVar}, adjusting for baseline covariate scores. The omnibus model yielded a statistically significant interaction effect (Cohen's d = ${hypothesisVerification.focalCoefficient.toFixed(2)}, F = 28.42, p < .001). Post-hoc pairwise comparisons with Bonferroni correction confirmed that participants in the active high-dose condition exhibited superior symptom reduction compared to control counterparts.`;
-  }
-
-  if (modelType === 'logistic_regression') {
-    return `Multivariate binary logistic regression was estimated to evaluate empirical predictors of ${outcomeVar} across N = ${sampleSize} subjects. The focal predictor yielded an adjusted Odds Ratio of OR = ${hypothesisVerification.focalCoefficient.toFixed(2)} (95% CI [1.82, 3.29], Wald z = ${hypothesisVerification.tOrZValue.toFixed(2)}, p < .001). Model classification accuracy and concordance index demonstrated robust discriminative validity.`;
-  }
-
-  return `Linear mixed-effects growth modeling across repeated assessment waves demonstrated a statistically significant linear trajectory over time (b = ${hypothesisVerification.focalCoefficient.toFixed(2)}, t = ${hypothesisVerification.tOrZValue.toFixed(2)}, p < .001). The first-order autoregressive parameter AR(1) accounted for within-subject serial autocorrelation, verifying sustained longitudinal growth.`;
+  const h = dataset.hypothesisVerification;
+  const prefix = `SIMULATED DATA ONLY. ${dataset.modelType} simulation with ${dataset.sampleSize} generated rows. `;
+  if (h.status === 'not_estimated') return prefix + h.summaryNotes;
+  return prefix + `The focal coefficient estimated from complete cases was ${h.focalCoefficient.toFixed(4)} (SE = ${h.standardError.toFixed(4)}, t = ${h.tOrZValue.toFixed(3)}, p = ${h.pValue.toPrecision(3)}). ${h.summaryNotes} These results describe an artificial sample, not empirical confirmation of a research hypothesis.`;
 }
 
 export const DISCIPLINARY_ARCHETYPES: DisciplinaryArchetype[] = [
@@ -1091,6 +1064,11 @@ export const EXTENDED_PARTICIPANTS_POOL = [
 // ==========================================
 
 export function generateQuantitativeDataset(config: QuantitativeModelConfig): GeneratedDataset {
+  if (!Number.isFinite(config.sampleSize)) throw new Error('Sample size must be finite.');
+  if (config.randomSeed !== undefined && !Number.isFinite(config.randomSeed)) throw new Error('Random seed must be finite.');
+  const actualSeed = config.randomSeed ?? crypto.getRandomValues(new Uint32Array(1))[0];
+  const random = seededRandom(actualSeed);
+  const gaussian = (mean = 0, sd = 1) => mean + sd * Math.sqrt(-2 * Math.log(Math.max(Number.EPSILON, random()))) * Math.cos(2 * Math.PI * random());
   const N = Math.max(10, Math.min(10000, config.sampleSize));
   const records: Record<string, any>[] = [];
   const variables: VariableDefinition[] = [];
@@ -1184,10 +1162,10 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
     (params.covariates || []).forEach((c) => (covData[c.name] = []));
 
     for (let i = 0; i < N; i++) {
-      rawX.push(randomGaussian(3.5, 0.9));
-      rawW.push(randomGaussian(3.8, 0.85));
+      rawX.push(gaussian(3.5, 0.9));
+      rawW.push(gaussian(3.8, 0.85));
       (params.covariates || []).forEach((c) => {
-        covData[c.name].push(randomGaussian(5.0, 1.8));
+        covData[c.name].push(gaussian(5.0, 1.8));
       });
     }
 
@@ -1214,7 +1192,7 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
         covContrib += c.beta * val;
       });
 
-      const noise = randomGaussian(0, params.noiseSd);
+      const noise = gaussian(0, params.noiseSd);
       const yVal = 1.2 + (params.betaPredictor * xVal) + (params.betaModerator * wVal) + (params.betaInteraction * intTerm) + covContrib + noise;
       yList.push(yVal);
 
@@ -1303,9 +1281,9 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
     const yVals: number[] = [];
 
     for (let i = 0; i < N; i++) {
-      const x = randomGaussian(3.6, 0.85);
-      const m = 1.0 + params.pathA * x + randomGaussian(0, params.noiseSdM);
-      const y = 0.8 + params.pathCDash * x + params.pathB * m + randomGaussian(0, params.noiseSdY);
+      const x = gaussian(3.6, 0.85);
+      const m = 1.0 + params.pathA * x + gaussian(0, params.noiseSdM);
+      const y = 0.8 + params.pathCDash * x + params.pathB * m + gaussian(0, params.noiseSdY);
 
       xVals.push(x);
       mVals.push(m);
@@ -1368,7 +1346,7 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
     sem.factors.forEach((f) => {
       const items: string[] = [];
       for (let j = 1; j <= f.itemsCount; j++) {
-        const itemName = `${f.name.slice(0, 3)}_${j}`;
+        const itemName = `${f.name}_${j}`;
         items.push(itemName);
         variables.push({
           name: itemName,
@@ -1385,31 +1363,44 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
     const scaleItemsForReliability: Record<string, number[][]> = {};
     sem.factors.forEach((f) => (scaleItemsForReliability[f.name] = []));
 
+    if (!sem.factors.length || new Set(sem.factors.map(f => f.name)).size !== sem.factors.length || sem.factors.some(f => f.targetLoading <= 0 || f.targetLoading > 1 || !Number.isFinite(f.targetLoading) || f.itemsCount < 2 || !Number.isInteger(f.itemsCount))) throw new Error('Use unique factors, at least two items each, and loadings in (0, 1].');
+    const remaining = new Set(sem.factors.map(f => f.name));
+    const order: string[] = [];
+    for (const path of sem.structuralPaths) if (!remaining.has(path.from) || !remaining.has(path.to) || !Number.isFinite(path.beta)) throw new Error('Structural paths must connect defined factors with finite coefficients.');
+    while (remaining.size) {
+      const next = [...remaining].find(name => sem.structuralPaths.filter(path => path.to === name).every(path => order.includes(path.from)));
+      if (!next) throw new Error('Structural paths must form an acyclic graph.');
+      order.push(next); remaining.delete(next);
+    }
+    const cov: Record<string, Record<string, number>> = {};
+    const residualSd: Record<string, number> = {};
+    for (const factor of order) {
+      const incoming = sem.structuralPaths.filter(path => path.to === factor);
+      const explained = incoming.reduce((sum, a) => sum + incoming.reduce((subtotal, b) => subtotal + a.beta * b.beta * (cov[a.from]?.[b.from] ?? 0), 0), 0);
+      if (explained >= 1) throw new Error('Structural paths imply nonpositive residual variance for a unit-variance factor. Reduce path coefficients.');
+      residualSd[factor] = Math.sqrt(1 - explained); cov[factor] = { [factor]: 1 };
+      for (const previous of order.slice(0, order.indexOf(factor))) {
+        const value = incoming.reduce((sum, path) => sum + path.beta * (cov[path.from]?.[previous] ?? 0), 0);
+        cov[factor][previous] = value; cov[previous][factor] = value;
+      }
+    }
     for (let i = 0; i < N; i++) {
-      // 1. Generate latent factor scores
-      const f1Latent = randomGaussian(0, 1.0);
-      const f2Latent = 0.42 * f1Latent + randomGaussian(0, 0.85);
-      const f3Latent = 0.54 * f2Latent + 0.22 * f1Latent + randomGaussian(0, 0.75);
-
-      const latents: Record<string, number> = {
-        [sem.factors[0].name]: f1Latent,
-        [sem.factors[1].name]: f2Latent,
-        [sem.factors[2]?.name || 'F3']: f3Latent
-      };
+      const latents: Record<string, number> = {};
+      for (const factor of order) latents[factor] = sem.structuralPaths.filter(path => path.to === factor).reduce((sum, path) => sum + path.beta * latents[path.from], 0) + gaussian(0, residualSd[factor]);
 
       const record: Record<string, any> = {
         ID: `SEM_${(i + 1).toString().padStart(5, '0')}`
       };
 
       sem.factors.forEach((f) => {
-        const factorScore = latents[f.name] || randomGaussian(0, 1);
+        const factorScore = latents[f.name];
         const itemRowVals: number[] = [];
 
         factorItemsMap[f.name].forEach((itemName) => {
           // Indicator = lambda * Factor + sqrt(1 - lambda^2) * error
           const lambda = f.targetLoading;
           const errorSd = Math.sqrt(Math.max(0.1, 1 - lambda * lambda));
-          const continuousScore = lambda * factorScore + randomGaussian(0, errorSd);
+          const continuousScore = lambda * factorScore + gaussian(0, errorSd);
           const likertVal = discretizeToLikert(continuousScore, scaleMax, 0, 1);
           record[itemName] = likertVal;
           itemRowVals.push(likertVal);
@@ -1488,9 +1479,9 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
       else if (aIdx === 1 && bIdx === 0) cellMean = params.cellMeans.A2_B1;
       else if (aIdx === 1 && bIdx === 1) cellMean = params.cellMeans.A2_B2;
 
-      const baseline = randomGaussian(20.0, 4.5);
+      const baseline = gaussian(20.0, 4.5);
       const covEffect = (params.covariateBeta || 0.45) * (baseline - 20.0);
-      const noise = randomGaussian(0, params.pooledSd);
+      const noise = gaussian(0, params.pooledSd);
       const outcome = Number((cellMean + covEffect + noise).toFixed(2));
 
       records.push({
@@ -1553,14 +1544,14 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
       };
 
       params.predictors.forEach((p) => {
-        const val = randomGaussian(p.mean, p.sd);
+        const val = gaussian(p.mean, p.sd);
         record[p.name] = Number(val.toFixed(2));
         const beta = Math.log(p.oddsRatio) / (p.sd || 1);
         logit += beta * (val - p.mean);
       });
 
       const prob = 1 / (1 + Math.exp(-logit));
-      const outcome = Math.random() < prob ? 1 : 0;
+      const outcome = random() < prob ? 1 : 0;
       record[params.outcomeName] = outcome;
       records.push(record);
     }
@@ -1604,13 +1595,13 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
       const subjectId = `SUBJ_${s.toString().padStart(4, '0')}`;
       const isTreatment = s % 2 === 0;
       const groupName = isTreatment ? 'Active_Training' : 'Control';
-      const randomIntercept = randomGaussian(50.0, params.randomInterceptSd);
+      const randomIntercept = gaussian(50.0, params.randomInterceptSd);
       const treatmentSlopeBonus = isTreatment ? params.growthSlope : 0.4;
 
       let prevResidual = 0;
       for (let t = 1; t <= waves; t++) {
         // AR(1) error: e_t = rho * e_{t-1} + sqrt(1 - rho^2) * white_noise
-        const whiteNoise = randomGaussian(0, params.residualSd);
+        const whiteNoise = gaussian(0, params.residualSd);
         const currentResidual = params.ar1Autocorrelation * prevResidual + Math.sqrt(1 - Math.pow(params.ar1Autocorrelation, 2)) * whiteNoise;
         prevResidual = currentResidual;
 
@@ -1643,9 +1634,13 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
     const rate = Math.min(0.20, config.missingRatePercent / 100);
     const targetCols = variables.filter((v) => v.role !== 'id' && v.role !== 'time').map((v) => v.name);
 
+    if (config.missingMechanism === 'mar') {
+      variables.push({ name: 'Missingness_Auxiliary', label: 'Fully observed MAR driver', type: 'continuous', role: 'covariate', description: 'Observed driver of missingness; values above zero have twice the missingness probability.' });
+      records.forEach(row => { row.Missingness_Auxiliary = gaussian(); });
+    }
     records.forEach((row) => {
       targetCols.forEach((col) => {
-        if (Math.random() < rate) {
+        if (random() < (config.missingMechanism === 'mar' ? rate * (row.Missingness_Auxiliary > 0 ? 1.5 : 0.5) : rate)) {
           row[col] = null;
         }
       });
@@ -1660,11 +1655,11 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
     const numCols = variables.filter((v) => v.type === 'continuous').map((v) => v.name);
 
     records.forEach((row) => {
-      if (Math.random() < outRate && numCols.length > 0) {
-        const col = numCols[Math.floor(Math.random() * numCols.length)];
+      if (random() < outRate && numCols.length > 0) {
+        const col = numCols[Math.floor(random() * numCols.length)];
         if (typeof row[col] === 'number') {
           // Add 3.5 SD perturbation
-          row[col] = Number((row[col] + (Math.random() > 0.5 ? 4.5 : -4.5)).toFixed(3));
+          row[col] = Number((row[col] + (random() > 0.5 ? 4.5 : -4.5)).toFixed(3));
         }
       }
     });
@@ -1673,6 +1668,16 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
   // ----------------------------------------------------
   // Calculate Descriptive Statistics & Correlation Matrix
   // ----------------------------------------------------
+  if (new Set(variables.map(v => v.name)).size !== variables.length || variables.some(v => !v.name.trim())) throw new Error('Variable names must be nonempty and unique.');
+  if (config.modelType === 'moderation') {
+    const predictor = variables.find(v => v.role === 'predictor')!.name;
+    const moderator = variables.find(v => v.role === 'moderator')!.name;
+    const product = `${predictor}_x_${moderator}`;
+    const pairs = records.filter(row => typeof row[predictor] === 'number' && typeof row[moderator] === 'number');
+    const meanX = config.meanCenterPredictors && pairs.length ? pairs.reduce((sum, row) => sum + row[predictor], 0) / pairs.length : 0;
+    const meanW = config.meanCenterPredictors && pairs.length ? pairs.reduce((sum, row) => sum + row[moderator], 0) / pairs.length : 0;
+    records.forEach(row => { row[product] = typeof row[predictor] === 'number' && typeof row[moderator] === 'number' ? Number(((row[predictor] - meanX) * (row[moderator] - meanW)).toFixed(3)) : null; });
+  }
   const descriptives: Record<string, VariableDescriptives> = {};
   const numericVars = variables.filter((v) => v.type === 'continuous' || v.type.startsWith('likert') || v.type === 'binary').map((v) => v.name);
 
@@ -1715,30 +1720,27 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
     pValMatrix.push(rowPVal);
   }
 
-  let assumptionAudit: AssumptionIntegrityAudit | undefined;
-  if (!focalOlsResult && auditOutcomeCol && auditPredictorCols.length > 0) {
-    const yVals = records.map((r) => r[auditOutcomeCol]);
-    const xMat = records.map((r) => auditPredictorCols.map((c) => r[c]));
-    focalOlsResult = computeOlsRegression(yVals, xMat);
-  } else if (!focalOlsResult) {
-    const outcomeVar = variables.find((v) => v.role === 'outcome')?.name;
-    const predVars = variables
-      .filter((v) => v.role !== 'outcome' && v.role !== 'id' && (v.type === 'continuous' || v.type.startsWith('likert')))
-      .map((v) => v.name)
-      .slice(0, 4);
-    if (outcomeVar && predVars.length > 0) {
-      auditOutcomeCol = outcomeVar;
-      auditPredictorCols = predVars;
-      const yVals = records.map((r) => r[auditOutcomeCol]);
-      const xMat = records.map((r) => auditPredictorCols.map((c) => r[c]));
-      focalOlsResult = computeOlsRegression(yVals, xMat);
-    }
+  // Refit after missingness and contamination; diagnostics must describe exported rows.
+  simpleSlopesResult = undefined; // Legacy slope SEs omit coefficient covariance.
+  if (config.modelType === 'moderation') {
+    const complete = records.filter(row => [auditOutcomeCol, ...auditPredictorCols].every(col => typeof row[col] === 'number' && Number.isFinite(row[col])));
+    focalOlsResult = computeOlsRegression(complete.map(row => row[auditOutcomeCol]), complete.map(row => auditPredictorCols.map(col => row[col])));
+    const fit = focalOlsResult;
+    const p = fit.pValues[3];
+    hypothesisVerification = {
+      hypothesisStatement: 'Interaction coefficient in this simulated sample',
+      status: fit.residuals?.length && Number.isFinite(p) ? (p < 0.05 ? 'confirmed' : 'not_supported') : 'not_estimated',
+      focalCoefficient: fit.coefficients[3] ?? 0, standardError: fit.standardErrors[3] ?? 0,
+      tOrZValue: fit.tValues[3] ?? 0, pValue: p ?? 1, rSquared: fit.rSquared,
+      summaryNotes: `${complete.length} complete cases analyzed after missingness and contamination. A sample-level test does not confirm the research hypothesis. No post-hoc power claim is made.`
+    };
+  } else {
+    hypothesisVerification = {
+      hypothesisStatement: 'Model diagnostics require external estimation', status: 'not_estimated',
+      focalCoefficient: 0, standardError: 0, tOrZValue: 0, pValue: 1,
+      summaryNotes: 'Data generated from the supplied parameters. Model-specific inference has not been estimated in the browser. Fit the appropriate model using the exported data; generation parameters are not sample estimates.'
+    };
   }
-
-  if (focalOlsResult && auditPredictorCols.length > 0) {
-    assumptionAudit = computeAssumptionAudit(records, auditPredictorCols, focalOlsResult, records.length);
-  }
-
   const generatedPkg: GeneratedDataset = {
     id: `DS_${Date.now()}`,
     timestamp: new Date().toISOString(),
@@ -1753,10 +1755,10 @@ export function generateQuantitativeDataset(config: QuantitativeModelConfig): Ge
       matrix: corrMatrix,
       pValues: pValMatrix
     },
+    generationConfig: { ...config, randomSeed: actualSeed },
     hypothesisVerification,
     psychometrics,
-    simpleSlopes: simpleSlopesResult,
-    assumptionAudit
+    simpleSlopes: simpleSlopesResult
   };
 
   generatedPkg.apaResultsProse = generateApaResultsParagraph(generatedPkg);
@@ -2051,114 +2053,11 @@ export function exportDatasetToCsv(dataset: GeneratedDataset): string {
 }
 
 export function generateExecutableRScript(dataset: GeneratedDataset): string {
-  const modelType = dataset.modelType;
-
-  return `# ==============================================================================
-# ScholarForge Suite - Applied Statistician Executable Analysis Script
-# Dataset: ${dataset.name}
-# Model Architecture: ${modelType.toUpperCase()}
-# Generated: ${new Date().toISOString()}
-#
-# NOTICE & DISCLAIMER:
-# This script accompanies a synthetic simulation dataset generated for methodology
-# testing, statistical power planning, and instructional demonstration. It does NOT
-# analyze real human subject or clinical data.
-# ==============================================================================
-
-# 1. Install & Load Necessary CRAN Packages
-packages <- c("tidyverse", "psych", "car", "broom", "ggplot2", "interactions")
-new_packages <- packages[!(packages %in% installed.packages()[, "Package"])]
-if(length(new_packages)) install.packages(new_packages)
-lapply(packages, library, character.only = TRUE)
-
-# 2. Ingest Dataset (Ensure CSV is in working directory or load directly)
-# df <- read.csv("scholarforge_dataset.csv", stringsAsFactors = TRUE)
-cat("### ScholarForge Dataset: ${dataset.name}\\n")
-cat("Sample Size (N): ${dataset.sampleSize}\\n\\n")
-
-# 3. Comprehensive Descriptive Statistics
-cat("--- DESCRIPTIVE STATISTICS ---\\n")
-# print(psych::describe(df))
-
-# 4. Correlation Matrix & Significance
-cat("--- BIVARIATE CORRELATION MATRIX ---\\n")
-# print(round(cor(df %>% select_if(is.numeric), use = "pairwise.complete.obs"), 3))
-
-${
-  modelType === 'moderation'
-    ? `# 5. Aiken & West Moderation Analysis
-# Model: Y ~ X * W + Covariates
-# mod_model <- lm(${dataset.variables.find((v) => v.role === 'outcome')?.name || 'Y'} ~ 
-#                 ${dataset.variables.find((v) => v.role === 'predictor')?.name || 'X'} * 
-#                 ${dataset.variables.find((v) => v.role === 'moderator')?.name || 'W'}, 
-#                 data = df)
-# summary(mod_model)
-
-# 6. Johnson-Neyman Interaction & Spotlight Plot
-# interactions::sim_slopes(mod_model, 
-#                          pred = ${dataset.variables.find((v) => v.role === 'predictor')?.name || 'X'}, 
-#                          modx = ${dataset.variables.find((v) => v.role === 'moderator')?.name || 'W'}, 
-#                          jn = TRUE)`
-    : modelType === 'sem_cfa'
-    ? `# 5. Confirmatory Factor Analysis (CFA) using lavaan
-library(lavaan)
-# cfa_model <- '
-#   Construct1 =~ item1 + item2 + item3
-#   Construct2 =~ item4 + item5 + item6
-# '
-# fit <- cfa(cfa_model, data = df)
-# summary(fit, fit.measures = TRUE, standardized = TRUE)`
-    : `# 5. General Linear Model (GLM)
-# fit <- lm(${dataset.variables.find((v) => v.role === 'outcome')?.name || 'Outcome'} ~ ., data = df)
-# summary(fit)`
-}
-
-cat("\\nAnalysis script generation completed by ScholarForge Suite.\\n")
-`;
+  return executableR(dataset);
 }
 
 export function generateExecutablePythonScript(dataset: GeneratedDataset): string {
-  return `"""
-ScholarForge Suite - Applied Statistician Python Script
-Dataset: ${dataset.name}
-Model: ${dataset.modelType.toUpperCase()}
-
-NOTICE & DISCLAIMER:
-This script accompanies a synthetic simulation dataset generated for methodology
-testing, statistical power planning, and instructional demonstration. It does NOT
-analyze real human subject or clinical data.
-"""
-
-import pandas as pd
-import numpy as np
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-# 1. Load Data
-# df = pd.read_csv("scholarforge_dataset.csv")
-print("Dataset loaded successfully: ${dataset.name}")
-
-# 2. Descriptives
-# print(df.describe().T)
-
-# 3. Correlation Matrix
-# corr = df.corr()
-# print(corr)
-
-# 4. Statistical Estimation
-${
-  dataset.modelType === 'moderation'
-    ? `# Moderation OLS Regression
-# formula = "${dataset.variables.find((v) => v.role === 'outcome')?.name} ~ ${dataset.variables.find((v) => v.role === 'predictor')?.name} * ${dataset.variables.find((v) => v.role === 'moderator')?.name}"
-# model = smf.ols(formula, data=df).fit()
-# print(model.summary())`
-    : `# Multiple Linear Regression
-# model = smf.ols("${dataset.variables.find((v) => v.role === 'outcome')?.name} ~ ...", data=df).fit()
-# print(model.summary())`
-}
-`;
+  return executablePython(dataset);
 }
 
 export function generateSpssSyntax(dataset: GeneratedDataset): string {
@@ -2241,7 +2140,9 @@ ${dataset.variables.map((v) => {
 ## 2. Model Empirical Verification
 - **Hypothesis**: ${dataset.hypothesisVerification.hypothesisStatement}
 - **Focal Parameter / Effect Size**: ${dataset.hypothesisVerification.focalCoefficient} (SE = ${dataset.hypothesisVerification.standardError})
-- **Test Statistic**: $t / z = ${dataset.hypothesisVerification.tOrZValue}$, $p = ${dataset.hypothesisVerification.pValue}$
+- **Inference status**: ${dataset.hypothesisVerification.status}
+- **Test Statistic**: ${dataset.hypothesisVerification.status === 'not_estimated' ? 'Not estimated' : `t = ${dataset.hypothesisVerification.tOrZValue}, p = ${dataset.hypothesisVerification.pValue}`}
+- **Reproducibility seed**: ${dataset.generationConfig?.randomSeed ?? 'Unknown'}
 - **Model Determination ($R^2$)**: ${dataset.hypothesisVerification.rSquared ?? 'N/A'}
 - **Applied Statistician Evaluation**: ${dataset.hypothesisVerification.summaryNotes}
 

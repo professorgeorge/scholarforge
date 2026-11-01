@@ -1,11 +1,11 @@
+import { getProject, updateProject } from './projectService';
 import type { AcademicPaper } from '../types/citation';
 
-const CART_STORAGE_KEY = 'scholarforge_research_cart_v1';
+
 
 export function getCartPapers(): AcademicPaper[] {
   try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    return getProject()?.papers ?? [];
   } catch (err) {
     console.error('Failed to load research cart from storage', err);
     return [];
@@ -14,7 +14,7 @@ export function getCartPapers(): AcademicPaper[] {
 
 export function saveCartPapers(papers: AcademicPaper[]): void {
   try {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(papers));
+    updateProject({ papers });
     window.dispatchEvent(new CustomEvent('scholarforge_cart_updated', { detail: papers }));
   } catch (err) {
     console.error('Failed to save research cart', err);

@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   ShieldCheck,
@@ -75,35 +76,35 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
   const [bibSaved, setBibSaved] = useState<boolean>(false);
   const [cartBatchSaved, setCartBatchSaved] = useState<boolean>(false);
   const [subTab, setSubTab] = useState<'batch' | 'single'>('batch');
-  const [rawBibliography, setRawBibliography] = useState<string>(() => {
+  const [rawBibliography, setRawBibliography] = useProjectState<string>('VerifierPane.rawBibliography', () => {
     if (initialBibliography.trim()) {
       return extractBibliographyFromManuscript(initialBibliography).bibliography;
     }
     return '';
   });
-  const [fullTransmittedText, setFullTransmittedText] = useState<string | null>(() => {
+  const [fullTransmittedText, setFullTransmittedText] = useProjectState<string | null>('VerifierPane.fullTransmittedText', () => {
     if (initialBibliography.trim()) {
       return extractBibliographyFromManuscript(initialBibliography).fullText;
     }
     return null;
   });
-  const [wasExtracted, setWasExtracted] = useState<boolean>(() => {
+  const [wasExtracted, setWasExtracted] = useProjectState<boolean>('VerifierPane.wasExtracted', () => {
     if (initialBibliography.trim()) {
       return extractBibliographyFromManuscript(initialBibliography).wasExtracted;
     }
     return false;
   });
-  const [detectedReferenceCount, setDetectedReferenceCount] = useState<number>(() => {
+  const [detectedReferenceCount, setDetectedReferenceCount] = useProjectState<number>('VerifierPane.detectedReferenceCount', () => {
     if (initialBibliography.trim()) {
       return extractBibliographyFromManuscript(initialBibliography).referenceCount;
     }
     return 0;
   });
-  const [transmittedDocName, setTransmittedDocName] = useState<string | null>(sourceFilename || null);
+  const [transmittedDocName, setTransmittedDocName] = useProjectState<string | null>('VerifierPane.transmittedDocName', sourceFilename || null);
   const [isViewingFullManuscript, setIsViewingFullManuscript] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [verifyProgress, setVerifyProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
-  const [report, setReport] = useState<BatchVerificationReport | null>(null);
+  const [report, setReport] = useProjectState<BatchVerificationReport | null>('VerifierPane.report', null);
   const [selectedOutputStyle, setSelectedOutputStyle] = useState<CitationStyle>('apa');
   const [statusFilter, setStatusFilter] = useState<'all' | 'verified' | 'discrepancy' | 'not_found' | 'retracted'>('all');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -384,7 +385,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
               </span>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 font-sans">
-              Cross-checks references against 250M+ verified DOI registries. Detects AI hallucinations, year typos, author discrepancies, and retractions.
+              Cross-checks references against 250M+ verified DOI registries. Identifies metadata mismatches and available retraction flags. Unmatched records require further checking.
             </p>
           </div>
         </div>
@@ -643,7 +644,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                     <h4 className="text-xs font-bold text-amber-950 dark:text-amber-200 font-serif">Discrepancy Forensics</h4>
                   </div>
                   <p className="text-[11px] text-amber-900/80 dark:text-amber-300 leading-relaxed font-sans">
-                    Flags author typos, mismatched publication years, fictitious volume/page numbers, and LLM hallucinations.
+                    Flags differences in authors, publication years, and volume/page metadata for source checking.
                   </p>
                 </div>
 

@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Database,
@@ -63,67 +64,46 @@ export const SyntheticDataForgePane: React.FC<SyntheticDataForgePaneProps> = ({
   const [quantSubTab, setQuantSubTab] = useState<QuantitativeSubTab>('data_table');
 
   // Quantitative Generator State
-  const [modelType, setModelType] = useState<QuantitativeModelType>('moderation');
-  const [sampleSize, setSampleSize] = useState<number>(1000);
-  const [missingMechanism, setMissingMechanism] = useState<'none' | 'mcar' | 'mar'>('none');
-  const [missingRate, setMissingRate] = useState<number>(3);
-  const [outlierRate, setOutlierRate] = useState<number>(0);
-  const [meanCenterPredictors, setMeanCenterPredictors] = useState<boolean>(true);
+  const [modelType, setModelType] = useProjectState<QuantitativeModelType>('SyntheticDataForgePane.modelType', 'moderation');
+  const [sampleSize, setSampleSize] = useProjectState<number>('SyntheticDataForgePane.sampleSize', 1000);
+  const [randomSeed, setRandomSeed] = useProjectState<number>('SyntheticDataForgePane.randomSeed', 20261101);
+  const [missingMechanism, setMissingMechanism] = useProjectState<'none' | 'mcar' | 'mar'>('SyntheticDataForgePane.missingMechanism', 'none');
+  const [missingRate, setMissingRate] = useProjectState<number>('SyntheticDataForgePane.missingRate', 3);
+  const [outlierRate, setOutlierRate] = useProjectState<number>('SyntheticDataForgePane.outlierRate', 0);
+  const [meanCenterPredictors, setMeanCenterPredictors] = useProjectState<boolean>('SyntheticDataForgePane.meanCenterPredictors', true);
 
   // Moderation Config
-  const [modPredictor, setModPredictor] = useState('Job_Autonomy');
-  const [modModerator, setModModerator] = useState('Psychological_Safety');
-  const [modOutcome, setModOutcome] = useState('Work_Performance');
-  const [modBetaX, setModBetaX] = useState<number>(0.32);
-  const [modBetaW, setModBetaW] = useState<number>(0.26);
-  const [modBetaInt, setModBetaInt] = useState<number>(0.24);
-  const [modNoiseSd, setModNoiseSd] = useState<number>(0.85);
+  const [modPredictor, setModPredictor] = useProjectState('SyntheticDataForgePane.modPredictor', 'Job_Autonomy');
+  const [modModerator, setModModerator] = useProjectState('SyntheticDataForgePane.modModerator', 'Psychological_Safety');
+  const [modOutcome, setModOutcome] = useProjectState('SyntheticDataForgePane.modOutcome', 'Work_Performance');
+  const [modBetaX, setModBetaX] = useProjectState<number>('SyntheticDataForgePane.modBetaX', 0.32);
+  const [modBetaW, setModBetaW] = useProjectState<number>('SyntheticDataForgePane.modBetaW', 0.26);
+  const [modBetaInt, setModBetaInt] = useProjectState<number>('SyntheticDataForgePane.modBetaInt', 0.24);
+  const [modNoiseSd, setModNoiseSd] = useProjectState<number>('SyntheticDataForgePane.modNoiseSd', 0.85);
 
   // Mediation Config
-  const [medPredictor, setMedPredictor] = useState('Transformational_Leadership');
-  const [medMediator, setMedMediator] = useState('Work_Engagement');
-  const [medOutcome, setMedOutcome] = useState('Innovative_Work_Behavior');
-  const [medPathA, setMedPathA] = useState<number>(0.45);
-  const [medPathB, setMedPathB] = useState<number>(0.42);
-  const [medPathCDash, setMedPathCDash] = useState<number>(0.14);
+  const [medPredictor, setMedPredictor] = useProjectState('SyntheticDataForgePane.medPredictor', 'Transformational_Leadership');
+  const [medMediator, setMedMediator] = useProjectState('SyntheticDataForgePane.medMediator', 'Work_Engagement');
+  const [medOutcome, setMedOutcome] = useProjectState('SyntheticDataForgePane.medOutcome', 'Innovative_Work_Behavior');
+  const [medPathA, setMedPathA] = useProjectState<number>('SyntheticDataForgePane.medPathA', 0.45);
+  const [medPathB, setMedPathB] = useProjectState<number>('SyntheticDataForgePane.medPathB', 0.42);
+  const [medPathCDash, setMedPathCDash] = useProjectState<number>('SyntheticDataForgePane.medPathCDash', 0.14);
 
   // Qualitative Generator State
-  const [qualType, setQualType] = useState<QualitativeDataType>('semi_structured_interviews');
-  const [qualDomain, setQualDomain] = useState<string>('');
-  const [participantCount, setParticipantCount] = useState<number>(4);
+  const [qualType, setQualType] = useProjectState<QualitativeDataType>('SyntheticDataForgePane.qualType', 'semi_structured_interviews');
+  const [qualDomain, setQualDomain] = useProjectState<string>('SyntheticDataForgePane.qualDomain', '');
+  const [participantCount, setParticipantCount] = useProjectState<number>('SyntheticDataForgePane.participantCount', 4);
   const [isGeneratingQual, setIsGeneratingQual] = useState<boolean>(false);
 
   // AI Prompt Synthesizer State
-  const [aiPrompt, setAiPrompt] = useState<string>('');
+  const [aiPrompt, setAiPrompt] = useProjectState<string>('SyntheticDataForgePane.aiPrompt', '');
   const [isAiProcessing, setIsAiProcessing] = useState<boolean>(false);
   const [aiStatusMsg, setAiStatusMsg] = useState<string>('');
 
   // Generated Artifacts
-  const [dataset, setDataset] = useState<GeneratedDataset | null>(() => {
-    return generateQuantitativeDataset({
-      modelType: 'moderation',
-      sampleSize: 1000,
-      missingMechanism: 'none',
-      missingRatePercent: 0,
-      outlierContaminationPercent: 0,
-      meanCenterPredictors: true,
-      moderationParams: {
-        predictorName: 'Job_Autonomy',
-        moderatorName: 'Psychological_Safety',
-        outcomeName: 'Work_Performance',
-        betaPredictor: 0.32,
-        betaModerator: 0.26,
-        betaInteraction: 0.24,
-        noiseSd: 0.85,
-        covariates: [
-          { name: 'Tenure_Years', beta: 0.12 },
-          { name: 'Job_Level', beta: 0.15 }
-        ]
-      }
-    });
-  });
+  const [dataset, setDataset] = useProjectState<GeneratedDataset | null>('SyntheticDataForgePane.dataset', null);
 
-  const [qualitativePackage, setQualitativePackage] = useState<GeneratedQualitativePackage | null>(null);
+  const [qualitativePackage, setQualitativePackage] = useProjectState<GeneratedQualitativePackage | null>('SyntheticDataForgePane.qualitativePackage', null);
 
   // Table pagination state
   const [tablePage, setTablePage] = useState<number>(1);
@@ -165,17 +145,17 @@ ${ds.variables.map(v => `- **${v.name}** (${v.role.toUpperCase()}): ${v.descript
 Monte Carlo variates were generated via standard Gaussian transformations (Box-Muller method) with specified structural path coefficients. Realism constraints were enforced through:
 - **Predictor Centering:** ${meanCenterPredictors ? 'Predictors mean-centered prior to interaction computation (Aiken & West, 1991).' : 'Raw uncentered scaling.'}
 - **Missingness Mechanism:** ${missingMechanism.toUpperCase()} at a rate of ${missingRate}%.
-- **Statistical Power:** Estimated statistical power for focal effect detection is ${Math.round((ds.assumptionAudit?.statisticalPower.currentPower ?? 0.85) * 100)}% at $\\alpha = 0.05$.`;
+- **Statistical Power:** Not estimated from a single generated dataset. Use repeated-sample planning with declared assumptions.`;
   };
 
   const generateQuantitativeResultsText = (ds: GeneratedDataset): string => {
-    return `### Quantitative Results & Hypothesis Verification
+    return `### Simulated Sample Results (Artificial Data Only)
 
 #### Descriptive Statistics & Bivariate Correlations
 ${Object.entries(ds.descriptives).map(([name, d]) => `- **${name}:** Mean = ${d.mean}, SD = ${d.sd}, Skewness = ${d.skewness}, Kurtosis = ${d.kurtosis}`).join('\n')}
 
 #### Statistical Model Estimation (APA 7th Format)
-${ds.apaResultsProse || `Hypothesis evaluation yielded a focal path coefficient of b = ${ds.hypothesisVerification.focalCoefficient.toFixed(3)} (SE = ${ds.hypothesisVerification.standardError.toFixed(3)}, t = ${ds.hypothesisVerification.tOrZValue.toFixed(2)}, p = ${ds.hypothesisVerification.pValue <= 0.001 ? '< .001' : ds.hypothesisVerification.pValue.toFixed(3)}), confirming the hypothesized empirical relationship.`}
+${ds.apaResultsProse || `Hypothesis evaluation yielded a focal path coefficient of b = ${ds.hypothesisVerification.focalCoefficient.toFixed(3)} (SE = ${ds.hypothesisVerification.standardError.toFixed(3)}, t = ${ds.hypothesisVerification.tOrZValue.toFixed(2)}, p = ${ds.hypothesisVerification.pValue <= 0.001 ? '< .001' : ds.hypothesisVerification.pValue.toFixed(3)}), describing this artificial sample only.`}
 
 ${ds.simpleSlopes ? `#### Conditional Simple Slopes Decomposition
 - **Low Moderator (-1 SD):** b = ${ds.simpleSlopes.slopes.find(s => s.condition.includes('Low'))?.slope.toFixed(3)} (p = ${ds.simpleSlopes.slopes.find(s => s.condition.includes('Low'))?.pValue})
@@ -184,24 +164,14 @@ ${ds.simpleSlopes ? `#### Conditional Simple Slopes Decomposition
   };
 
   const generateQualitativeManuscriptText = (pkg: GeneratedQualitativePackage): string => {
-    return `### Qualitative Thematic Findings & Informant Discourse
+    return `### Simulated Qualitative Training Material (Artificial Data Only)
 
-#### Study Informant Demographics (N = ${pkg.participants.length})
-Data were generated across ${pkg.participants.length} purposive participant informants (${pkg.type.replace(/_/g, ' ')}). 
-Informants represented diverse professional tenure ranging from ${Math.min(...pkg.participants.map(p => p.experienceYears))} to ${Math.max(...pkg.participants.map(p => p.experienceYears))} years of domain experience.
+This package contains ${pkg.participants.length} generated participant personas. No interviews, recruitment, member checking, peer debriefing, or empirical qualitative analysis have been performed by this generator.
 
-#### Thematic Codebook Matrix & Exemplar Discourse
-Inductive thematic analysis following Braun and Clarke's (2006, 2021) 6-phase reflexive framework identified the following master themes:
+#### Illustrative Codebook and Artificial Quotations
+${pkg.thematicCodebook.map((cb, index) => `##### Illustrative theme ${index + 1}: ${cb.theme} (${cb.subTheme})\n${cb.definition}\n\n> ${cb.representativeQuotes[0]?.quote || ''}\n\nArtificial persona: ${cb.representativeQuotes[0]?.participantPseudonym || 'Simulated speaker'}`).join('\n\n')}
 
-${pkg.thematicCodebook.map((cb, idx) => `##### Theme ${idx + 1}: ${cb.theme} (${cb.subTheme})
-**Operational Definition:** ${cb.definition}
-
-> "${cb.representativeQuotes[0]?.quote || ''}"  
-> — *${cb.representativeQuotes[0]?.participantPseudonym || 'Informant'}*
-`).join('\n\n')}
-
-#### Methodological Rigor & Trustworthiness
-In accordance with Lincoln and Guba's evaluative criteria for qualitative trustworthiness, credibility was supported through iterative peer debriefing and verbatim member reflections; transferability was anchored via dense contextual description; and dependability was documented through an exhaustive audit trail.`;
+These examples are for training and codebook testing. They must not be reported as observed participant experiences or empirical findings.`;
   };
 
   // Generate Quantitative Dataset Handler
@@ -209,6 +179,7 @@ In accordance with Lincoln and Guba's evaluative criteria for qualitative trustw
     const config: QuantitativeModelConfig = {
       modelType,
       sampleSize,
+      randomSeed,
       missingMechanism,
       missingRatePercent: missingRate,
       outlierContaminationPercent: outlierRate,
@@ -824,6 +795,9 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
             )}
 
             {/* Applied Statistician Realism Controls */}
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Reproducibility seed
+              <input aria-label="Synthetic generation seed" type="number" min="0" max="4294967295" step="1" value={randomSeed} onChange={e => setRandomSeed(Number(e.target.value))} className="ml-2 rounded border p-2 bg-white dark:bg-slate-900" />
+            </label>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
               <div>
                 <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
@@ -922,10 +896,10 @@ Do NOT include markdown backticks around the json. Output raw JSON only.`;
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 uppercase tracking-wider">
-                      Hypothesis Statistically Verified
+                      Simulated Sample Diagnostics
                     </span>
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-mono">
-                      p &lt; {dataset.hypothesisVerification.pValue <= 0.001 ? '.001' : dataset.hypothesisVerification.pValue}
+                      {dataset.hypothesisVerification.status === 'not_estimated' ? 'Not estimated' : `p = ${dataset.hypothesisVerification.pValue.toPrecision(3)}`}
                     </span>
                   </div>
                   <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-0.5">

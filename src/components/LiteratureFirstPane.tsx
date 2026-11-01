@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState } from 'react';
 import { 
   Search, 
@@ -70,8 +71,8 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   initialPicoQuestion = '',
   onResetAutoSearch,
 }) => {
-  const [topic, setTopic] = useState(initialTopic);
-  const [focus, setFocus] = useState(initialFocus);
+  const [topic, setTopic] = useProjectState('LiteratureFirstPane.topic', initialTopic);
+  const [focus, setFocus] = useProjectState('LiteratureFirstPane.focus', initialFocus);
   const [activeSubTab, setActiveSubTab] = useState<'federated' | 'pico'>(initialSubTab);
   const resultsRef = React.useRef<HTMLDivElement>(null);
 
@@ -82,23 +83,23 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
   }, [initialSubTab]);
 
   const [isSearching, setIsSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useProjectState('LiteratureFirstPane.hasSearched', false);
   const [searchProgressMsg, setSearchProgressMsg] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [isPromptsOpen, setIsPromptsOpen] = useState(false);
   const [isPrismaOpen, setIsPrismaOpen] = useState(false);
-  const [prismaStats, setPrismaStats] = useState<PrismaFlowStats | null>(null);
+  const [prismaStats, setPrismaStats] = useProjectState<PrismaFlowStats | null>('LiteratureFirstPane.prismaStats', null);
   const [cartFeedback, setCartFeedback] = useState<string | null>(null);
   const [downloadFeedback, setDownloadFeedback] = useState<string | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [discoveredPapers, setDiscoveredPapers] = useState<AcademicPaper[]>([]);
+  const [discoveredPapers, setDiscoveredPapers] = useProjectState<AcademicPaper[]>('LiteratureFirstPane.discoveredPapers', []);
   const [selectedPaperIds, setSelectedPaperIds] = useState<Set<string>>(new Set());
   const [expandedAbstractId, setExpandedAbstractId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [customKeyword, setCustomKeyword] = useState('');
-  const [searchScope, setSearchScope] = useState<'default' | 'title_only' | 'title_abstract'>('default');
+  const [searchScope, setSearchScope] = useProjectState<'default' | 'title_only' | 'title_abstract'>('LiteratureFirstPane.searchScope', 'default');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [enabledSources, setEnabledSources] = useState({
+  const [enabledSources, setEnabledSources] = useProjectState('LiteratureFirstPane.enabledSources', {
     openalex: true,
     europepmc: true,
     crossref: true,
@@ -156,6 +157,9 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
       );
 
       setPrismaStats(result.prismaStats);
+      setSearchProgressMsg(result.sourceStatuses.map(s => `${s.name}: ${s.status} (${s.count})`).join(' · '));
+      const incomplete = result.sourceStatuses.filter(s => /timed out|unavailable|failed/.test(s.status));
+      if (incomplete.length) setErrorMsg('Search coverage may be incomplete: ' + incomplete.map(s => `${s.name}: ${s.status}`).join('; '));
       setHasSearched(true);
 
       if (result.papers.length === 0) {
@@ -255,9 +259,9 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
         return {
           ...claim,
           candidatePapers: ranked.length > 0 ? ranked : selectedPapers,
-          selectedPaper: assignedPaper,
+          selectedPaper: null,
           status: assignedPaper ? 'found' : 'not_found',
-          confidence: assignedPaper ? 'high' : 'low',
+          confidence: 'low',
           isExcluded: false,
           citationNumber: idx + 1,
         };

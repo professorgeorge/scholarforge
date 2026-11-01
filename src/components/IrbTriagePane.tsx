@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useMemo } from 'react';
 import {
   ShieldCheck,
@@ -66,12 +67,12 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
   onAppendToDraft,
   onNavigateToStudio
 }) => {
-  const [state, setState] = useState<IrbTriageState>(DEFAULT_STATE);
-  const [institutionName, setInstitutionName] = useState<string>('');
-  const [protocolId, setProtocolId] = useState<string>('');
-  const [studyTitle, setStudyTitle] = useState<string>('Investigating Contemporary Empirical & Methodological Workflows');
-  const [investigatorName, setInvestigatorName] = useState<string>('Principal Investigator');
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [state, setState] = useProjectState<IrbTriageState>('IrbTriagePane.state', DEFAULT_STATE);
+  const [institutionName, setInstitutionName] = useProjectState<string>('IrbTriagePane.institutionName', '');
+  const [protocolId, setProtocolId] = useProjectState<string>('IrbTriagePane.protocolId', '');
+  const [studyTitle, setStudyTitle] = useProjectState<string>('IrbTriagePane.studyTitle', 'Investigating Contemporary Empirical & Methodological Workflows');
+  const [investigatorName, setInvestigatorName] = useProjectState<string>('IrbTriagePane.investigatorName', 'Principal Investigator');
+  const [selectedPresetId, setSelectedPresetId] = useProjectState<string | null>('IrbTriagePane.selectedPresetId', null);
   const [activeOutputTab, setActiveOutputTab] = useState<'statement' | 'consent' | 'memo'>('statement');
   
   const [defSearch, setDefSearch] = useState<string>('');

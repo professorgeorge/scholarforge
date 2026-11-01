@@ -86,7 +86,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
   {
     id: 'pico',
     simpleTitle: 'PICO Search Strategy',
-    subTitle: 'PRISMA-Compliant Query Formulator',
+    subTitle: 'Structured Search Query Formulator',
     categoryLabel: 'Search Strategy',
     stageId: 'discover',
     stageNumber: '1',
@@ -180,7 +180,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
     stageId: 'design',
     stageNumber: '2',
     stageName: 'Design & Data',
-    description: 'Determine Institutional Review Board (IRB) exemption eligibility, stratify human subject risk levels, and generate publication-ready informed consent and ethics declarations.',
+    description: 'Prepare questions for Institutional Review Board (IRB) assessment, stratify human subject risk levels, and generate publication-ready informed consent and ethics declarations.',
     popular: false,
     icon: ShieldAlert,
     accentColor: {
@@ -324,12 +324,12 @@ export const UTILITY_TILES: UtilityTileDef[] = [
   {
     id: 'journal',
     simpleTitle: 'Journal Matchmaker & Pre-Flight',
-    subTitle: 'Scopus/WoS Fit & Desk-Rejection Audit',
+    subTitle: 'Journal Discovery & Submission Checks',
     categoryLabel: 'Journal Pre-Flight',
     stageId: 'publish',
     stageNumber: '4',
     stageName: 'Publish & Audit',
-    description: 'Match manuscripts to indexed journals by Scopus CiteScore, acceptance rate, review speed, and open-access costs. Run pre-flight audits on word counts, citation recency, and ethics.',
+    description: 'Discover candidate journals using open metadata; verify policies and unavailable metrics at the publisher. Run pre-flight audits on word counts, citation recency, and ethics.',
     popular: false,
     icon: FileCheck,
     accentColor: {
@@ -347,7 +347,7 @@ export const UTILITY_TILES: UtilityTileDef[] = [
       badgeTextDark: 'dark:text-purple-300',
       ringColor: 'focus:ring-purple-500/20'
     },
-    tags: ['Scopus & WoS Match', 'Desk-Rejection Audit', 'Diamond OA / APC', 'Word Limits'],
+    tags: ['Open Metadata Discovery', 'Desk-Rejection Audit', 'Diamond OA / APC', 'Word Limits'],
     primaryActionLabel: 'Match Journals'
   },
   {
@@ -491,8 +491,8 @@ export function detectResearchIntent(rawText: string): IntentDetectionResult | n
       description: 'Detected moderation, mediation, Likert scale, or ANOVA modeling keywords. Simulate realistic Monte Carlo datasets or generate R/Python/SPSS code.',
       badgeLabel: 'Statistical Model',
       badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
-      targetPillar: 'synthetic',
-      primaryActionLabel: 'Generate Synthetic Dataset'
+      targetPillar: 'methodology',
+      primaryActionLabel: 'Review Design and Analysis Options'
     };
   }
 
@@ -503,7 +503,7 @@ export function detectResearchIntent(rawText: string): IntentDetectionResult | n
       type: 'pico',
       confidence: 'medium',
       title: 'Systematic Review / PICO Strategy Detected',
-      description: 'Formulate PRISMA 2020-compliant queries across PubMed, Scopus, Web of Science, and IEEE.',
+      description: 'Formulate structured search queries across PubMed, Scopus, Web of Science, and IEEE.',
       badgeLabel: 'PICO Query',
       badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
       targetPillar: 'pico',

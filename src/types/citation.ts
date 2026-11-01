@@ -17,6 +17,7 @@ export interface AcademicPaper {
   openAccess: boolean;
   openAccessPdf?: string;
   source: 'openalex' | 'crossref' | 'europepmc' | 'semanticscholar' | 'arxiv' | 'manual';
+  registryProvenance?: { registry: string; recordId: string; retrievedAt: string; query?: string }[];
   relevanceScore?: number;
   volume?: string;
   issue?: string;
