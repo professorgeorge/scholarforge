@@ -1,6 +1,6 @@
 # Research workspace implementation
 
-This release connects the existing twelve utilities to a persistent project workbench. The workbench is available from **Open project workspace**, above the active manuscript.
+This release connects the existing twelve utilities to a persistent project workbench. The workbench is available from **Project workspace**, above the active manuscript.
 
 ## Implemented
 
@@ -68,3 +68,10 @@ Browser verification in this environment was blocked by local-server reachabilit
 - [PRISMA 2020](https://www.prisma-statement.org/prisma-2020)
 - [GRADE Working Group](https://www.gradeworkinggroup.org/)
 - [EQUATOR](https://www.equator-network.org/)
+
+
+## Applications, counterevidence, and instruments
+
+Three project-scoped utilities extend the existing navigation, hub, command palette and optional AI reviews. ResearchDiscovery shares explicit source selection, bounded federated searches, partial failure reporting, reference imports and candidate paging. New searches retain prior candidates, so source reviews are not silently removed. The literal query option preserves the user's terms at engine dispatch; adapters may still transform provider syntax. Default literature discovery remains adaptive.
+
+Evidence reviews require population/outcome, comparability, exact supplied quotation/location, and interpretation for directional classifications. Negligible-effect labels additionally require an explicit equivalence/interval basis. The saved proposition accompanies each review, and stale classifications are suppressed in Markdown reports. Instrument profiles retain unknown permissions and validation roles until users document them; quotation checks verify transcription against supplied text, not publication authenticity. Exports preserve missing details instead of manufacturing them.

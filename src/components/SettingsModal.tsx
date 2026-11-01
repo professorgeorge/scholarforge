@@ -1,3 +1,4 @@
+import { switchLLMProvider } from '../services/llmService';
 import React, { useState, useEffect } from 'react';
 import { 
   X, 
@@ -288,7 +289,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   value={tempLLMConfig.provider}
                   onChange={(e) => {
                     const nextProvider = e.target.value as any;
-                    let nextModel = tempLLMConfig.model;
+                    const nextConfig = switchLLMProvider(tempLLMConfig, nextProvider);
+                    let nextModel = nextConfig.model;
                     if (nextProvider === 'webgpu') {
                       if (!SAFE_UNRESTRICTED_WEBLM_MODELS.some((m) => m.id === nextModel)) {
                         nextModel = DEFAULT_WEBLM_MODEL;
@@ -302,7 +304,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         nextModel = 'llama3.2:latest';
                       }
                     }
-                    setTempLLMConfig({ ...tempLLMConfig, provider: nextProvider, model: nextModel });
+                    setTempLLMConfig({ ...nextConfig, model: nextModel });
                     setTestResult(null);
                     setWebLlmProgress(null);
                   }}
@@ -463,10 +465,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               )}
 
-              {['gemini', 'openai', 'groq', 'openrouter', 'deepseek'].includes(tempLLMConfig.provider) && (
+              {tempLLMConfig.provider === 'custom' && (
+                <div className="space-y-1">
+                  <label htmlFor="custom-ai-endpoint" className="block text-xs font-bold text-slate-800 dark:text-slate-200">Custom chat-completions endpoint</label>
+                  <input id="custom-ai-endpoint" type="url" value={tempLLMConfig.baseUrl || ''} onChange={event => setTempLLMConfig({ ...tempLLMConfig, baseUrl: event.target.value })} placeholder="http://localhost:1234/v1/chat/completions" className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-2 text-sm text-slate-900 dark:text-white" />
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Use the full chat-completions URL supplied by your model server. The endpoint must accept browser requests. An API key is optional if the server does not require one.</p>
+                </div>
+              )}
+
+              {['gemini', 'openai', 'groq', 'openrouter', 'deepseek', 'custom'].includes(tempLLMConfig.provider) && (
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                    {tempLLMConfig.provider === 'gemini' ? 'Google Gemini API Key' : `${tempLLMConfig.provider.toUpperCase()} API Key`}:
+                    {tempLLMConfig.provider === 'gemini' ? 'Google Gemini API Key' : `${tempLLMConfig.provider.toUpperCase()} API Key${tempLLMConfig.provider === 'custom' ? ' (optional)' : ''}`}:
                   </label>
                   <div className="relative">
                     <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

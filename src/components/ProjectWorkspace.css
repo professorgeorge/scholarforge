@@ -11,13 +11,10 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.8rem;
-  padding: 1rem;
-  background: #edf4fb;
-}
-.sf-project-bar > span {
-  flex: 1;
-  font-size: 0.8rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: var(--bg-surface);
 }
 .sf-workspace-body {
   padding: 1.2rem;
@@ -218,7 +215,6 @@
   color: #e2e8f0;
   border-color: #475569;
 }
-.dark .sf-project-bar,
 .dark .sf-card {
   background: #172337;
 }
@@ -243,12 +239,6 @@
   .sf-workspace-body {
     padding: 0.8rem;
   }
-  .sf-project-bar {
-    align-items: stretch;
-  }
-  .sf-project-bar > * {
-    flex: 1 1 100%;
-  }
 }
 
 /* Match the project workbench to the surrounding research tools. */
@@ -260,18 +250,6 @@
   background: var(--bg-surface);
   color: var(--text-main);
   box-shadow: 0 2px 8px rgb(15 23 42 / 3%);
-}
-.sf-project-bar {
-  background: var(--bg-surface);
-  padding: 1rem 1.25rem;
-  gap: 1rem;
-}
-.sf-project-bar > .sf-field {
-  flex: 0 1 16rem;
-}
-.sf-project-bar > span {
-  flex: 1 1 14rem;
-  color: var(--text-muted);
 }
 .sf-workspace-body {
   border-top: 1px solid var(--border-main);
@@ -329,14 +307,6 @@
     width: calc(100% - 2rem);
     margin: 1rem auto;
   }
-  .sf-project-bar {
-    padding: 1rem;
-    gap: 0.75rem;
-  }
-  .sf-project-bar > .sf-field,
-  .sf-project-bar > span {
-    flex: 1 1 100%;
-  }
   .sf-workspace-body {
     padding: 1rem;
   }
@@ -346,5 +316,94 @@
   }
   .sf-tabs button {
     flex: 1 1 auto;
+  }
+}
+
+/* A compact context strip; project management stays behind its disclosure. */
+.sf-project-identity {
+  display: flex;
+  align-items: center;
+  flex: 1 1 14rem;
+  min-width: 0;
+  gap: 0.65rem;
+  font-size: 0.85rem;
+}
+.sf-project-identity > svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--text-soft);
+}
+.sf-project-label {
+  color: var(--text-soft);
+  font-size: 0.75rem;
+}
+.sf-project-identity strong {
+  min-width: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sf-workspace .sf-project-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.6rem;
+  background: transparent;
+  color: var(--accent-oxford);
+  border-color: transparent;
+  font-size: 0.75rem;
+}
+.sf-workspace .sf-project-toggle:hover {
+  background: var(--bg-subtle);
+}
+.sf-project-toggle svg,
+.sf-project-backup svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+.sf-chevron-open {
+  transform: rotate(180deg);
+}
+.sf-project-management {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.sf-project-management > .sf-field {
+  flex: 1 1 14rem;
+  max-width: 24rem;
+}
+.sf-project-backup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.sf-workspace .sf-project-summary {
+  margin: 0.75rem 0 1.25rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+@media (max-width: 639px) {
+  .sf-project-bar {
+    gap: 0.25rem 0.5rem;
+    padding: 0.6rem 0.75rem;
+  }
+  .sf-project-identity {
+    flex-basis: 100%;
+    padding: 0.25rem 0;
+  }
+  .sf-workspace .sf-project-toggle {
+    margin-left: auto;
+  }
+  .sf-project-management > .sf-field {
+    max-width: 100%;
   }
 }

@@ -16,6 +16,14 @@ export const DEFAULT_LLM_CONFIG: LLMConfig = {
   temperature: 0.6,
 };
 
+/** Provider credentials and model names must not leak into a different endpoint. */
+export function switchLLMProvider(config: LLMConfig, provider: LLMConfig['provider']): LLMConfig {
+  if (provider === config.provider) return { ...config };
+  return { ...config, provider, apiKey: undefined, model: undefined,
+    baseUrl: provider === 'custom' ? 'http://localhost:1234/v1/chat/completions' : provider === 'ollama' ? 'http://localhost:11434' : undefined,
+  };
+}
+
 export const FULL_PAPER_PROMPT = {
   systemPrompt: `You are an expert academic scholar, senior principal investigator, and scientific author.
 CRITICAL MANDATORY INSTRUCTIONS:

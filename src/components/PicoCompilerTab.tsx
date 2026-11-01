@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState } from 'react';
 import { 
   Sparkles, 
@@ -47,14 +48,14 @@ export const PicoCompilerTab: React.FC<PicoCompilerTabProps> = ({
   llmConfig = DEFAULT_LLM_CONFIG,
   initialQuestion = '',
 }) => {
-  const [picoState, setPicoState] = useState<PicoQueryState>({
+  const [picoState, setPicoState] = useProjectState<PicoQueryState>('PicoCompilerTab.picoState', {
     population: '',
     intervention: '',
     comparison: '',
     outcome: '',
   });
 
-  const [questionInput, setQuestionInput] = useState(initialQuestion);
+  const [questionInput, setQuestionInput] = useProjectState('PicoCompilerTab.question', initialQuestion);
   const [isGeneratingWithLlm, setIsGeneratingWithLlm] = useState(false);
   const [llmNotice, setLlmNotice] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);

@@ -37,7 +37,7 @@ export type AcademicPillar =
   | 'synthetic' 
   | 'irb' 
   | 'writing' 
-  | 'anonymizer';
+  | 'anonymizer' | 'applications' | 'counterevidence' | 'instruments';
 
 export type ResearchStage = 'discover' | 'design' | 'draft' | 'publish';
 
@@ -70,6 +70,7 @@ export const RESEARCH_STAGES: StageDef[] = [
     defaultPillar: 'literature',
     tools: [
       { id: 'literature', label: 'Federated Literature Search', icon: Search, description: 'Multi-source discovery with PubMed, DataCite, source status & reference imports' },
+      { id: 'counterevidence', label: 'Null Findings & Counterevidence', icon: Search, description: 'Search and document null results, replications and contrary evidence' },
       { id: 'pico', label: 'PICO Systematic Strategy', icon: Compass, description: 'Clinical & PRISMA query formulator for PubMed, Cochrane, Scopus & Web of Science' },
     ]
   },
@@ -83,6 +84,7 @@ export const RESEARCH_STAGES: StageDef[] = [
     defaultPillar: 'methodology',
     tools: [
       { id: 'methodology', label: 'Methodology Compass', icon: Compass, description: 'Quantitative, qualitative & mixed-method design wizard' },
+      { id: 'instruments', label: 'Measurement & Instrument Finder', icon: Compass, description: 'Discover and compare measurement evidence, scoring and permissions' },
       { id: 'synthetic', label: 'Synthetic Data Forge', icon: Database, description: 'Monte Carlo data generator & interview discourse simulation' },
       { id: 'irb', label: 'IRB Ethics Protocol', icon: ShieldCheck, description: 'Ethics exemption determination, risk analysis & consent drafting' },
     ]
@@ -98,6 +100,7 @@ export const RESEARCH_STAGES: StageDef[] = [
     tools: [
       { id: 'studio', label: 'Manuscript Studio', icon: BookOpen, description: 'Interactive writing canvas, file import & AI drafting' },
       { id: 'claims', label: 'Claims Workbench', icon: CheckCircle2, description: 'Sentence-by-sentence claim extraction & evidence consensus' },
+      { id: 'applications', label: 'Research Applications Studio', icon: BookOpen, description: 'Turn findings into bounded practical applications and pilot plans' },
       { id: 'writing', label: 'Writing Utilities', icon: Wrench, description: 'Title Polisher, Journal Word Budget & BibTeX Cleaner' },
     ]
   },
@@ -119,12 +122,7 @@ export const RESEARCH_STAGES: StageDef[] = [
 ];
 
 export function getStageForPillar(pillar: AcademicPillar): ResearchStage | null {
-  if (pillar === 'hub') return null;
-  if (pillar === 'literature' || pillar === 'pico') return 'discover';
-  if (pillar === 'methodology' || pillar === 'synthetic' || pillar === 'irb') return 'design';
-  if (pillar === 'studio' || pillar === 'claims' || pillar === 'writing') return 'draft';
-  if (pillar === 'verify' || pillar === 'journal' || pillar === 'anonymizer' || pillar === 'scholars') return 'publish';
-  return null;
+  return RESEARCH_STAGES.find(stage => stage.tools.some(tool => tool.id === pillar))?.id || null;
 }
 
 // Backwards compatibility alias for WorkflowLens
@@ -141,28 +139,28 @@ export const WORKFLOW_LENSES: WorkflowLensDef[] = [
     id: 'full', 
     label: 'All Stages', 
     icon: '🔭', 
-    pillars: ['literature', 'pico', 'methodology', 'synthetic', 'irb', 'studio', 'claims', 'writing', 'verify', 'journal', 'anonymizer', 'scholars'], 
-    description: 'All 4 research lifecycle stages (12 utilities)' 
+    pillars: RESEARCH_STAGES.flatMap(stage => stage.tools.map(tool => tool.id)),
+    description: 'All 4 research lifecycle stages (15 utilities)'
   },
   { 
     id: 'review', 
     label: 'Literature & Search', 
     icon: '📖', 
-    pillars: ['literature', 'pico', 'claims', 'verify'], 
+    pillars: ['literature', 'pico', 'counterevidence', 'claims', 'verify'],
     description: 'Literature search, PICO matrix, PRISMA, and DOI auditing' 
   },
   { 
     id: 'methods', 
     label: 'Methods & Simulation', 
     icon: '📊', 
-    pillars: ['methodology', 'synthetic', 'irb'], 
+    pillars: ['methodology', 'instruments', 'synthetic', 'irb'],
     description: 'Methodology compass, synthetic data forge, and IRB ethics triage' 
   },
   { 
     id: 'drafting', 
     label: 'Manuscript Drafting', 
     icon: '✍️', 
-    pillars: ['studio', 'claims', 'writing', 'verify'], 
+    pillars: ['studio', 'claims', 'applications', 'writing', 'verify'],
     description: 'Manuscript writing, claim validation, word budgets, and citation styling' 
   },
   { 
@@ -427,7 +425,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className={`text-[10px] hidden lg:block ${
                   activePillar === 'hub' ? 'text-blue-200' : 'text-slate-400'
                 }`}>
-                  12 Tools
+                  15 Tools
                 </div>
               </div>
             </button>

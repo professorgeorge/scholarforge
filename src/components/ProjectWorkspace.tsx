@@ -1,3 +1,4 @@
+import { FolderOpen, ChevronDown, Download } from "lucide-react";
 import { reviewFlow, reviewFlowSvg } from "../services/reviewFlowService";
 import { QuestionBuilder } from "./QuestionBuilder";
 import { SubmissionRequirements } from "./SubmissionRequirements";
@@ -254,42 +255,20 @@ export function ProjectWorkspace({
   return (
     <section className="sf-workspace" aria-label="Research project workspace">
       <div className="sf-project-bar">
-        <Field label="Active project">
-          <select
-            aria-label="Active project"
-            value={project.id}
-            disabled={busy}
-            onChange={(e) => selectProject(e.target.value)}
-          >
-            {getProjects().map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+        <div className="sf-project-identity">
+          <FolderOpen aria-hidden="true" />
+          <span className="sf-project-label">Project</span>
+          <strong title={project.name}>{project.name}</strong>
+        </div>
         <button
-          onClick={() => {
-            setOpen(!open);
-          }}
+          type="button"
+          className="sf-project-toggle"
+          aria-expanded={open}
+          aria-controls="research-project-details"
+          onClick={() => setOpen(!open)}
         >
-          {open ? "Close workspace" : "Open project workspace"}
-        </button>
-        <span>
-          {project.papers.length} sources · {project.evidence.length} evidence
-          entries · {unresolved} claims need review
-        </span>
-        <button
-          className="sf-secondary"
-          onClick={() =>
-            downloadFile(
-              "ScholarForge-project.json",
-              exportProjectBackup(project),
-              "application/json",
-            )
-          }
-        >
-          Back up project
+          <span>Project workspace</span>
+          <ChevronDown aria-hidden="true" className={open ? "sf-chevron-open" : undefined} />
         </button>
       </div>
       {getStorageError() && (
@@ -310,7 +289,38 @@ export function ProjectWorkspace({
         </p>
       )}
       {open && (
-        <div className="sf-workspace-body">
+        <div id="research-project-details" className="sf-workspace-body">
+          <div className="sf-project-management">
+            <Field label="Current project">
+              <select
+                aria-label="Current project"
+                value={project.id}
+                disabled={busy}
+                onChange={(event) => selectProject(event.target.value)}
+              >
+                {getProjects().map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
+              </select>
+            </Field>
+            <button
+              type="button"
+              className="sf-secondary sf-project-backup"
+              onClick={() => downloadFile("ScholarForge-project.json", exportProjectBackup(project), "application/json")}
+            >
+              <Download aria-hidden="true" />
+              Download project backup
+            </button>
+          </div>
+          {project.papers.length > 0 || project.evidence.length > 0 || unresolved > 0 ? (
+            <p className="sf-project-summary">
+              {[
+                project.papers.length > 0 ? `${project.papers.length} saved ${project.papers.length === 1 ? 'source' : 'sources'}` : '',
+                project.evidence.length > 0 ? `${project.evidence.length} evidence ${project.evidence.length === 1 ? 'entry' : 'entries'}` : '',
+                unresolved > 0 ? `${unresolved} ${unresolved === 1 ? 'claim needs' : 'claims need'} review` : '',
+              ].filter(Boolean).join(' · ')}
+            </p>
+          ) : (
+            <p className="sf-project-summary">Keep sources, evidence, and research decisions together. Add search results to your research cart to save them in this project.</p>
+          )}
           <nav className="sf-tabs" aria-label="Project sections">
             {TABS.map((t) => (
               <button

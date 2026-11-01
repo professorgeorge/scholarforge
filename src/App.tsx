@@ -1,4 +1,8 @@
+import { ApplicationsPane } from './components/ApplicationsPane';
+import { CounterevidencePane } from './components/CounterevidencePane';
+import { InstrumentFinderPane } from './components/InstrumentFinderPane';
 import { useProjectState } from './components/useProjectState';
+import { ToolAiAssistant } from './components/ToolAiAssistant';
 import { ProjectWorkspace } from './components/ProjectWorkspace';
 import { getActiveProjectId } from './services/projectService';
 import React, { useState, useEffect } from 'react';
@@ -625,6 +629,8 @@ export const App: React.FC = () => {
         {/* Isolated Pillar Error Boundary protects user workspace session */}
         <PillarErrorBoundary key={activePillar} pillarName={activePillar.toUpperCase()}>
 
+        {activePillar !== 'hub' && <ToolAiAssistant key={activePillar} tool={activePillar} config={llmConfig} onConfigure={() => setIsSettingsOpen(true)} />}
+
         {/* HOME: SCHOLARFORGE UTILITIES HUB */}
         {activePillar === 'hub' && (
           <div className="py-2 animate-in fade-in duration-200">
@@ -1057,6 +1063,9 @@ export const App: React.FC = () => {
         )}
 
         {/* Pillar 2: Manuscript Studio */}
+        {activePillar === 'applications' && <ApplicationsPane />}
+        {activePillar === 'counterevidence' && <CounterevidencePane />}
+        {activePillar === 'instruments' && <InstrumentFinderPane />}
         {activePillar === 'studio' && (
           <>
             {!hasActiveManuscript ? (

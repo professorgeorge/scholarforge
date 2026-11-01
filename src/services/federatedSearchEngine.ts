@@ -20,6 +20,7 @@ export interface FederatedSearchOptions {
   openAccessOnly?: boolean;
   minCitations?: number;
   requireDoi?: boolean;
+  queryMode?: 'adaptive' | 'literal';
   searchScope?: 'default' | 'title_only' | 'title_abstract';
   enabledSources?: Partial<Record<ScholarlySourceId, boolean>>;
 }
@@ -94,7 +95,10 @@ export async function executeFederatedSearch(
   let europePmcQuery: string;
   let fullTextKeywordQuery: string;
 
-  if (hasBooleanOrQuotes) {
+  if (options.queryMode === 'literal') {
+    europePmcQuery = rawTrimmed;
+    fullTextKeywordQuery = rawTrimmed;
+  } else if (hasBooleanOrQuotes) {
     europePmcQuery = rawTrimmed;
     // For full-text search APIs (OpenAlex, Crossref, S2), extract the clean core words without quotes/parens
     const cleanTokens = extractAcademicKeywords(rawTrimmed);
@@ -193,7 +197,7 @@ export async function executeFederatedSearch(
   }
 
   if (enabledSources.semanticscholar) {
-    const s2Keywords = extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
+    const s2Keywords = options.queryMode === 'literal' ? fullTextKeywordQuery : extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
     tasks.push(
       wrapSource(
         'semanticscholar',
@@ -202,18 +206,20 @@ export async function executeFederatedSearch(
           limit: limitPerSource,
           fromYear,
           toYear,
-        })
+        }),
+        s2Keywords || fullTextKeywordQuery
       )
     );
   }
 
   if (enabledSources.arxiv && !excludePreprints) {
-    const arxivKeywords = extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
+    const arxivKeywords = options.queryMode === 'literal' ? fullTextKeywordQuery : extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
     tasks.push(
       wrapSource(
         'arxiv',
         'arXiv Archive',
-        searchArxiv(arxivKeywords || fullTextKeywordQuery, limitPerSource)
+        searchArxiv(arxivKeywords || fullTextKeywordQuery, limitPerSource),
+        arxivKeywords || fullTextKeywordQuery
       )
     );
   }

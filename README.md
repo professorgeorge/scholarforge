@@ -31,16 +31,34 @@ Open **Project workspace** above the active manuscript to create or switch proje
 
 ## Existing utilities
 
-The suite retains twelve utilities organized in four stages:
+The suite offers fifteen utilities organized in four stages:
 
 | Stage | Utilities |
 |---|---|
-| Discover | Federated literature search; PICO strategy builder |
-| Design & Data | Methodology Compass; Synthetic Data Forge; IRB preparation |
-| Draft & Ground | Manuscript Studio; Claims Workbench; writing utilities |
+| Discover | Federated literature search; PICO strategy builder; Null Findings & Counterevidence Finder |
+| Design & Data | Methodology Compass; Measurement & Instrument Finder; Synthetic Data Forge; IRB preparation |
+| Draft & Ground | Manuscript Studio; Claims Workbench; Research Applications Studio; writing utilities |
 | Audit & Publish | Reference audit; journal discovery; anonymizer; scholar/reviewer finder |
 
 The command palette, research cart, binder, citation styles, and local or external model configuration remain available.
+
+## Findings, counterevidence, and measurement
+
+**Research Applications Studio** creates editable finding → stakeholder → action cards with evidence locations, boundary conditions, risks, pilot plans, and proposed success measures. Load a recorded project claim or enter a finding. Export a Markdown brief or JSON, or save the brief to the binder. Proposed benefits remain distinct from demonstrated outcomes.
+
+**Null Findings & Counterevidence Finder** prepares editable broad, null-result, and replication searches. Review source passages and comparable populations/outcomes before recording a direction. Non-significance is separate from negligible-effect/equivalence evidence. A changed proposition or mismatched source passage invalidates the classification in the Markdown report. Exported JSON preserves the proposition associated with each recorded review.
+
+**Measurement & Instrument Finder** searches for candidate measurement literature and links to IPIP, HealthMeasures/PROMIS, and PhenX. Build and compare profiles with validation quotations, source roles, population/version, burden, scoring, and documented permissions. Search hits do not automatically become validated instruments, and scale items are not reproduced.
+
+Both finders use independent scholarly sources, retain partial results and query coverage, merge duplicate candidates, and accept saved project sources or reference-manager exports. Searches are bounded discovery, not exhaustive reviews; provider syntax can differ. All three tools work without AI, retain saved work in the active project, and provide explicit optional AI reviews with editable context.
+
+## Optional AI assistance
+
+Every utility includes an **Optional AI assistance** panel with task-specific reviews. Configure a cloud provider, Ollama, a browser model, or a compatible custom endpoint in Settings. Configuration alone does not invoke the shared assistant: choose a task, load saved tool inputs or paste material, edit the visible context, and click **Run AI review**. Only that material and the supplied instructions are sent with the task prompt. Context is excerpted and bounded; provider credentials, unrelated project documents, and raw dataset rows are excluded from automatic context loading.
+
+AI reviews can be copied or explicitly saved to the research binder. They do not overwrite manuscript text, registry results, calculations, ethics determinations, or anonymization output. Journal AI triage requires its own action; scholar-profile AI parsing and biography assistance require an explicit opt-in. Custom model endpoints can be entered directly and may operate without an API key when the server permits it. Switching providers clears credentials, model names, and endpoints belonging to the previous provider.
+
+See [AI coverage and verification boundaries](docs/AI-COVERAGE.md) for the tasks available in each utility.
 
 ## Scholarly sources and reference exchange
 

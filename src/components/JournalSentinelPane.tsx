@@ -185,10 +185,7 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
       const report = auditManuscriptPreFlight(targetTitle, targetAbstract, targetDraft, targetRefs);
       setAuditReport(report);
 
-      // 3. If LLM is configured, automatically launch deep editorial analysis in background
-      if (hasLlm) {
-        runAiDeepAnalysis(targetTitle, targetAbstract, targetDraft);
-      }
+      // AI editorial analysis is a separate, explicitly invoked action.
     } catch (err) {
       console.error('Error during journal matching and pre-flight audit:', err);
     } finally {

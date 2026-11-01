@@ -52,7 +52,7 @@ export interface UtilityTileDef {
   primaryActionLabel: string;
 }
 
-export const UTILITY_TILES: UtilityTileDef[] = [
+const CORE_UTILITY_TILES: UtilityTileDef[] = [
   // --- STAGE 1: DISCOVER ---
   {
     id: 'literature',
@@ -410,6 +410,13 @@ export const UTILITY_TILES: UtilityTileDef[] = [
   }
 ];
 
+export const UTILITY_TILES: UtilityTileDef[] = ([...CORE_UTILITY_TILES,
+  { ...CORE_UTILITY_TILES[0], id: 'counterevidence', simpleTitle: 'Null Findings & Counterevidence', subTitle: 'Challenge an idea', description: 'Search across sources for null findings, replications and contrary evidence. Record comparable outcomes, source quotations and your interpretation.', tags: ['Null results', 'Replication', 'Evidence review'], popular: false, primaryActionLabel: 'Examine a proposition' },
+  { ...CORE_UTILITY_TILES[2], id: 'instruments', simpleTitle: 'Measurement & Instrument Finder', subTitle: 'Measure with a clear basis', stageId: 'design', stageNumber: '2', stageName: 'Design & Data', categoryLabel: 'Measurement & Methods', description: 'Find candidate scales and protocols. Compare population fit, validation evidence, scoring, burden and permissions.', tags: ['Scales', 'Validation', 'Permissions'], icon: Compass, popular: false, primaryActionLabel: 'Find a measure' },
+  { ...CORE_UTILITY_TILES[5], id: 'applications', simpleTitle: 'Research Applications Studio', subTitle: 'Findings into practice', stageId: 'draft', stageNumber: '3', stageName: 'Draft & Ground', categoryLabel: 'Research into Practice', description: 'Connect findings to stakeholders, proposed actions, boundary conditions, risks and a pilot evaluation plan.', tags: ['Practical implications', 'Translation', 'Pilot plan'], icon: BookOpen, popular: false, primaryActionLabel: 'Develop applications' },
+] satisfies UtilityTileDef[]).sort((a,b) => Number(a.stageNumber) - Number(b.stageNumber));
+
+
 type CategoryFilter = 'all' | 'popular' | 'discover' | 'design' | 'draft' | 'publish';
 
 interface ScholarHubViewProps {
@@ -429,6 +436,7 @@ interface ScholarHubViewProps {
 export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
   onSelectPillar,
   onStartResearch,
+  onOpenSettings,
   currentManuscriptWordCount = 0,
 }) => {
   const [mode, setMode] = useState<ResearchStartMode>('topic');
@@ -550,12 +558,12 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
         </div>
       </section>
 
-      {/* 2. THE 12 INDIVIDUAL UTILITY TILES GRID */}
+      {/* 2. THE 15 INDIVIDUAL UTILITY TILES GRID */}
         <div className="space-y-6 animate-in fade-in duration-200">
           
           {/* Functional Domain Category Filter Buttons */}
           <div className="space-y-3">
-            <div><h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Browse all tools</h2><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Know what you need? Open any tool directly.</p></div>
+            <div><h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Browse all tools</h2><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Know what you need? Open any tool directly.</p><p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Every tool includes optional AI reviews. <button type="button" onClick={onOpenSettings} className="font-semibold text-blue-800 dark:text-blue-300 underline cursor-pointer">Configure your AI model</button> and invoke assistance when you choose.</p></div>
             <div className="max-w-md"><label htmlFor="tool-search" className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Find a tool</label><input id="tool-search" type="search" value={toolSearch} onChange={(event) => setToolSearch(event.target.value)} placeholder="Search tool names or capabilities" className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white" /></div>
             <div className="flex flex-wrap items-center gap-2 py-1 text-xs">
               <button

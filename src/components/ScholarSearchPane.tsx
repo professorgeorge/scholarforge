@@ -1,3 +1,4 @@
+import { useProjectState } from './useProjectState';
 import React, { useState, useMemo } from 'react';
 import { 
   Search, Users, Award, FileEdit, Briefcase, ShieldCheck, Sparkles, 
@@ -66,10 +67,10 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
   onNavigateToStudio
 }) => {
   const [paneMode, setPaneMode] = useState<'talent_search' | 'scholar_impact'>('talent_search');
-  const [objective, setObjective] = useState<SearchObjective>('grant_coi');
+  const [objective, setObjective] = useProjectState<SearchObjective>('ScholarSearchPane.objective', 'grant_coi');
   const [exportedToStudio, setExportedToStudio] = useState<boolean>(false);
 
-  const [query, setQuery] = useState<ManuscriptQuery>({
+  const [query, setQuery] = useProjectState<ManuscriptQuery>('ScholarSearchPane.query', {
     title: initialTitle,
     abstract: initialAbstract,
     keywords: '',

@@ -19,6 +19,7 @@ import {
   type GoogleScholarInput 
 } from '../services/scholarImpactService';
 import type { LLMConfig } from '../services/llmService';
+import { isLlmConfigured } from '../services/aiScholarExtensions';
 import { DEFAULT_LLM_CONFIG } from '../services/llmService';
 
 interface ScholarImpactTabProps {
@@ -32,6 +33,7 @@ export const ScholarImpactTab: React.FC<ScholarImpactTabProps> = ({
     scholarUrlOrId: '',
     pastedScholarText: '',
   });
+  const [useAi, setUseAi] = useState(false);
   const [isFetchingImpact, setIsFetchingImpact] = useState<boolean>(false);
   const [impactProfile, setImpactProfile] = useState<ScholarImpactProfile | null>(null);
   const [impactError, setImpactError] = useState<string>('');
@@ -57,7 +59,7 @@ export const ScholarImpactTab: React.FC<ScholarImpactTabProps> = ({
     setImpactProfile(null);
 
     try {
-      const profile = await resolveGoogleScholarDossier(inputToUse, llmConfig);
+      const profile = await resolveGoogleScholarDossier(inputToUse, useAi && isLlmConfigured(llmConfig) ? llmConfig : DEFAULT_LLM_CONFIG);
       setImpactProfile(profile);
     } catch (err: any) {
       setImpactError(err.message || 'Google Scholar profile resolution failed.');
@@ -129,6 +131,8 @@ export const ScholarImpactTab: React.FC<ScholarImpactTabProps> = ({
       {/* Ingestion Methods */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs text-xs">
         
+        <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={useAi} disabled={!isLlmConfigured(llmConfig) || isFetchingImpact} onChange={event => setUseAi(event.target.checked)} className="mt-0.5" /><span>Use the configured AI model to help parse pasted profile text and draft a biography. This sends the supplied profile text or metrics to your model when you analyze the profile. Leave off for the standard parser and calculated metrics.</span></label>
+
         {/* Method 1: Google Scholar Profile URL */}
         <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-blue-200 dark:border-blue-900/60 space-y-2">
           <label className="font-bold text-blue-950 dark:text-blue-300 flex items-center justify-between font-serif">
