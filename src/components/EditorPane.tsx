@@ -1,3 +1,4 @@
+import { createRetainedTextReader } from '../services/projectFileService';
 import React, { useState, useRef } from 'react';
 import { 
   Sparkles, 
@@ -83,7 +84,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
     if (!file) return;
 
     setUploadedDataFileName(file.name);
-    const reader = new FileReader();
+    const reader = createRetainedTextReader(file);
     reader.onload = (event) => {
       const content = event.target?.result as string;
       if (content) {

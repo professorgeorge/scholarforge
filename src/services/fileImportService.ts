@@ -1,9 +1,18 @@
 import mammoth from 'mammoth';
+import { retainProjectFile } from './projectFileService';
+import { getActiveProjectId } from './projectService';
+
+export async function extractTextFromManuscriptFile(file: File) {
+  const projectId = getActiveProjectId();
+  const result = await extractFileText(file);
+  await retainProjectFile(file, projectId);
+  return result;
+}
 
 /**
  * Extracts clean manuscript text from an uploaded file (.docx, .txt, .md, .rtf, .tex).
  */
-export async function extractTextFromManuscriptFile(file: File): Promise<{
+async function extractFileText(file: File): Promise<{
   text: string;
   filename: string;
   wordCount: number;

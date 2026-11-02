@@ -1,4 +1,6 @@
 import type { AcademicPaper } from "../types/citation";
+import type { RetainedProjectFile } from './projectFileService';
+import { cleanRepositoryValue, recordRepositoryChange, repositoryContentKey, repositoryToolForKey, type RepositoryState } from './projectRepositoryRegistry';
 
 export type ReviewDecision = "pending" | "include" | "exclude" | "uncertain";
 export interface ScreeningDecision {
@@ -112,6 +114,8 @@ export interface ResearchProject {
   reporting: Record<string, ReportingResponse>;
   tasks: Record<string, boolean>;
   tools: Record<string, unknown>;
+  repository?: RepositoryState;
+  files?: RetainedProjectFile[];
 }
 
 const INDEX = "scholarforge_projects_v1";
@@ -183,6 +187,10 @@ export function getProjects(): ResearchProject[] {
 }
 export function getStorageError(): string {
   return storageError;
+}
+export function reportProjectStorageError(message: string): void {
+  storageError = message;
+  window.dispatchEvent(new Event(PROJECT_EVENT));
 }
 export async function flushProjectWrites(): Promise<void> {
   await mirrorQueue;
@@ -349,10 +357,22 @@ export function setToolState(
   value: unknown,
   projectId = getActiveProjectId(),
 ): void {
+  const current = getProject(projectId);
+  if (current && JSON.stringify(current.tools[key]) === JSON.stringify(value)) return;
   updateProject(
-    (p) => ({ ...p, tools: { ...p.tools, [key]: value } }),
+    (p) => ({ ...p, tools: { ...p.tools, [key]: value }, repository: recordRepositoryChange(p.tools, p.repository, key, value, now()) }),
     projectId,
   );
+}
+
+export function checkpointProjectTool(tool: string, projectId = getActiveProjectId()): void {
+  const project = getProject(projectId);
+  if (!project) return;
+  const value = cleanRepositoryValue(Object.fromEntries(Object.entries(project.tools).filter(([key, item]) => repositoryToolForKey(key)?.id === tool && repositoryContentKey(key, item))));
+  if (!Object.keys(value).length) return;
+  const key = `checkpoint.${tool}`;
+  if (project.repository?.history.some(entry => entry.key === key && JSON.stringify(entry.value) === JSON.stringify(value))) return;
+  updateProject(current => ({ ...current, repository: { updated: { ...current.repository?.updated, [tool]: now() }, history: [...(current.repository?.history || []), { id: id(), key, tool, at: now(), value }] } }), projectId);
 }
 
 export function saveManuscriptVersion(
@@ -474,6 +494,8 @@ export function validateProject(value: unknown): ResearchProject {
       throw new Error(`Invalid ${key}.`);
   if (typeof p.criteriaVersion !== "number" || typeof p.updatedAt !== "string")
     throw new Error("Invalid project metadata.");
+  if (p.repository && (!Array.isArray(p.repository.history) || !p.repository.updated || typeof p.repository.updated !== 'object' || p.repository.history.some(entry => !entry || typeof entry.id !== 'string' || typeof entry.key !== 'string' || typeof entry.tool !== 'string' || typeof entry.at !== 'string'))) throw new Error('Invalid project repository.');
+  if (p.files && (!Array.isArray(p.files) || p.files.some(file => !file || typeof file.id !== 'string' || typeof file.name !== 'string' || typeof file.base64 !== 'string' || (file.base64.length % 4 !== 0 || /[^A-Za-z0-9+/=]/.test(file.base64) || /=[^=]/.test(file.base64) || /={3}/.test(file.base64)) || typeof file.size !== 'number' || typeof file.mime !== 'string' || typeof file.at !== 'string'))) throw new Error('Invalid retained project files.');
   for (const key of [
     "question",
     "discipline",
@@ -537,7 +559,7 @@ export function validateProject(value: unknown): ResearchProject {
 
 export function importProjectBackup(text: string): ResearchProject {
   const raw = JSON.parse(text);
-  const original = validateProject(raw.project ?? raw);
+  const original = validateProject(cleanRepositoryValue(raw.project ?? raw));
   // Always import as a copy, never overwrite an existing project or current work.
   const project = {
     ...original,
@@ -579,7 +601,7 @@ export function exportProjectBackup(project: ResearchProject): string {
       format: "ScholarForge project backup",
       version: 1,
       exportedAt: now(),
-      project: { ...project, tools },
+      project: cleanRepositoryValue({ ...project, tools }),
     },
     null,
     2,

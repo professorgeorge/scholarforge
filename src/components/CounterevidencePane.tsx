@@ -12,8 +12,8 @@ export function CounterevidencePane() {
   const [topic, setTopic] = useProjectState('CounterevidencePane.topic', '');
   const [queries, setQueries] = useProjectState<ReturnType<typeof counterQueries>>('CounterevidencePane.queries', []);
   const [reviews, setReviews] = useProjectState<Record<string, EvidenceReview>>('CounterevidencePane.reviews', {});
-  const [paper, setPaper] = useState<AcademicPaper | null>(null);
-  const [draft, setDraft] = useState<EvidenceReview | null>(null);
+  const [paper, setPaper] = useProjectState<AcademicPaper | null>('CounterevidencePane.activePaper', null);
+  const [draft, setDraft] = useProjectState<EvidenceReview | null>('CounterevidencePane.draft', null);
   const [errors, setErrors] = useState<string[]>([]);
   const [notice, setNotice] = useState('');
   const choose = (selected: AcademicPaper) => { setPaper(selected); setDraft(reviews[selected.id] || { paperId: selected.id, direction: 'unreviewed', comparable: 'unclear', population: '', outcome: '', quote: '', locator: '', sourceExcerpt: '', interpretation: '', equivalenceBasis: '' }); setErrors([]); setNotice(''); };

@@ -7,19 +7,20 @@ import { getProject } from '../services/projectService';
 import { addBinderItem, getBinderItems } from '../services/binderService';
 import { buildToolReviewContext, formatToolAiReview, MAX_REVIEW_MATERIAL, reviewWithToolAI, TOOL_AI_REVIEWS, type AiToolId, type ToolAiReview } from '../services/toolAiService';
 
-interface ToolAiAssistantProps { tool: AiToolId; config: LLMConfig; onConfigure: () => void }
-export function ToolAiAssistant({ tool, config, onConfigure }: ToolAiAssistantProps) {
+interface ToolAiAssistantProps { tool: AiToolId; config: LLMConfig; onConfigure: () => void; initialTaskId?: string; contextVersion?: string; onUseProposedText?: (text: string) => void; useProposedTextLabel?: string }
+export function ToolAiAssistant({ tool, config, onConfigure, initialTaskId, contextVersion, onUseProposedText, useProposedTextLabel }: ToolAiAssistantProps) {
   const definition = TOOL_AI_REVIEWS[tool];
   const configured = isLlmConfigured(config);
-  const [taskId, setTaskId] = useState(definition.tasks[0].id);
+  const [taskId, setTaskId] = useState(initialTaskId || definition.tasks[0].id);
   const [material, setMaterial] = useState('');
   const [request, setRequest] = useState('');
   const [sourceIds, setSourceIds] = useState<string[]>([]);
   const [excerpted, setExcerpted] = useState(false);
+  const [materialVersion, setMaterialVersion] = useState<string | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
-  const [result, setResult] = useProjectState<{ review: ToolAiReview; provider: string; task: string; id: string; at: string } | null>(`ToolAiAssistant.${tool}.review`, null);
+  const [result, setResult] = useProjectState<{ review: ToolAiReview; provider: string; task: string; id: string; at: string; contextVersion?: string } | null>(`ToolAiAssistant.${tool}.${initialTaskId || 'review'}`, null);
   const clearResult = () => { setResult(null); setFeedback(''); setError(''); };
 
   const run = async () => {
@@ -27,7 +28,7 @@ export function ToolAiAssistant({ tool, config, onConfigure }: ToolAiAssistantPr
     setBusy(true); clearResult();
     try {
       const review = await reviewWithToolAI(tool, taskId, material, request, sourceIds, config);
-      setResult({ review, provider: `${config.provider}${config.model ? ` / ${config.model} (configured model)` : ''}`, task: definition.tasks.find(task => task.id === taskId)!.label, id: crypto.randomUUID(), at: new Date().toISOString() });
+      setResult({ review, provider: `${config.provider}${config.model ? ` / ${config.model} (configured model)` : ''}`, task: definition.tasks.find(task => task.id === taskId)!.label, id: crypto.randomUUID(), at: new Date().toISOString(), contextVersion: materialVersion });
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'AI review failed. Your tool inputs have not been changed.'); }
     finally { setBusy(false); }
   };
@@ -47,9 +48,9 @@ export function ToolAiAssistant({ tool, config, onConfigure }: ToolAiAssistantPr
       <div>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <label htmlFor={`ai-material-${tool}`} className="text-xs font-semibold text-slate-700 dark:text-slate-200">Material to send (editable)</label>
-          <button type="button" disabled={busy} onClick={() => { const context = buildToolReviewContext(tool, getProject()); setMaterial(context.text); setSourceIds(context.sourceIds); setExcerpted(context.truncated); clearResult(); }} className="text-xs font-semibold text-blue-800 dark:text-blue-300 underline cursor-pointer">Load saved tool inputs</button>
+          <button type="button" disabled={busy} onClick={() => { const context = buildToolReviewContext(tool, getProject()); setMaterial(context.text); setSourceIds(context.sourceIds); setExcerpted(context.truncated); setMaterialVersion(contextVersion); clearResult(); }} className="text-xs font-semibold text-blue-800 dark:text-blue-300 underline cursor-pointer">Load saved tool inputs</button>
         </div>
-        <textarea id={`ai-material-${tool}`} value={material} disabled={busy} maxLength={MAX_REVIEW_MATERIAL} rows={7} onChange={event => { setMaterial(event.target.value); clearResult(); }} placeholder="Paste the passage, research question, plan, or records you want reviewed. Nothing is sent until you invoke AI." className="w-full resize-y rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 text-sm leading-relaxed text-slate-900 dark:text-white" />
+        <textarea id={`ai-material-${tool}`} value={material} disabled={busy} maxLength={MAX_REVIEW_MATERIAL} rows={7} onChange={event => { setMaterial(event.target.value); setMaterialVersion(contextVersion); clearResult(); }} placeholder="Paste the passage, research question, plan, or records you want reviewed. Nothing is sent until you invoke AI." className="w-full resize-y rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 text-sm leading-relaxed text-slate-900 dark:text-white" />
         <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{material.length.toLocaleString()} / {MAX_REVIEW_MATERIAL.toLocaleString()} characters. {excerpted ? 'The loaded context was shortened. Inspect the excerpts and add any missing details.' : 'Only the material shown here and your instructions below are supplied.'}</p>
       </div>
       <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200">Focus or constraints (optional)
@@ -63,12 +64,14 @@ export function ToolAiAssistant({ tool, config, onConfigure }: ToolAiAssistantPr
       {error && <p role="alert" className="rounded-lg bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-800 dark:text-red-200">{error}</p>}
       {result && <section aria-label="AI review suggestions" className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-4 space-y-4">
         <div><h3 className="font-semibold text-slate-900 dark:text-white">AI suggestions · review before use</h3><p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{result.task} · {result.provider} · {new Date(result.at).toLocaleString()}</p></div>
+        {contextVersion !== result.contextVersion && <p role="status" className="rt-notice">Your workspace changed after this review. Load the current inputs and run a new review before adding suggested wording.</p>}
         <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">{result.review.summary}</p>
         {result.review.suggestions.map((suggestion, index) => <div key={index}><h4 className="text-sm font-semibold text-slate-900 dark:text-white">{suggestion.title}</h4><p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-slate-300">{suggestion.detail}</p>{suggestion.sourceIds.length > 0 && <p className="mt-1 text-xs text-blue-800 dark:text-blue-300">Supplied source IDs: {suggestion.sourceIds.join(', ')}. Check the source text before relying on this interpretation.</p>}</div>)}
         {result.review.proposedText && <div><h4 className="text-sm font-semibold text-slate-900 dark:text-white">Suggested wording</h4><p className="mt-2 whitespace-pre-wrap rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{result.review.proposedText}</p></div>}
         {result.review.questions.length > 0 && <div><h4 className="text-sm font-semibold text-slate-900 dark:text-white">Questions to resolve</h4><ul className="mt-1 list-disc pl-5 text-sm text-slate-600 dark:text-slate-300">{result.review.questions.map((question, index) => <li key={index}>{question}</li>)}</ul></div>}
         <div><h4 className="text-sm font-semibold text-slate-900 dark:text-white">Limitations</h4><ul className="mt-1 list-disc pl-5 text-sm text-slate-600 dark:text-slate-300">{result.review.limitations.map((limitation, index) => <li key={index}>{limitation}</li>)}</ul><p className="mt-2 text-xs text-slate-500 dark:text-slate-400">AI suggestions do not replace registry verification, statistical estimation, ethics review, or a final anonymity check.</p></div>
         <div className="flex flex-wrap gap-3">
+          {onUseProposedText && result.review.proposedText && <button type="button" disabled={contextVersion !== result.contextVersion} className="btn-academic-secondary px-3 py-2 text-xs" onClick={() => { onUseProposedText(result.review.proposedText); setFeedback('Suggested wording added as an editable draft.'); }}>{useProposedTextLabel || 'Add suggested wording as a draft'}</button>}
           <button type="button" className="btn-academic-secondary px-3 py-2 inline-flex items-center gap-2 text-xs cursor-pointer" onClick={async () => { try { await navigator.clipboard.writeText(formatToolAiReview(result.review)); setFeedback('Review copied.'); } catch { setFeedback('Clipboard is unavailable. Select and copy the review text.'); } }}><Copy aria-hidden="true" className="w-4 h-4" />Copy review</button>
           <button type="button" disabled={feedback === 'Review saved to the research binder.'} className="btn-academic-secondary px-3 py-2 inline-flex items-center gap-2 text-xs cursor-pointer disabled:opacity-50" onClick={() => { addBinderItem({ type: 'note', title: `AI review: ${definition.name} · ${result.task}`, snippet: formatToolAiReview(result.review), sourcePillar: definition.name, metadata: { aiGenerated: true, reviewId: result.id, provider: result.provider, createdAt: result.at } }); setFeedback(getBinderItems()[0]?.metadata?.reviewId === result.id ? 'Review saved to the research binder.' : 'The review could not be saved. Check the storage warning and copy the text instead.'); }}><BookmarkPlus aria-hidden="true" className="w-4 h-4" />Save review to binder</button>
         </div>

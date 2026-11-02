@@ -1,4 +1,5 @@
 import { useProjectState } from './useProjectState';
+import { useProjectSet } from './useProjectSet';
 import React, { useState, useMemo } from 'react';
 import { 
   Search, Users, Award, FileEdit, Briefcase, ShieldCheck, Sparkles, 
@@ -80,16 +81,16 @@ export const ScholarSearchPane: React.FC<ScholarSearchPaneProps> = ({
 
   const [doiInput, setDoiInput] = useState('');
   const [isIngestingDoi, setIsIngestingDoi] = useState(false);
-  const [candidates, setCandidates] = useState<ReviewerCandidate[]>([]);
+  const [candidates, setCandidates] = useProjectState<ReviewerCandidate[]>('ScholarSearchPane.candidates', []);
   const [isLoading, setIsLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useProjectState('ScholarSearchPane.hasSearched', false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Shortlist and selection
-  const [shortlistedIds, setShortlistedIds] = useState<Set<string>>(new Set());
+  const [shortlistedIds, setShortlistedIds] = useProjectSet('ScholarSearchPane.shortlistedIds');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
+  const [excludedIds, setExcludedIds] = useProjectSet('ScholarSearchPane.excludedIds');
 
   // Modals & Drawer
   const [isRosterOpen, setIsRosterOpen] = useState(false);

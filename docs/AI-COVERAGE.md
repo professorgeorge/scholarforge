@@ -1,9 +1,11 @@
 # Optional AI assistance across ScholarForge
 
-A shared review layer gives all fifteen utilities a consistent connection and invocation flow while retaining native AI actions and deterministic tools.
+A shared review layer gives all seventeen utilities a consistent connection and invocation flow while retaining native AI actions and deterministic tools.
 
 | Utility | Native assistance retained | Optional review tasks |
 | --- | --- | --- |
+| Funding Opportunity Finder | Official-source searches, condition retrieval, applicant-category checks, shortlists and comparison exports | Refine funding search terms; review supplied eligibility passages; compare retained funding records without inventing opportunities or predicting funding success |
+| Concept & Theory Studio | Guided concept development, quoted-source gap review, conceptual map, pathway comparison and brief export | Clarify puzzles; compare framings; challenge candidate gaps; develop explanations and rivals; compare methods; review coherence |
 | Research Applications Studio | Editable application cards and brief export | Develop bounded practical applications; critique finding-to-action assumptions |
 | Null Findings & Counterevidence | Multi-source discovery, reference imports, and quoted evidence review | Improve neutral counter-searches; review supplied interpretations without equating non-significance with no effect |
 | Measurement & Instrument Finder | Candidate discovery, measurement collection links, and profile comparison | Compare supplied measurement evidence; plan adaptation and validation checks without inventing items or permissions |
@@ -32,8 +34,16 @@ The response must follow a bounded structured format. Source identifiers outside
 
 ## Existing invocation fixes
 
+Concept Studio places the AI panel within each step. Loading context groups the puzzle, framings, gap evidence, conceptual model, and pathways without sending internal review signatures. Linked evidence sources are prioritized within the six-source limit. Suggested wording can be explicitly appended as a draft; it cannot mark a gap or model reviewed. Workspace changes after loading context or running a review block acceptance of stale suggestions until a current review is run. Manual edits remain available without AI. Provider availability and substantive model quality are not established by mocked tests.
+
 Journal matching no longer launches AI analysis automatically when a provider is configured. Its dedicated AI triage action remains available. Scholar-profile assistance has a separate opt-in; the ordinary parser and calculations continue without a connected model. Custom endpoints have a configurable chat-completions URL and optional key. Provider changes discard credentials and model settings from the previous endpoint.
 
 ## Verification
 
-Regression checks cover all fifteen utility definitions, bounded/redacted context, omitted dataset rows, malformed responses, unsupported source IDs, explicit invocation, no requests without a configured model, preservation of unsupported simulation diagnostics, and provider-switch credential isolation. Browser checks use a local mock provider for connection, invocation, display, and binder saving. Live inference quality and network access depend on the user's selected provider and model.
+Regression checks cover all seventeen utility definitions, bounded/redacted context, omitted dataset rows, malformed responses, unsupported source IDs, explicit invocation, no requests without a configured model, preservation of unsupported simulation diagnostics, and provider-switch credential isolation. Concept Studio checks cover evidence transcription, missing support, review invalidation, exported limitations, and a mocked connected-provider gap review. Live inference quality and network access depend on the user's selected provider and model.
+
+## Project retention
+
+AI reviews are retained with the active project's tool work and in automatic result snapshots. Project repository downloads include these reviews as suggestions with their recorded limitations; collecting a review does not adopt its wording or certify its claims. Repository collection itself makes no model request. Credentials are removed recursively from project backups and retained result values. Restored or changed context may require a fresh review before accepting wording.
+
+Funding review context uses F1–F6 identifiers, supplied opportunity conditions and timestamps, applicant profile fields, coverage, and selected notes. Shortlisted records are preferred; otherwise the latest search results are used. AI does not independently retrieve or verify a call, and metadata-level matches do not establish applicant eligibility. The ordinary funding search sends query terms, applicant-category codes, status, and page rather than the full project narrative.

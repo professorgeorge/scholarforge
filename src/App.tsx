@@ -1,10 +1,13 @@
 import { ApplicationsPane } from './components/ApplicationsPane';
+import { ConceptStudioPane } from './components/ConceptStudioPane';
+import { FundingFinderPane } from './components/FundingFinderPane';
 import { CounterevidencePane } from './components/CounterevidencePane';
 import { InstrumentFinderPane } from './components/InstrumentFinderPane';
 import { useProjectState } from './components/useProjectState';
 import { ToolAiAssistant } from './components/ToolAiAssistant';
 import { ProjectWorkspace } from './components/ProjectWorkspace';
-import { getActiveProjectId } from './services/projectService';
+import { getActiveProjectId, getProject, setToolState, checkpointProjectTool } from './services/projectService';
+import { conceptHandoffFields } from './services/conceptStudioService';
 import React, { useState, useEffect } from 'react';
 import { Navbar, type AcademicPillar, type WorkflowLensId, WORKFLOW_LENSES } from './components/Navbar';
 import { ScholarLaunchpad } from './components/ScholarLaunchpad';
@@ -111,6 +114,13 @@ export const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('scholarforge_active_pillar', activePillar);
   }, [activePillar]);
+  useEffect(() => {
+    const retain = () => { if (activePillar !== 'hub') checkpointProjectTool(activePillar, projectId); };
+    const onHidden = () => { if (document.visibilityState === 'hidden') retain(); };
+    window.addEventListener('pagehide', retain);
+    document.addEventListener('visibilitychange', onHidden);
+    return () => { window.removeEventListener('pagehide', retain); document.removeEventListener('visibilitychange', onHidden); retain(); };
+  }, [activePillar, projectId]);
 
   const [activeLens, setActiveLens] = useState<WorkflowLensId>('full');
   const [isSpotlightOpen, setIsSpotlightOpen] = useState<boolean>(false);
@@ -214,6 +224,8 @@ export const App: React.FC = () => {
   const [literatureTopic, setLiteratureTopic] = useProjectState('App.literatureTopic', '');
   const [literatureFocus, setLiteratureFocus] = useProjectState('App.literatureFocus', '');
   const [literatureAutoSearch, setLiteratureAutoSearch] = useState(false);
+  const [conceptNarrative, setConceptNarrative] = useProjectState('ConceptStudio.incomingNarrative', '');
+  const [manuscriptRepositoryRequest, setManuscriptRepositoryRequest] = useState(0);
   const [standaloneReferences, setStandaloneReferences] = useState<{ text: string; filename?: string } | null>(null);
 
   useEffect(() => {
@@ -587,12 +599,12 @@ export const App: React.FC = () => {
         onSelectLens={setActiveLens}
       />
 
-      <ProjectWorkspace navigate={setActivePillar} restoreManuscript={handleManuscriptUpdate} llmConfig={llmConfig} />
+      <ProjectWorkspace navigate={setActivePillar} restoreManuscript={handleManuscriptUpdate} llmConfig={llmConfig} manuscriptRequest={manuscriptRepositoryRequest} />
 
       {/* Active Manuscript Bar (Persistent Session Memory & 1-Click Handoffs) */}
       <ActiveManuscriptBar
         manuscript={activeManuscript}
-        onManuscriptLoaded={handleManuscriptUpdate}
+        onViewVersions={() => setManuscriptRepositoryRequest(previous => previous + 1)}
         onClearManuscript={handleClearManuscript}
         onNavigateToPillar={(pillar) => {
           setActivePillar(pillar);
@@ -629,7 +641,7 @@ export const App: React.FC = () => {
         {/* Isolated Pillar Error Boundary protects user workspace session */}
         <PillarErrorBoundary key={activePillar} pillarName={activePillar.toUpperCase()}>
 
-        {activePillar !== 'hub' && <ToolAiAssistant key={activePillar} tool={activePillar} config={llmConfig} onConfigure={() => setIsSettingsOpen(true)} />}
+        {activePillar !== 'hub' && activePillar !== 'concept' && <ToolAiAssistant key={activePillar} tool={activePillar} config={llmConfig} onConfigure={() => setIsSettingsOpen(true)} />}
 
         {/* HOME: SCHOLARFORGE UTILITIES HUB */}
         {activePillar === 'hub' && (
@@ -648,7 +660,10 @@ export const App: React.FC = () => {
               onOpenCart={() => setIsCartOpen(true)}
               onOpenBinder={() => setIsBinderOpen(true)}
               onStartResearch={(request) => {
-                if (request.mode === 'topic') {
+                if (request.mode === 'concept') {
+                  setConceptNarrative(request.text);
+                  setActivePillar('concept');
+                } else if (request.mode === 'topic') {
                   setLiteratureTopic(request.text);
                   setPicoInitialQuestion(request.text);
                   setLiteratureFocus('');
@@ -670,6 +685,21 @@ export const App: React.FC = () => {
             />
           </div>
         )}
+
+        {activePillar === 'concept' && <ConceptStudioPane config={llmConfig} onConfigure={() => setIsSettingsOpen(true)} incomingNarrative={conceptNarrative} onConsumeNarrative={() => setConceptNarrative('')} onHandoff={(target, study, query) => {
+          if (target === 'literature') {
+            setLiteratureTopic(query || study.question);
+            setLiteratureFocus('');
+            setLiteratureAutoSearch(false);
+          } else {
+            const fields = conceptHandoffFields(target, study, getProject()?.tools || {});
+            for (const [key, value] of Object.entries(fields)) setToolState(key, value, projectId);
+          }
+          setActivePillar(target);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }} />}
+
+        {activePillar === 'funding' && <FundingFinderPane onDevelopConcept={() => { setActivePillar('concept'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />}
 
         {/* STAGE 1: DISCOVER */}
         {/* Tool 1A: Federated Multi-Source Literature Discovery */}
@@ -693,9 +723,10 @@ export const App: React.FC = () => {
             {/* Stage 1 Workflow Next-Step Bridge */}
             <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
               <div className="text-xs text-slate-600 dark:text-slate-400">
-                <span className="font-bold text-slate-900 dark:text-white font-serif">Literature discovered?</span> Move to study design or start drafting:
+                <span className="font-bold text-slate-900 dark:text-white font-serif">Literature discovered?</span> Revisit your explanation, move to study design, or start drafting:
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                <button type="button" onClick={() => { setActivePillar('concept'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold cursor-pointer">Concept & Theory Studio</button>
                 <button
                   type="button"
                   onClick={() => { setActivePillar('methodology'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}

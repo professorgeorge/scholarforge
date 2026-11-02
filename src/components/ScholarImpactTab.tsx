@@ -1,4 +1,6 @@
+import { createRetainedTextReader } from '../services/projectFileService';
 import React, { useState, useRef } from 'react';
+import { useProjectState } from './useProjectState';
 import { 
   GraduationCap, 
   Sparkles, 
@@ -29,13 +31,13 @@ interface ScholarImpactTabProps {
 export const ScholarImpactTab: React.FC<ScholarImpactTabProps> = ({
   llmConfig = DEFAULT_LLM_CONFIG
 }) => {
-  const [scholarInput, setScholarInput] = useState<GoogleScholarInput>({
+  const [scholarInput, setScholarInput] = useProjectState<GoogleScholarInput>('ScholarImpactTab.scholarInput', {
     scholarUrlOrId: '',
     pastedScholarText: '',
   });
   const [useAi, setUseAi] = useState(false);
   const [isFetchingImpact, setIsFetchingImpact] = useState<boolean>(false);
-  const [impactProfile, setImpactProfile] = useState<ScholarImpactProfile | null>(null);
+  const [impactProfile, setImpactProfile] = useProjectState<ScholarImpactProfile | null>('ScholarImpactTab.impactProfile', null);
   const [impactError, setImpactError] = useState<string>('');
   const [activeBioTab, setActiveBioTab] = useState<'tenure' | 'speaker' | 'grant'>('tenure');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export const ScholarImpactTab: React.FC<ScholarImpactTabProps> = ({
   };
 
   const handleScholarFileUpload = (file: File) => {
-    const reader = new FileReader();
+    const reader = createRetainedTextReader(file);
     reader.onload = (e) => {
       const content = e.target?.result as string;
       if (content) {

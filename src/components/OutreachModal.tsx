@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useProjectArtifact } from './useProjectArtifact';
 import { 
   X, Copy, Check, Mail, Sparkles, Award, FileEdit, Briefcase, 
   ShieldCheck, Loader2, Wand2, AlertCircle 
@@ -54,6 +55,7 @@ export const OutreachModal: React.FC<OutreachModalProps> = ({
 
   const subject = editedSubject !== null ? editedSubject : generated.subject;
   const body = editedBody !== null ? editedBody : generated.body;
+  useProjectArtifact('OutreachModal.drafts', { candidateId: candidate?.id, candidateName: candidate?.name, subject, body, objective, tone, status: 'Unsent draft' }, !!candidate && !!body);
 
   const handleToneChange = (newTone: OutreachTone) => {
     setTone(newTone);

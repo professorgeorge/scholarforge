@@ -411,6 +411,8 @@ const CORE_UTILITY_TILES: UtilityTileDef[] = [
 ];
 
 export const UTILITY_TILES: UtilityTileDef[] = ([...CORE_UTILITY_TILES,
+  { ...CORE_UTILITY_TILES[0], id: 'funding', simpleTitle: 'Funding Opportunity Finder', subTitle: 'From research idea to funding shortlist', categoryLabel: 'Funding & Opportunities', description: 'Search Grants.gov, EU funding topics, and the UKRI recent feed. Review applicant requirements, dates, and amounts; retain opportunities and fit notes with your project.', tags: ['Grants', 'Applicant eligibility', 'International funding', 'Proposal'], icon: Search, popular: true, primaryActionLabel: 'Find funding opportunities' },
+  { ...CORE_UTILITY_TILES[0], id: 'concept', simpleTitle: 'Concept & Theory Studio', subTitle: 'From puzzle to research pathway', categoryLabel: 'Conceptualization & Theory', description: 'Clarify a puzzling situation, compare framings, examine evidence for a gap, build a conceptual model and compare study pathways.', tags: ['Theory building', 'Research gaps', 'Conceptual framework', 'Proposal'], icon: Compass, popular: true, primaryActionLabel: 'Develop a research idea' },
   { ...CORE_UTILITY_TILES[0], id: 'counterevidence', simpleTitle: 'Null Findings & Counterevidence', subTitle: 'Challenge an idea', description: 'Search across sources for null findings, replications and contrary evidence. Record comparable outcomes, source quotations and your interpretation.', tags: ['Null results', 'Replication', 'Evidence review'], popular: false, primaryActionLabel: 'Examine a proposition' },
   { ...CORE_UTILITY_TILES[2], id: 'instruments', simpleTitle: 'Measurement & Instrument Finder', subTitle: 'Measure with a clear basis', stageId: 'design', stageNumber: '2', stageName: 'Design & Data', categoryLabel: 'Measurement & Methods', description: 'Find candidate scales and protocols. Compare population fit, validation evidence, scoring, burden and permissions.', tags: ['Scales', 'Validation', 'Permissions'], icon: Compass, popular: false, primaryActionLabel: 'Find a measure' },
   { ...CORE_UTILITY_TILES[5], id: 'applications', simpleTitle: 'Research Applications Studio', subTitle: 'Findings into practice', stageId: 'draft', stageNumber: '3', stageName: 'Draft & Ground', categoryLabel: 'Research into Practice', description: 'Connect findings to stakeholders, proposed actions, boundary conditions, risks and a pilot evaluation plan.', tags: ['Practical implications', 'Translation', 'Pilot plan'], icon: BookOpen, popular: false, primaryActionLabel: 'Develop applications' },
@@ -440,7 +442,7 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
   currentManuscriptWordCount = 0,
 }) => {
   const [mode, setMode] = useState<ResearchStartMode>('topic');
-  const [inputs, setInputs] = useState<Record<ResearchStartMode, { text: string; filename?: string }>>({ topic: { text: '' }, manuscript: { text: '' }, references: { text: '' } });
+  const [inputs, setInputs] = useState<Record<ResearchStartMode, { text: string; filename?: string }>>({ concept: { text: '' }, topic: { text: '' }, manuscript: { text: '' }, references: { text: '' } });
   const [toolSearch, setToolSearch] = useState('');
   const [fileError, setFileError] = useState('');
   const input = inputs[mode];
@@ -518,7 +520,7 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300">Choose a task, add your material, then continue to the right tool.</p>
           </div>
 
-          <fieldset disabled={isProcessingFile} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <fieldset disabled={isProcessingFile} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <legend className="sr-only">Choose your starting task</legend>
             {(Object.keys(RESEARCH_START_OPTIONS) as ResearchStartMode[]).map((id) => {
               const task = RESEARCH_START_OPTIONS[id];
@@ -549,8 +551,8 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div id="research-start-next" className="max-w-xl text-xs leading-relaxed text-slate-600 dark:text-slate-400">
                 <p>{option.next}</p>
-                {mode !== 'manuscript' && <p className="mt-1">Your active manuscript stays unchanged.</p>}
-                {mode === 'manuscript' && currentManuscriptWordCount > 0 && <p className="mt-1 font-semibold text-amber-800 dark:text-amber-300">Continuing replaces the active manuscript ({currentManuscriptWordCount.toLocaleString()} words) with this draft.</p>}
+                {mode !== 'manuscript' && currentManuscriptWordCount > 0 && <p className="mt-1">Your current manuscript stays unchanged.</p>}
+                {mode === 'manuscript' && currentManuscriptWordCount > 0 && <p className="mt-1 font-semibold text-amber-800 dark:text-amber-300">Continuing selects this draft as the current manuscript. The previous draft ({currentManuscriptWordCount.toLocaleString()} words) remains in saved versions.</p>}
               </div>
               <button type="submit" disabled={!input.text.trim() || isProcessingFile} className="btn-academic-primary px-4 py-3 inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed sm:max-w-72">{option.action}<ArrowRight className="w-4 h-4" /></button>
             </div>

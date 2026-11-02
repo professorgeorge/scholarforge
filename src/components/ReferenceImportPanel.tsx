@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { AcademicPaper } from '../types/citation';
 import { fetchZoteroLibrary, importReferences } from '../services/libraryInteropService';
+import { getActiveProjectId } from '../services/projectService';
+import { retainProjectFile } from '../services/projectFileService';
 
 interface ReferenceImportPanelProps {
   disabled?: boolean;
@@ -17,6 +19,7 @@ export function ReferenceImportPanel({ disabled, onImport }: ReferenceImportPane
   React.useEffect(() => () => abort.current?.abort(), []);
 
   const readFile = async (file: File) => {
+    const projectId = getActiveProjectId();
     setBusy(true);
     setError('');
     setPreview([]);
@@ -26,6 +29,7 @@ export function ReferenceImportPanel({ disabled, onImport }: ReferenceImportPane
       if (!['ris', 'bib', 'json'].includes(extension || '')) throw new Error('Choose a RIS, BibTeX, or CSL/Zotero JSON file.');
       const records = importReferences(await file.text(), extension === 'ris' ? 'ris' : extension === 'bib' ? 'bib' : 'json');
       if (!records.length) throw new Error('No bibliographic records were found. Export a RIS, BibTeX, or CSL-JSON file and try again.');
+      await retainProjectFile(file, projectId);
       setPreview(records);
       setOrigin(`File import: ${file.name}`);
     } catch (failure) {

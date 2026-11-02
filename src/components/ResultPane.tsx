@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useProjectState } from './useProjectState';
 import type { 
   CitationOptions, 
   Claim
@@ -82,12 +83,14 @@ export const ResultPane: React.FC<ResultPaneProps> = ({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Direct Manuscript Canvas Editor State
-  const [editableText, setEditableText] = useState<string>(originalText);
+  const [editableText, setEditableText] = useProjectState<string>('ResultPane.editableText', originalText);
+  const [sourceText, setSourceText] = useProjectState('ResultPane.sourceText', '');
   const [isSavingEdit, setIsSavingEdit] = useState<boolean>(false);
   const [editSuccessMsg, setEditSuccessMsg] = useState<string | null>(null);
 
   React.useEffect(() => {
-    setEditableText(originalText);
+    if (sourceText && sourceText !== originalText) setEditableText(originalText);
+    setSourceText(originalText);
   }, [originalText]);
 
   const handleSaveAndReground = () => {
@@ -120,10 +123,10 @@ export const ResultPane: React.FC<ResultPaneProps> = ({
 
   // Peer-Review AI Revision state
   const [showRevisionPanel, setShowRevisionPanel] = useState<boolean>(false);
-  const [revisionComments, setRevisionComments] = useState<string>('');
+  const [revisionComments, setRevisionComments] = useProjectState<string>('ResultPane.revisionComments', '');
   const [isRevising, setIsRevising] = useState<boolean>(false);
   const [revisionError, setRevisionError] = useState<string>('');
-  const [versionHistory, setVersionHistory] = useState<string[]>([]);
+  const [versionHistory, setVersionHistory] = useProjectState<string[]>('ResultPane.versionHistory', []);
   const [isPromptsOpen, setIsPromptsOpen] = useState<boolean>(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 

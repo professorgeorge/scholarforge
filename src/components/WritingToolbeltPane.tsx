@@ -1,4 +1,5 @@
 import { useProjectState } from './useProjectState';
+import { useProjectArtifact } from './useProjectArtifact';
 import React, { useState, useMemo } from 'react';
 import {
   FileText,
@@ -115,28 +116,32 @@ export const WritingToolbeltPane: React.FC<WritingToolbeltPaneProps> = ({
 
   // 3. BibTeX Cleaner State
   const [bibtexInput, setBibtexInput] = useProjectState<string>('WritingToolbeltPane.bibtexInput', initialBibtex);
+  const [sourceText, setSourceText] = useProjectState('WritingToolbeltPane.sourceText', { title: '', abstract: '', bibliography: '' });
 
   // Sync props when active manuscript changes
   React.useEffect(() => {
-    if (initialTitle) {
+    if (initialTitle && ((!topicInput && !budgetTitle) || (sourceText.title && sourceText.title !== initialTitle))) {
       setTopicInput(initialTitle);
       setBudgetTitle(initialTitle);
       if (!budgetRunningHead) {
         setBudgetRunningHead(initialTitle.slice(0, 50).toUpperCase());
       }
     }
+    setSourceText(previous => ({ ...previous, title: initialTitle }));
   }, [initialTitle]);
 
   React.useEffect(() => {
-    if (initialAbstract) {
+    if (initialAbstract && (!budgetAbstract || (sourceText.abstract && sourceText.abstract !== initialAbstract))) {
       setBudgetAbstract(initialAbstract);
     }
+    setSourceText(previous => ({ ...previous, abstract: initialAbstract }));
   }, [initialAbstract]);
 
   React.useEffect(() => {
-    if (initialBibtex) {
+    if (initialBibtex && (!bibtexInput || (sourceText.bibliography && sourceText.bibliography !== initialBibtex))) {
       setBibtexInput(initialBibtex);
     }
+    setSourceText(previous => ({ ...previous, bibliography: initialBibtex }));
   }, [initialBibtex]);
 
   const handleCopy = (text: string, key: string) => {
@@ -344,6 +349,8 @@ export const WritingToolbeltPane: React.FC<WritingToolbeltPaneProps> = ({
       })
       .replace(/^\s*\n/gm, '');
   }, [bibtexInput]);
+
+  useProjectArtifact('WritingToolbeltPane.outputs', { generatedTitles, cleanedBibtex, budget: { titleWordCount, runningHeadCharCount, abstractWordCount, highlightCount, budgetSpecs, sectionBreakdown } }, !!(topicInput.trim() || bibtexInput.trim() || budgetTitle.trim() || budgetAbstract.trim() || budgetRunningHead.trim() || budgetHighlights.trim()));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">

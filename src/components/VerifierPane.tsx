@@ -1,3 +1,4 @@
+import { createRetainedTextReader } from '../services/projectFileService';
 import { useProjectState } from './useProjectState';
 import React, { useState, useRef, useEffect } from 'react';
 import {
@@ -109,7 +110,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
   const [statusFilter, setStatusFilter] = useState<'all' | 'verified' | 'discrepancy' | 'not_found' | 'retracted'>('all');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
-  const [forensicMap, setForensicMap] = useState<Record<string, CitationForensicReport>>({});
+  const [forensicMap, setForensicMap] = useProjectState<Record<string, CitationForensicReport>>('VerifierPane.forensicMap', {});
   const [analyzingForensicId, setAnalyzingForensicId] = useState<string | null>(null);
   const [forensicNotice, setForensicNotice] = useState<string | null>(null);
   const [showCleanExportMenu, setShowCleanExportMenu] = useState<boolean>(false);
@@ -219,7 +220,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
+    const reader = createRetainedTextReader(file);
     reader.onload = (evt) => {
       const content = evt.target?.result;
       if (typeof content === 'string') {
@@ -241,7 +242,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
     setIsDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      const reader = new FileReader();
+      const reader = createRetainedTextReader(file);
       reader.onload = (evt) => {
         const content = evt.target?.result;
         if (typeof content === 'string') {

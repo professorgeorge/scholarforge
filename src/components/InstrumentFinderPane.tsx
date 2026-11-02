@@ -13,7 +13,7 @@ export function InstrumentFinderPane() {
   const [language, setLanguage] = useProjectState('InstrumentFinderPane.language', '');
   const [query, setQuery] = useProjectState('InstrumentFinderPane.query', '');
   const [profiles, setProfiles] = useProjectState<InstrumentProfile[]>('InstrumentFinderPane.profiles', []);
-  const [draft, setDraft] = useState<InstrumentProfile | null>(null);
+  const [draft, setDraft] = useProjectState<InstrumentProfile | null>('InstrumentFinderPane.draft', null);
   const [errors, setErrors] = useState<string[]>([]);
   const [notice, setNotice] = useState('');
   const choose = (source: AcademicPaper) => { setDraft({ id: crypto.randomUUID(), name: '', construct, population: '', language: '', burden: '', scoring: '', validationQuote: '', locator: '', sourceExcerpt: '', referenceRole: 'unknown', permission: 'unknown', permissionUrl: '', permissionNotes: '', source }); setErrors([]); setNotice(''); };

@@ -13,9 +13,15 @@ npm ci
 npm run dev
 ```
 
-**Start here** offers three explicit tasks: find literature, work on a manuscript, or check references. Material stays staged until you continue. Topics and standalone reference checks preserve the active manuscript; opening a draft in Manuscript Studio makes it the active manuscript. Searches and reference verification start only when you run them in their tools. Use **Find a tool** to search the separate utility catalog.
+**Start here** offers four explicit tasks: develop a research idea, find literature, work on a manuscript, or check references. Material stays staged until you continue. Concept narrations, topics, and standalone reference checks preserve the active manuscript; opening a draft in Manuscript Studio makes it the active manuscript. Searches and reference verification start only when you run them in their tools. Use **Find a tool** to search the separate utility catalog.
 
-Open **Project workspace** above the active manuscript to create or switch projects. Existing manuscript, cart, and binder content is copied into the first project. Legacy originals are retained.
+Open **Project repository** to find and download the active project's work. Tool inputs, drafts, retrieved sources, generated results, and AI reviews are collected automatically. Meaningful result changes retain snapshots; leaving a tool also records a working checkpoint. Existing saved work appears without another upload or filing step. Retrieved records remain distinct from screened evidence and the curated shared library.
+
+The repository offers searchable categories, readable previews, individual JSON/Markdown downloads, manuscript versions, original retained files, and a complete ZIP with a restorable backup. The ZIP includes source-reference exports when available. Downloads include full structured data even when long readable lists are abbreviated. New document and text imports retain original files up to 40 MB as well as extracted text. Older imports may have extracted text only. Keep external backups: storage is local to this browser, with no cloud synchronization.
+
+**Current manuscript** identifies the one draft shared by manuscript-oriented tools. The indicator appears only when a draft is selected; it offers **Open in Studio**, **Saved versions**, and an explanation of its role. Import or paste a draft through the home-page manuscript task or Manuscript Studio. Choosing a saved version in the repository makes it current; stopping its use leaves saved versions intact. No separate “memory activation” or upload step is needed.
+
+Create, switch, rename, or restore projects through repository settings. Restoration creates a separate copy. The first project inherits existing manuscript, cart, and binder records; legacy originals remain available for recovery. The separate **Research workbench** retains logged searches, screening, evidence entry, planning, reporting, and decision-recording activities; their saved records also appear in the repository.
 
 ## Project workbench
 
@@ -31,11 +37,11 @@ Open **Project workspace** above the active manuscript to create or switch proje
 
 ## Existing utilities
 
-The suite offers fifteen utilities organized in four stages:
+The suite offers seventeen utilities organized in four stages:
 
 | Stage | Utilities |
 |---|---|
-| Discover | Federated literature search; PICO strategy builder; Null Findings & Counterevidence Finder |
+| Discover | Concept & Theory Studio; Funding Opportunity Finder; federated literature search; PICO strategy builder; Null Findings & Counterevidence Finder |
 | Design & Data | Methodology Compass; Measurement & Instrument Finder; Synthetic Data Forge; IRB preparation |
 | Draft & Ground | Manuscript Studio; Claims Workbench; Research Applications Studio; writing utilities |
 | Audit & Publish | Reference audit; journal discovery; anonymizer; scholar/reviewer finder |
@@ -43,6 +49,10 @@ The suite offers fifteen utilities organized in four stages:
 The command palette, research cart, binder, citation styles, and local or external model configuration remain available.
 
 ## Findings, counterevidence, and measurement
+
+**Concept & Theory Studio** guides a short narration through puzzle clarification, alternative framings, literature-gap assessment, conceptual explanation, methodological pathways, and an exportable research concept brief. Each step offers connected AI reviews using the existing model settings and editable, bounded context. AI wording is appended only through an explicit action and remains a draft. No model connection is needed for manual work.
+
+The studio supports scholarly searches, reference-manager imports, saved project sources, source quotations, competing explanations, relationship/process/typological/interpretive models, and study-pathway comparison. A candidate gap becomes user-reviewed only after a working frame, question, coverage notes, competing-work assessment, and matching source passages are recorded. This does not certify novelty or exhaustive coverage. Changed upstream inputs flag dependent reviews for rechecking. Briefs retain missing details and review flags and can be saved to the binder or exported as Markdown/JSON. Explicit handoffs fill Literature Search, Counterevidence, and Instrument Finder inputs or append context to Methodology Compass. Cited sources can be kept in the shared project library.
 
 **Research Applications Studio** creates editable finding → stakeholder → action cards with evidence locations, boundary conditions, risks, pilot plans, and proposed success measures. Load a recorded project claim or enter a finding. Export a Markdown brief or JSON, or save the brief to the binder. Proposed benefits remain distinct from demonstrated outcomes.
 
@@ -155,3 +165,26 @@ All quantitative datasets, Likert scale items, Monte Carlo matrices, participant
 
 **Under no circumstances should synthetic simulation data generated by ScholarForge be submitted, published, represented, or relied upon as genuine empirical observations or human subject research.** Users are solely responsible for ensuring adherence to Committee on Publication Ethics (COPE) guidelines and Institutional Review Board (IRB) ethical standards.
 
+
+## Funding Opportunity Finder
+
+Find the tool in **Discover**, the tool finder, the proposal workbench, or the Concept Studio handoff. Describe the funding idea, applicant organisation or individual, applicant country, project location, purpose, and constraints. Edit the query before searching. Grants.gov applies applicant-category codes with unrestricted/clarification categories retained; EU and UKRI eligibility remains a source-document review. Country, project location, purpose, and constraints inform fit notes and explicit AI reviews, not verified remote eligibility filters.
+
+Live connectors cover Grants.gov search and detailed conditions, EU public funding-topic search, and an optional UKRI recent RSS feed. Wellcome and the source portals are linked as additional official-site discovery routes; linked sites are not counted as searched. No API keys are required for these connectors. Simpler.Grants.gov is not a second independent source in this implementation.
+
+Each API batch is bounded to 20 records per source, with explicit pagination, source counts, failures, and coverage limits. UKRI provides only recent feed leads. Source status and supplied dates are retained separately: records whose supplied dates have passed are excluded from current-result views, including when the source labels them open. Missing dates or amounts stay unknown. Local award filters use overlapping reported ranges in one currency, with no currency conversion or assumption that a programme budget is an individual award.
+
+Retrieve Grants.gov conditions explicitly, review category conflicts and remaining country/investigator/consortium rules, retain a shortlist, and write fit notes. Changed applicant context or conditions flag notes for rechecking. Searches, results, conditions, shortlists, and notes are retained in the project repository. Export the shortlist as Markdown/CSV, download all funding records as JSON, or save a brief to the binder. AI can refine terms or compare supplied records; it does not search independently, create opportunities, certify eligibility, or predict funding success.
+
+### Running funding connectors
+
+Both `npm run dev` and `npm run preview` include the fixed-host funding proxy. For a built local application, use Node.js 22.13+ and run:
+
+```bash
+npm run build
+npm start
+```
+
+The built application is served at `http://127.0.0.1:4173/` by default. `PORT` and `SCHOLARFORGE_HOST` configure the server. A plain static-file host does not supply `/api/funding/search` and `/api/funding/detail`; deploy the Node server or provide equivalent routes. The UI reports a missing connector rather than treating it as a valid zero-result search. Upstream requests use allowlisted official hosts, bounded responses, timeouts, five-minute caching, and no applicant credentials or application-submission endpoints.
+
+Source documentation: [Grants.gov API](https://www.grants.gov/api/api-guide), [Grants.gov API terms](https://www.grants.gov/api/terms-conditions), [EU Funding & Tenders APIs](https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/support/apis), [UKRI funding finder and feed](https://www.ukri.org/opportunity/).

@@ -37,7 +37,7 @@ export type AcademicPillar =
   | 'synthetic' 
   | 'irb' 
   | 'writing' 
-  | 'anonymizer' | 'applications' | 'counterevidence' | 'instruments';
+  | 'anonymizer' | 'applications' | 'counterevidence' | 'instruments' | 'concept' | 'funding';
 
 export type ResearchStage = 'discover' | 'design' | 'draft' | 'publish';
 
@@ -69,6 +69,8 @@ export const RESEARCH_STAGES: StageDef[] = [
     icon: '🔍',
     defaultPillar: 'literature',
     tools: [
+      { id: 'concept', label: 'Concept & Theory Studio', icon: Compass, description: 'Develop a puzzle, examine gaps, build explanations and compare study pathways' },
+      { id: 'funding', label: 'Funding Opportunity Finder', icon: Search, description: 'Search official funding calls and compare applicant requirements, deadlines, and award ranges' },
       { id: 'literature', label: 'Federated Literature Search', icon: Search, description: 'Multi-source discovery with PubMed, DataCite, source status & reference imports' },
       { id: 'counterevidence', label: 'Null Findings & Counterevidence', icon: Search, description: 'Search and document null results, replications and contrary evidence' },
       { id: 'pico', label: 'PICO Systematic Strategy', icon: Compass, description: 'Clinical & PRISMA query formulator for PubMed, Cochrane, Scopus & Web of Science' },
@@ -140,13 +142,13 @@ export const WORKFLOW_LENSES: WorkflowLensDef[] = [
     label: 'All Stages', 
     icon: '🔭', 
     pillars: RESEARCH_STAGES.flatMap(stage => stage.tools.map(tool => tool.id)),
-    description: 'All 4 research lifecycle stages (15 utilities)'
+    description: 'All 4 research lifecycle stages (17 utilities)'
   },
   { 
     id: 'review', 
     label: 'Literature & Search', 
     icon: '📖', 
-    pillars: ['literature', 'pico', 'counterevidence', 'claims', 'verify'],
+    pillars: ['concept', 'literature', 'pico', 'counterevidence', 'claims', 'verify'],
     description: 'Literature search, PICO matrix, PRISMA, and DOI auditing' 
   },
   { 
@@ -425,7 +427,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className={`text-[10px] hidden lg:block ${
                   activePillar === 'hub' ? 'text-blue-200' : 'text-slate-400'
                 }`}>
-                  15 Tools
+                  {RESEARCH_STAGES.reduce((count, stage) => count + stage.tools.length, 0)} Tools
                 </div>
               </div>
             </button>

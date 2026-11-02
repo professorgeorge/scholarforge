@@ -103,7 +103,7 @@ export const ClaimsWorkbenchPane: React.FC<ClaimsWorkbenchPaneProps> = ({
   const [copiedDraft, setCopiedDraft] = useState(false);
   const [cartSavedAll, setCartSavedAll] = useState(false);
   const [studioInserted, setStudioInserted] = useState(false);
-  const [counterEvidenceMap, setCounterEvidenceMap] = useState<Record<string, { counterClaim: string; papers: AcademicPaper[] }>>({});
+  const [counterEvidenceMap, setCounterEvidenceMap] = useProjectState<Record<string, { counterClaim: string; papers: AcademicPaper[] }>>('ClaimsWorkbenchPane.counterEvidenceMap', {});
   const [isTestingCounter, setIsTestingCounter] = useState(false);
 
   useEffect(() => {

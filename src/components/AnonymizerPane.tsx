@@ -1,4 +1,5 @@
 import { useProjectState } from './useProjectState';
+import { useProjectArtifact } from './useProjectArtifact';
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   ShieldCheck,
@@ -35,12 +36,14 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
   initialText = ''
 }) => {
   const [inputText, setInputText] = useProjectState<string>('AnonymizerPane.inputText', initialText);
+  const [sourceText, setSourceText] = useProjectState('AnonymizerPane.sourceText', '');
   const [copied, setCopied] = useState<boolean>(false);
   const [studioSent, setStudioSent] = useState<boolean>(false);
 
   useEffect(() => {
     if (initialText && initialText.trim()) {
-      setInputText(initialText);
+      if (!inputText || (sourceText && sourceText !== initialText)) setInputText(initialText);
+      setSourceText(initialText);
     }
   }, [initialText]);
 
@@ -127,6 +130,8 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
 
     return { output: text, count, items };
   }, [inputText]);
+
+  useProjectArtifact('AnonymizerPane.output', { ...anonymizationResult, status: 'Proposed redactions; review for remaining identifiers' }, !!inputText.trim());
 
   const handleCopy = () => {
     if (!anonymizationResult.output) return;

@@ -3,6 +3,8 @@ import type { ResearchProject } from './projectService';
 import type { AcademicPaper } from '../types/citation';
 import { callRawLLM, type LLMConfig } from './llmService';
 import { isLlmConfigured } from './aiScholarExtensions';
+import type { ConceptStudy } from './conceptStudioService';
+import { fundingFit, nextFundingDeadline, fundingDeadlinePassed, fundingDateWarning, type FundingOpportunity, type FundingProfile, type FundingRun } from './fundingService';
 
 export type AiToolId = Exclude<AcademicPillar, 'hub'>;
 interface ToolReviewDefinition {
@@ -11,6 +13,27 @@ interface ToolReviewDefinition {
   fields: string[];
 }
 export const TOOL_AI_REVIEWS: Record<AiToolId, ToolReviewDefinition> = {
+  funding: {
+    name: 'Funding Opportunity Finder',
+    tasks: [
+      { id: 'search', label: 'Refine the idea into funding search terms', instruction: 'Turn the supplied funding idea and applicant context into two or three short keyword queries and useful synonyms. Separate project purpose from funder terminology. Ask about missing applicant country, investigator stage, partnerships, and project location. proposedText should contain one short keyword query only. Do not claim searches were run or invent funding calls.' },
+      { id: 'eligibility', label: 'Review supplied eligibility and fit questions', instruction: 'Use only supplied opportunity records, eligibility passages and applicant context. Compare organisational category, applicant country, work location, investigator rules, consortium requirements and cost sharing. Category matches are not eligibility determinations. Quote only supplied text, cite supplied IDs, flag missing call documents and date conflicts. Do not infer international eligibility from a funder region or certify that an applicant is eligible.' },
+      { id: 'compare', label: 'Compare the retained funding shortlist', instruction: 'Compare only supplied records for thematic relevance, explicit eligibility requirements, supplied award ranges and currencies, date conflicts, and preparation needs. Missing amounts remain unknown; programme budgets are not individual awards. Do not invent deadlines, calls, awards, success probabilities or rankings presented as funding likelihood. Cite supplied IDs and propose next verification steps.' },
+    ],
+    fields: ['FundingFinder.profile', 'FundingFinder.query', 'FundingFinder.notes'],
+  },
+  concept: {
+    name: 'Concept & Theory Studio',
+    tasks: [
+      { id: 'puzzle', label: 'Clarify the puzzle and ask the next questions', instruction: 'Separate observations from interpretations and expectations. Identify stakeholders, levels of analysis, assumptions and missing context. Ask at most three useful next questions. Offer a tentative problem framing in proposedText, never an established conclusion.' },
+      { id: 'frames', label: 'Develop alternative problem framings', instruction: 'Offer three distinct conceptual framings with assumptions, scholarly search terms, and tradeoffs. Avoid forcing a variable-based or positivist model. In proposedText draft one clearly provisional problem statement; ask the user which framing fits.' },
+      { id: 'gap', label: 'Challenge the proposed literature gap', instruction: 'Assess the candidate gap only against supplied sources and passages. Distinguish contradiction, mechanism, boundary, measurement and assumption gaps. Explain competing work and missing search coverage. Never infer absence from few or zero results, certify novelty, or describe an AI hypothesis as an established gap. Cite supplied IDs. In proposedText draft a qualified candidate gap with explicit uncertainty.' },
+      { id: 'model', label: 'Develop and challenge the explanation', instruction: 'Review concept definitions, relationships or temporal processes, mechanisms, boundary conditions, rival explanations, disconfirming observations and intended contribution. Accommodate interpretive, typological and process models. Distinguish explanatory hypotheses from established findings and association from causation. In proposedText draft a provisional explanation with rivals and boundary conditions.' },
+      { id: 'pathways', label: 'Compare methodological pathways', instruction: 'Compare two or three methodological pathways for the supplied question and theoretical aim. Explain epistemic fit, sampling and data, analysis, causal or interpretive limits, feasibility and ethics. Do not select a uniquely best method or invent access, data or resources. In proposedText draft a study-pathway decision memo with alternatives and unresolved constraints.' },
+      { id: 'brief', label: 'Review the research concept brief', instruction: 'Review coherence from situation and framing through literature gap, conceptual explanation and proposed study. Identify unsupported novelty claims, ambiguous concepts, rival accounts and feasibility issues. Offer a qualified contribution statement in proposedText. Do not claim a completed study or verified theory.' },
+    ],
+    fields: [],
+  },
   applications: {
     name: 'Research Applications Studio',
     tasks: [
@@ -153,8 +176,32 @@ export function buildToolReviewContext(tool: AiToolId, project?: ResearchProject
     return undefined;
   }
   const state = project?.tools || {};
+  if (tool === 'funding') {
+    const profile = state['FundingFinder.profile'] as FundingProfile | undefined;
+    const records = (state['FundingFinder.opportunities'] || []) as FundingOpportunity[];
+    const shortlist = (state['FundingFinder.shortlist'] || []) as string[];
+    const lastRun = (state['FundingFinder.runs'] as FundingRun[] | undefined)?.at(-1);
+    const candidates = records.filter(item => shortlist.length ? shortlist.includes(item.id) : lastRun?.recordIds.includes(item.id));
+    if (candidates.length > 6) truncated = true;
+    const sources = candidates.slice(0, 6).map((item, index) => ({ id: `F${index + 1}`, originalRecordId: item.id, title: bounded(item.title), officialUrl: item.url, source: item.source, retrievedAt: item.retrievedAt, detailsAt: item.detailsAt, description: bounded(item.description, 0, 1200), sourceReportedStatus: item.statusText, suppliedDeadlineText: bounded(item.deadlineText), nextOrLastSuppliedDate: nextFundingDeadline(item), suppliedDeadlinePassed: fundingDeadlinePassed(item), dateWarning: fundingDateWarning(item), awardFloor: item.floor, awardCeiling: item.ceiling, currency: item.currency, eligibility: bounded(item.eligibility, 0, 2000), applicantCategories: item.applicantLabels, conditions: bounded(item.conditions), costSharing: item.costSharing, assessment: profile ? fundingFit(item, profile).label : 'Applicant profile missing' }));
+    const sourceNotes = state['FundingFinder.notes'] as Record<string, { text?: string }> | undefined;
+    const payload = { tool: TOOL_AI_REVIEWS[tool].name, profile: profile ? { idea: bounded(profile.idea, 0, 2000), applicant: profile.applicant, country: bounded(profile.country, 0, 200), projectLocation: bounded(profile.projectLocation, 0, 200), purpose: bounded(profile.purpose, 0, 200), constraints: bounded(profile.constraints, 0, 1500) } : {}, query: bounded(state['FundingFinder.query'], 0, 300), notes: candidates.slice(0, 6).map(item => ({ opportunity: item.id, text: bounded(sourceNotes?.[item.id]?.text || '', 0, 800) })), searchCoverage: bounded(lastRun?.coverage), sources, contextIsExcerpted: truncated };
+    let text = JSON.stringify(payload, null, 2);
+    while (text.length > MAX_REVIEW_MATERIAL && sources.length) { sources.pop(); payload.contextIsExcerpted = true; truncated = true; text = JSON.stringify(payload, null, 2); }
+    return { text, sourceIds: sources.map(item => item.id), truncated };
+  }
   const fields: Record<string, unknown> = {};
   for (const key of TOOL_AI_REVIEWS[tool].fields) if (state[key] !== undefined) fields[key] = bounded(state[key], 0, /inputText|claimInput|rawBibliography|bibtexInput|baseDraftText|budgetAbstract/.test(key) ? 8000 : 2000);
+  if (tool === 'concept') {
+    const study = state['ConceptStudio.study'] as ConceptStudy | undefined;
+    if (study) {
+      fields.puzzle = bounded({ narrative: study.narrative, observed: study.observed, expected: study.expected, stakeholders: study.stakeholders, level: study.level, assumptions: study.assumptions, unknowns: study.unknowns });
+      fields.framings = bounded({ alternatives: study.frames, selectedFrameId: study.selectedFrameId, question: study.question });
+      fields.gap = bounded({ candidate: study.gap, kind: study.gapKind, coverage: study.coverageNotes, competingWork: study.counterEvidence, evidence: study.evidence, searches: state['ConceptStudio.searches'] });
+      fields.model = bounded({ kind: study.modelKind, explanation: study.explanation, constructs: study.constructs, connections: study.links, propositions: study.propositions, rivals: study.rivals, disconfirmation: study.disconfirmation, contribution: study.contribution });
+      fields.pathways = bounded({ alternatives: study.pathways, selectedPathwayId: study.selectedPathwayId, constraints: study.constraints, decisions: study.decisions });
+    }
+  }
   const manuscript = state.scholarforge_active_manuscript as { rawText?: string; title?: string; abstract?: string } | undefined;
   if (['studio', 'writing', 'journal'].includes(tool) && manuscript) {
     fields.activeManuscript = { title: bounded(manuscript.title), abstract: bounded(manuscript.abstract), draftExcerpt: bounded(manuscript.rawText, 0, 8000) };
@@ -176,6 +223,11 @@ export function buildToolReviewContext(tool: AiToolId, project?: ResearchProject
     }
   }
   if (tool === 'applications') papers = project?.papers || [];
+  if (tool === 'concept') {
+    const retrieved = state['ConceptStudio.papers'];
+    const notes = (state['ConceptStudio.study'] as ConceptStudy | undefined)?.evidence || [];
+    papers = Array.isArray(retrieved) ? [...retrieved].sort((a, b) => Number(notes.some(entry => entry.paperId === b.id)) - Number(notes.some(entry => entry.paperId === a.id))) : [];
+  }
   if (tool === 'counterevidence' || tool === 'instruments') {
     const retrieved = state[tool === 'counterevidence' ? 'CounterevidencePane.papers' : 'InstrumentFinderPane.papers'];
     papers = Array.isArray(retrieved) ? retrieved : [];

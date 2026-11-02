@@ -10,7 +10,7 @@ const review = { summary: 'Provisional review of supplied material.', suggestion
 const project = tools => ({ name: 'Test', question: 'How does work relate to wellbeing?', discipline: 'Social sciences', protocol: 'A proposed observational study.', papers: [], evidence: [], tools });
 
 test('tool AI coverage includes every utility, including ethics, writing, and anonymization', () => {
-  assert.deepEqual(Object.keys(TOOL_AI_REVIEWS).sort(), ['applications','counterevidence','instruments','literature','pico','methodology','synthetic','irb','studio','claims','writing','verify','journal','anonymizer','scholars'].sort());
+  assert.deepEqual(Object.keys(TOOL_AI_REVIEWS).sort(), ['funding','concept','applications','counterevidence','instruments','literature','pico','methodology','synthetic','irb','studio','claims','writing','verify','journal','anonymizer','scholars'].sort());
   for (const definition of Object.values(TOOL_AI_REVIEWS)) {
     assert.ok(definition.tasks.length >= 2);
     assert.equal(new Set(definition.tasks.map(task => task.id)).size, definition.tasks.length);

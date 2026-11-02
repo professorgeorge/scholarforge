@@ -1,5 +1,5 @@
 /** Explicit home-page handoffs keep queries and references out of manuscript memory. */
-export type ResearchStartMode = 'topic' | 'manuscript' | 'references';
+export type ResearchStartMode = 'concept' | 'topic' | 'manuscript' | 'references';
 
 export interface ResearchStartRequest {
   mode: ResearchStartMode;
@@ -15,6 +15,11 @@ export const RESEARCH_START_OPTIONS: Record<ResearchStartMode, {
   action: string;
   next: string;
 }> = {
+  concept: {
+    label: 'Develop a research idea', description: 'Start with a situation that needs explaining.',
+    inputLabel: 'What is puzzling about this situation?', placeholder: 'Describe what happens, what you expected instead, and why the difference matters.',
+    action: 'Open Concept & Theory Studio', next: 'Your narration will be staged for review. Develop alternative framings, examine literature, and compare explanations and study pathways.',
+  },
   topic: {
     label: 'Find literature',
     description: 'Start with a topic or research question.',

@@ -146,7 +146,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
       {
         id: 'pillar-hub',
         title: 'Home: Utilities Hub',
-        description: 'Directory of all 15 ScholarForge research utilities & comprehensive lifecycle view',
+        description: 'Directory of all 17 ScholarForge research utilities & comprehensive lifecycle view',
         category: 'Tools & Features',
         icon: <LayoutGrid className="w-4 h-4 text-blue-600" />,
         keywords: ['hub', 'home', 'overview', 'dashboard', 'tiles', 'utilities', 'start'],
@@ -155,6 +155,8 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
       { id: 'pillar-applications', title: 'Research Applications Studio', description: 'Findings, stakeholders, practical actions and pilot evaluations', category: '3. Draft & Ground', icon: <BookOpen className="w-4 h-4" />, keywords: ['applications', 'practice', 'implications', 'translation'], action: () => onSelectPillar('applications') },
       { id: 'pillar-counterevidence', title: 'Null Findings & Counterevidence Finder', description: 'Null results, replications and contrary evidence', category: '1. Discover', icon: <Search className="w-4 h-4" />, keywords: ['null', 'counterevidence', 'contradiction', 'replication'], action: () => onSelectPillar('counterevidence') },
       { id: 'pillar-instruments', title: 'Measurement & Instrument Finder', description: 'Scales, validation evidence, scoring and permissions', category: '2. Design & Data', icon: <Compass className="w-4 h-4" />, keywords: ['measurement', 'instrument', 'scale', 'psychometric', 'validation'], action: () => onSelectPillar('instruments') },
+      { id: 'pillar-concept', title: 'Concept & Theory Studio', description: 'From a puzzling situation to research questions, evidence-linked gaps, explanations and study pathways', category: '1. Discover', icon: <Compass className="w-4 h-4" />, keywords: ['concept', 'theory', 'conceptualization', 'problem', 'puzzle', 'gap', 'framework', 'proposal'], action: () => onSelectPillar('concept') },
+      { id: 'pillar-funding', title: 'Funding Opportunity Finder', description: 'Official funding calls, applicant requirements, international opportunities and project shortlists', category: '1. Discover', icon: <Search className="w-4 h-4" />, keywords: ['grant', 'grants', 'funding', 'funds', 'opportunity', 'funder', 'nonprofit', 'university', 'proposal', 'EU', 'UKRI'], action: () => onSelectPillar('funding') },
       // --- STAGE 1: DISCOVER ---
       {
         id: 'pillar-literature',

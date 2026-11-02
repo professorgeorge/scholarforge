@@ -118,15 +118,19 @@ export const JournalSentinelPane: React.FC<JournalSentinelPaneProps> = ({
   const [isCoverLetterModalOpen, setIsCoverLetterModalOpen] = useState<boolean>(false);
   const [appliedAbstractSuccess, setAppliedAbstractSuccess] = useState<boolean>(false);
 
-  // Run initial match if title or abstract provided
+  const [sourceText, setSourceText] = useProjectState('JournalSentinelPane.sourceText', '');
+  // Resume saved work without starting another discovery request.
   useEffect(() => {
-    if (initialTitle || initialAbstract) {
-      setTitle(initialTitle);
-      setAbstract(initialAbstract);
-      if (initialFullDraft) setFullDraft(initialFullDraft);
-      runDiscoveryAndAudit(initialTitle, initialAbstract, initialFullDraft, initialReferences);
+    if (initialTitle || initialAbstract || initialFullDraft) {
+      const incoming = JSON.stringify([initialTitle, initialAbstract, initialFullDraft]);
+      if ((!title && !abstract) || (sourceText && sourceText !== incoming)) {
+        setTitle(initialTitle);
+        setAbstract(initialAbstract);
+        setFullDraft(initialFullDraft);
+      }
+      setSourceText(incoming);
     }
-  }, [initialTitle, initialAbstract]);
+  }, [initialTitle, initialAbstract, initialFullDraft]);
 
   // AI Deep Editorial & Semantic Analysis Routine
   const runAiDeepAnalysis = async (

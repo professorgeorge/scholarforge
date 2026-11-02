@@ -1,4 +1,5 @@
 import { useProjectState } from './useProjectState';
+import { useProjectArtifact } from './useProjectArtifact';
 import React, { useState, useMemo } from 'react';
 import {
   ShieldCheck,
@@ -133,6 +134,8 @@ export const IrbTriagePane: React.FC<IrbTriagePaneProps> = ({
     ),
     [state, institutionName, protocolId, studyTitle]
   );
+
+  useProjectArtifact('IrbTriagePane.outputs', { assessment, audit, requiredDocs, formalStatement, informedConsentDoc, exemptionMemoDoc, status: 'Preparation drafts; not ethics approval' }, JSON.stringify(state) !== JSON.stringify(DEFAULT_STATE) || !!institutionName.trim() || !!protocolId.trim() || studyTitle !== 'Investigating Contemporary Empirical & Methodological Workflows' || investigatorName !== 'Principal Investigator');
 
   // Filtered Deficiencies
   const filteredDeficiencies = useMemo(() => {

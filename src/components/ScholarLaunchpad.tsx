@@ -1,4 +1,6 @@
+import { createRetainedTextReader } from '../services/projectFileService';
 import React, { useState, useRef, useEffect } from 'react';
+import { useProjectState } from './useProjectState';
 import { 
   Sparkles, 
   Search, 
@@ -77,18 +79,20 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
   });
 
   // Tab 1: Synthesis Inputs
-  const [topic, setTopic] = useState('');
+  const [topic, setTopic] = useProjectState('ScholarLaunchpad.topic', '');
   const [searchScope, setSearchScope] = useState<number>(25);
 
   // Tab 2: Ground Existing Draft Inputs
-  const [draftText, setDraftText] = useState(() => initialDraftText || '');
+  const [draftText, setDraftText] = useProjectState('ScholarLaunchpad.draftText', () => initialDraftText || '');
+  const [sourceText, setSourceText] = useProjectState('ScholarLaunchpad.sourceText', '');
   const [importedFilename, setImportedFilename] = useState<string | null>(initialFilename || null);
   const [isImportingDocx, setIsImportingDocx] = useState(false);
   const docxInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialDraftText && initialDraftText.trim()) {
-      setDraftText(initialDraftText);
+      if (!draftText || (sourceText && sourceText !== initialDraftText)) setDraftText(initialDraftText);
+      setSourceText(initialDraftText);
       setActiveTab('ground_draft');
     }
     if (initialFilename) {
@@ -97,21 +101,21 @@ export const ScholarLaunchpad: React.FC<ScholarLaunchpadProps> = ({
   }, [initialDraftText, initialFilename]);
 
   // Tab 2: Peer-Review Comments & Critique Inputs
-  const [reviewerCommentsText, setReviewerCommentsText] = useState('');
+  const [reviewerCommentsText, setReviewerCommentsText] = useProjectState('ScholarLaunchpad.reviewerCommentsText', '');
   const [reviewerFilename, setReviewerFilename] = useState<string | null>(null);
   const [isImportingReviewerDocx, setIsImportingReviewerDocx] = useState(false);
   const reviewerFileInputRef = useRef<HTMLInputElement>(null);
 
   // Advanced Empirical Focus & Secondary / Primary Data
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [focus, setFocus] = useState('');
-  const [primaryDataText, setPrimaryDataText] = useState('');
+  const [focus, setFocus] = useProjectState('ScholarLaunchpad.focus', '');
+  const [primaryDataText, setPrimaryDataText] = useProjectState('ScholarLaunchpad.primaryDataText', '');
   const [primaryDataFilename, setPrimaryDataFilename] = useState<string | null>(null);
   const [includeSecondaryData, setIncludeSecondaryData] = useState(true);
   const primaryDataInputRef = useRef<HTMLInputElement>(null);
 
   // Literature Discovery & Export State
-  const [discoveredPapersForExport, setDiscoveredPapersForExport] = useState<AcademicPaper[]>([]);
+  const [discoveredPapersForExport, setDiscoveredPapersForExport] = useProjectState<AcademicPaper[]>('ScholarLaunchpad.discoveredPapersForExport', []);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isSearchingLiteratureOnly, setIsSearchingLiteratureOnly] = useState(false);
 
@@ -243,7 +247,7 @@ Summarize the overarching contribution of the research and its definitive takeaw
         setReviewerCommentsText(result.text);
         setReviewerFilename(result.filename);
       } else {
-        const reader = new FileReader();
+        const reader = createRetainedTextReader(file);
         reader.onload = (event) => {
           const content = event.target?.result as string;
           if (content) {
@@ -282,7 +286,7 @@ Summarize the overarching contribution of the research and its definitive takeaw
         setErrorMsg(`Failed to parse primary data document: ${err.message}`);
       }
     } else {
-      const reader = new FileReader();
+      const reader = createRetainedTextReader(file);
       reader.onload = (event) => {
         const content = event.target?.result as string;
         if (content) {

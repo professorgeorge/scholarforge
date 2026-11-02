@@ -1,11 +1,13 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { fundingMiddleware } from './server/fundingProxy.ts'
 
 function scholarProxyPlugin(): Plugin {
   return {
     name: 'scholar-proxy-plugin',
     configureServer(server) {
+      server.middlewares.use((req, res, next) => { void fundingMiddleware(req, res, next); });
       server.middlewares.use(async (req, res, next) => {
         if (req.url && req.url.startsWith('/api/scholar-profile')) {
           const urlObj = new URL(req.url, 'http://localhost');
@@ -46,6 +48,9 @@ function scholarProxyPlugin(): Plugin {
         }
         next();
       });
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => { void fundingMiddleware(req, res, next); });
     },
   };
 }

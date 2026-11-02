@@ -1,3 +1,4 @@
+import { createRetainedTextReader } from '../services/projectFileService';
 import { useProjectState } from './useProjectState';
 import React, { useState, useRef } from 'react';
 import { 
@@ -123,7 +124,7 @@ export const ResearchStudioPane: React.FC<ResearchStudioPaneProps> = ({
     if (!file) return;
 
     setUploadedFileName(file.name);
-    const reader = new FileReader();
+    const reader = createRetainedTextReader(file);
     reader.onload = (event) => {
       const content = event.target?.result as string;
       if (content) {
