@@ -1,15 +1,12 @@
-import { ApplicationsPane } from './components/ApplicationsPane';
-import { ConceptStudioPane } from './components/ConceptStudioPane';
-import { FundingFinderPane } from './components/FundingFinderPane';
-import { CounterevidencePane } from './components/CounterevidencePane';
-import { InstrumentFinderPane } from './components/InstrumentFinderPane';
+import { readPreference, writePreference } from './services/preferenceStorage';
+import { IrbTriagePane } from './components/IrbTriagePane';
 import { useProjectState } from './components/useProjectState';
 import { ToolAiAssistant } from './components/ToolAiAssistant';
 import { ProjectWorkspace } from './components/ProjectWorkspace';
 import { getActiveProjectId, getProject, setToolState, checkpointProjectTool } from './services/projectService';
 import { conceptHandoffFields } from './services/conceptStudioService';
-import React, { useState, useEffect } from 'react';
-import { Navbar, type AcademicPillar, type WorkflowLensId, WORKFLOW_LENSES } from './components/Navbar';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { Navbar, type AcademicPillar, type WorkflowLensId, WORKFLOW_LENSES, RESEARCH_STAGES } from './components/Navbar';
 import { ScholarLaunchpad } from './components/ScholarLaunchpad';
 import { ResultPane } from './components/ResultPane';
 import { EvidencePane } from './components/EvidencePane';
@@ -17,19 +14,9 @@ import { ManualSearchModal } from './components/ManualSearchModal';
 import { HelpModal } from './components/HelpModal';
 import { SettingsModal } from './components/SettingsModal';
 import { ResearchCartDrawer } from './components/ResearchCartDrawer';
-import { VerifierPane } from './components/VerifierPane';
-import { LiteratureFirstPane } from './components/LiteratureFirstPane';
-import { ClaimsWorkbenchPane } from './components/ClaimsWorkbenchPane';
-import { ScholarSearchPane } from './components/ScholarSearchPane';
-import { JournalSentinelPane } from './components/JournalSentinelPane';
-import { MethodologyCompassPane } from './components/MethodologyCompassPane';
-import { SyntheticDataForgePane } from './components/SyntheticDataForgePane';
 import { CommandPaletteModal } from './components/CommandPaletteModal';
 import { AcademicToolbeltModal } from './components/AcademicToolbeltModal';
 import { ResearchBinderDrawer } from './components/ResearchBinderDrawer';
-import { IrbTriagePane } from './components/IrbTriagePane';
-import { WritingToolbeltPane } from './components/WritingToolbeltPane';
-import { AnonymizerPane } from './components/AnonymizerPane';
 import { ScholarHubView } from './components/ScholarHubView';
 import { ActiveManuscriptBar } from './components/ActiveManuscriptBar';
 import { PillarErrorBoundary } from './components/PillarErrorBoundary';
@@ -63,8 +50,26 @@ import {
 import confetti from 'canvas-confetti';
 import { addMultiplePapersToCart } from './services/cartService';
 
+const ApplicationsPane = lazy(() => import('./components/ApplicationsPane').then(module => ({ default: module.ApplicationsPane })));
+const ConceptStudioPane = lazy(() => import('./components/ConceptStudioPane').then(module => ({ default: module.ConceptStudioPane })));
+const FundingFinderPane = lazy(() => import('./components/FundingFinderPane').then(module => ({ default: module.FundingFinderPane })));
+const CounterevidencePane = lazy(() => import('./components/CounterevidencePane').then(module => ({ default: module.CounterevidencePane })));
+const InstrumentFinderPane = lazy(() => import('./components/InstrumentFinderPane').then(module => ({ default: module.InstrumentFinderPane })));
+const VerifierPane = lazy(() => import('./components/VerifierPane').then(module => ({ default: module.VerifierPane })));
+const LiteratureFirstPane = lazy(() => import('./components/LiteratureFirstPane').then(module => ({ default: module.LiteratureFirstPane })));
+const ClaimsWorkbenchPane = lazy(() => import('./components/ClaimsWorkbenchPane').then(module => ({ default: module.ClaimsWorkbenchPane })));
+const ScholarSearchPane = lazy(() => import('./components/ScholarSearchPane').then(module => ({ default: module.ScholarSearchPane })));
+const JournalSentinelPane = lazy(() => import('./components/JournalSentinelPane').then(module => ({ default: module.JournalSentinelPane })));
+const MethodologyCompassPane = lazy(() => import('./components/MethodologyCompassPane').then(module => ({ default: module.MethodologyCompassPane })));
+const SyntheticDataForgePane = lazy(() => import('./components/SyntheticDataForgePane').then(module => ({ default: module.SyntheticDataForgePane })));
+
+const WritingToolbeltPane = lazy(() => import('./components/WritingToolbeltPane').then(module => ({ default: module.WritingToolbeltPane })));
+const AnonymizerPane = lazy(() => import('./components/AnonymizerPane').then(module => ({ default: module.AnonymizerPane })));
+
 export const App: React.FC = () => {
   const [projectId] = useState(getActiveProjectId);
+  const groundingRun = useRef(0);
+  useEffect(() => () => { groundingRun.current++; }, []);
   const [activeManuscript, setActiveManuscript] = useState<ActiveManuscriptContext | null>(() => loadActiveManuscriptFromStorage());
   const [inputText, setInputText] = useState<string>(() => {
     const saved = loadActiveManuscriptFromStorage();
@@ -76,6 +81,9 @@ export const App: React.FC = () => {
   });
 
   const handleManuscriptUpdate = (text: string, filename?: string) => {
+    groundingRun.current++;
+    setIsProcessing(false);
+    if (text !== inputText) setClaims([]);
     const parsed = parseManuscript(text, filename || uploadedDocName || undefined);
     setActiveManuscript(parsed);
     setInputText(parsed.rawText);
@@ -86,6 +94,9 @@ export const App: React.FC = () => {
   };
 
   const handleClearManuscript = () => {
+    groundingRun.current++;
+    setIsProcessing(false);
+    setClaims([]);
     setActiveManuscript(null);
     setInputText('');
     setUploadedDocName(null);
@@ -95,7 +106,7 @@ export const App: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const [sensitivity, setSensitivity] = useState<'all' | 'moderate' | 'high'>(() => {
-    const saved = localStorage.getItem('scholarforge_claim_sensitivity');
+    const saved = readPreference('scholarforge_claim_sensitivity');
     if (saved === 'all' || saved === 'moderate' || saved === 'high') return saved;
     return 'moderate';
   });
@@ -106,13 +117,13 @@ export const App: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [activePillar, setActivePillar] = useState<AcademicPillar>(() => {
-    const saved = localStorage.getItem('scholarforge_active_pillar');
-    if (saved) return saved as AcademicPillar;
+    const saved = readPreference('scholarforge_active_pillar');
+    if (saved === 'hub' || RESEARCH_STAGES.some(stage => stage.tools.some(tool => tool.id === saved))) return saved as AcademicPillar;
     return 'hub';
   });
 
   useEffect(() => {
-    localStorage.setItem('scholarforge_active_pillar', activePillar);
+    writePreference('scholarforge_active_pillar', activePillar);
   }, [activePillar]);
   useEffect(() => {
     const retain = () => { if (activePillar !== 'hub') checkpointProjectTool(activePillar, projectId); };
@@ -194,7 +205,7 @@ export const App: React.FC = () => {
   const [originalPreRevisionText, setOriginalPreRevisionText] = useProjectState<string>('App.originalPreRevisionText', '');
 
   const [options, setOptions] = useState<CitationOptions>(() => {
-    const saved = localStorage.getItem('scholarforge_citation_options');
+    const saved = readPreference('scholarforge_citation_options');
     if (saved) {
       try {
         return {
@@ -236,29 +247,29 @@ export const App: React.FC = () => {
 
   // Keep options and sensitivity synchronized in localStorage
   useEffect(() => {
-    localStorage.setItem('scholarforge_citation_options', JSON.stringify(options));
+    writePreference('scholarforge_citation_options', JSON.stringify(options));
   }, [options]);
 
 
   useEffect(() => {
-    localStorage.setItem('scholarforge_claim_sensitivity', sensitivity);
+    writePreference('scholarforge_claim_sensitivity', sensitivity);
   }, [sensitivity]);
 
   const [llmConfig, setLlmConfig] = useState<LLMConfig>(() => {
-    const saved = localStorage.getItem('citation_filler_llm_config');
+    const saved = readPreference('citation_filler_llm_config');
     if (!saved) return DEFAULT_LLM_CONFIG;
     try {
       const parsed = JSON.parse(saved);
       if (parsed.provider === 'gemini') {
         if (!parsed.model || parsed.model.includes('1.5') || parsed.model.includes('3.6')) {
           parsed.model = 'gemini-2.5-flash';
-          localStorage.setItem('citation_filler_llm_config', JSON.stringify(parsed));
+          writePreference('citation_filler_llm_config', JSON.stringify(parsed));
         }
       } else if (parsed.provider === 'webgpu') {
         const validWebModels = ['Qwen2.5-1.5B-Instruct-q4f16_1-MLC', 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', 'SmolLM2-1.7B-Instruct-q4f16_1-MLC'];
         if (!validWebModels.includes(parsed.model)) {
           parsed.model = 'Qwen2.5-1.5B-Instruct-q4f16_1-MLC';
-          localStorage.setItem('citation_filler_llm_config', JSON.stringify(parsed));
+          writePreference('citation_filler_llm_config', JSON.stringify(parsed));
         }
       }
       return parsed;
@@ -282,6 +293,7 @@ export const App: React.FC = () => {
     if (!draftText.trim() || isProcessing) return;
 
     handleManuscriptUpdate(draftText, uploadedDocName || 'Draft_Manuscript.docx');
+    const run = ++groundingRun.current;
     setRebuttalPackage(null);
     setOriginalPreRevisionText('');
     setIsProcessing(true);
@@ -339,6 +351,7 @@ export const App: React.FC = () => {
         })
       );
 
+      if (run !== groundingRun.current) return;
       setClaims([...updatedClaims]);
       setProgress({ current: Math.min(i + batchSize, updatedClaims.length), total: updatedClaims.length });
     }
@@ -355,6 +368,8 @@ export const App: React.FC = () => {
 
   // Re-extract claims from the current manuscript using an updated sensitivity setting
   const handleReExtractClaims = (newSensitivity: 'all' | 'moderate' | 'high') => {
+    groundingRun.current++;
+    setIsProcessing(false);
     if (!inputText.trim()) return;
     setSensitivity(newSensitivity);
 
@@ -541,6 +556,7 @@ export const App: React.FC = () => {
   };
 
   const handleResetResearchData = () => {
+    handleClearManuscript();
     setInputText('');
     setClaims([]);
     setProgress({ current: 0, total: 0 });
@@ -550,6 +566,7 @@ export const App: React.FC = () => {
   };
 
   const handleFullFactoryReset = () => {
+    handleClearManuscript();
     setInputText('');
     setClaims([]);
     setProgress({ current: 0, total: 0 });
@@ -640,6 +657,7 @@ export const App: React.FC = () => {
 
         {/* Isolated Pillar Error Boundary protects user workspace session */}
         <PillarErrorBoundary key={activePillar} pillarName={activePillar.toUpperCase()}>
+        <Suspense fallback={<p role="status" className="p-6">Opening research tool…</p>}>
 
         {activePillar !== 'hub' && activePillar !== 'concept' && <ToolAiAssistant key={activePillar} tool={activePillar} config={llmConfig} onConfigure={() => setIsSettingsOpen(true)} />}
 
@@ -1253,6 +1271,7 @@ export const App: React.FC = () => {
           </>
         )}
 
+        </Suspense>
         </PillarErrorBoundary>
       </main>
 
@@ -1291,27 +1310,12 @@ export const App: React.FC = () => {
         activeStyle={options.style}
         onSeedManuscript={(cartPapers) => {
           if (cartPapers.length === 0) return;
-          const syntheticClaims: Claim[] = cartPapers.map((paper, idx) => ({
-            id: `cart-claim-${idx + 1}-${paper.id}`,
-            text: `Empirical research demonstrates key dynamics regarding ${paper.title}.`,
-            rawSentence: `Empirical research demonstrates key dynamics regarding ${paper.title}.`,
-            paragraphIndex: idx,
-            sentenceIndex: 0,
-            startIndex: 0,
-            endIndex: 100,
-            confidence: 'high',
-            keywords: [paper.title.slice(0, 30)],
-            searchQueries: [paper.title],
-            candidatePapers: [paper],
-            selectedPaper: paper,
-            status: 'found',
-            isExcluded: false,
-          }));
-          const draft = cartPapers
-            .map((p) => `Recent scholarly literature investigates ${p.title}.`)
-            .join(' ');
-          setInputText(draft);
-          setClaims(syntheticClaims);
+          const draft = '# Literature reading notes\n\n' + cartPapers.map(paper =>
+            `## ${paper.title}\nSource: ${paper.doi ? `https://doi.org/${paper.doi}` : paper.url || 'Link not supplied'}\n\n[Read the source and record its research question, methods, findings, limitations, and relevant quotations here.]`
+          ).join('\n\n');
+          handleManuscriptUpdate(draft, 'Literature_Reading_Notes.md');
+          setClaims([]);
+          setActivePillar('studio');
           setIsCartOpen(false);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
@@ -1319,6 +1323,7 @@ export const App: React.FC = () => {
 
       {/* Universal Command Palette (Scholar Spotlight) */}
       <CommandPaletteModal
+        onAuditDoi={doi => { setStandaloneReferences({ text: doi, filename: 'DOI lookup' }); setActivePillar('verify'); }}
         isOpen={isSpotlightOpen}
         onClose={() => setIsSpotlightOpen(false)}
         onSelectPillar={(pillar) => {

@@ -14,8 +14,18 @@ export function getCartPapers(): AcademicPaper[] {
 
 export function saveCartPapers(papers: AcademicPaper[]): void {
   try {
-    updateProject({ papers });
-    window.dispatchEvent(new CustomEvent('scholarforge_cart_updated', { detail: papers }));
+    // The cart is the shared source library. Removing a card must not orphan
+    // evidence, imported full text, or an existing screening ledger.
+    const project = getProject();
+    const linked = new Set([
+      ...(project?.evidence || []).map(entry => entry.paperId),
+      ...(project?.documents || []).map(entry => entry.paperId),
+      ...(project?.screening || []).map(entry => entry.paperId),
+    ]);
+    const retained = (project?.papers || []).filter(paper => linked.has(paper.id) && !papers.some(next => next.id === paper.id));
+    const updated = [...papers, ...retained];
+    updateProject({ papers: updated });
+    window.dispatchEvent(new CustomEvent('scholarforge_cart_updated', { detail: updated }));
   } catch (err) {
     console.error('Failed to save research cart', err);
   }

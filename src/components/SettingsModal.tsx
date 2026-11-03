@@ -140,29 +140,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleSaveAll = () => {
-    setLlmConfig(tempLLMConfig);
+    try {
     localStorage.setItem('citation_filler_llm_config', JSON.stringify(tempLLMConfig));
     localStorage.setItem('scholarforge_citation_options', JSON.stringify(options));
     localStorage.setItem('scholarforge_claim_sensitivity', sensitivity);
+    setLlmConfig(tempLLMConfig);
     onClose();
+    } catch { setActiveTab('data'); setResetStatus({ type: 'error', message: 'Settings could not be saved. Browser storage may be full or unavailable. Existing project records have not been deleted.' }); }
   };
 
   const handleResetResearchOnly = () => {
     clearCart();
     clearBinder();
-    setCartCount(0);
+    setCartCount(getCartPapers().length);
     setBinderCount(0);
     onResetResearchData?.();
     setResetStatus({
       type: 'success',
-      message: 'Research workspace cleared: Literature Cart & Research Binder emptied. Your API credentials, AI configurations, and citation styles were safely preserved.'
+      message: 'Current draft and claims cleared; unlinked cart cards and binder clips removed. Linked sources, saved versions, other tool work, repository history, and other projects remain. Provider settings are unchanged.'
     });
   };
 
   const handleFactoryReset = () => {
     clearCart();
     clearBinder();
-    setCartCount(0);
+    setCartCount(getCartPapers().length);
     setBinderCount(0);
     try {
       localStorage.removeItem('citation_filler_llm_config');
@@ -172,13 +174,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       localStorage.removeItem('scholarforge_universal_binder');
     } catch (e) {
       console.error('Storage clear error', e);
+      setResetStatus({ type: 'error', message: 'Workspace clearing started, but saved provider settings could not be fully removed. Browser storage is unavailable; do not assume credentials were erased.' });
+      return;
     }
     setTempLLMConfig(DEFAULT_LLM_CONFIG);
     setShowConfirmFactory(false);
     onFullFactoryReset?.();
     setResetStatus({
       type: 'success',
-      message: 'Full Factory Reset complete! All stored API keys, custom endpoints, research cards, and preferences have been purged.'
+      message: 'Provider settings and citation preferences reset; current draft, claims, unlinked cart cards, and binder clips cleared. Projects, linked sources, saved versions, tool work, and repository history remain.'
     });
   };
 
@@ -794,11 +798,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </h4>
                       </div>
                       <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                        Clears your active manuscript draft, empties the Literature Cart, and purges Research Binder clips.
+                        Clears the current draft and claims, removes unlinked cart cards, and clears binder clips. Sources linked to evidence, full text, or screening, plus saved versions and repository history, remain.
                         <strong className="text-slate-900 dark:text-slate-200"> Preserves your API keys, custom endpoints, citation options, and theme</strong> so you can start a fresh inquiry without re-authenticating.
                       </p>
                       <ul className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5 pt-1">
-                        <li>• Empties Literature Cart &amp; Research Binder clips</li>
+                        <li>• Removes unlinked cart cards and clears Research Binder clips</li>
                         <li>• Clears current draft manuscript &amp; claim extraction buffer</li>
                         <li>• Keeps all Google Gemini, OpenAI, Groq, or Ollama credentials intact</li>
                       </ul>
@@ -825,11 +829,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             Option 2
                           </span>
                           <h4 className="text-sm font-bold text-red-950 dark:text-red-300">
-                            Full Factory Reset (Purge All Data &amp; API Keys)
+                            Reset Workspace and Provider Settings
                           </h4>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                          Permanently deletes <strong className="text-red-800 dark:text-red-300">ALL stored data from this browser</strong>, including saved API tokens (Gemini, OpenAI, Groq, DeepSeek), custom endpoints, literature collections, binder notes, and citation settings. Restores ScholarForge to a brand-new factory state.
+                          Clears the current draft, claims, unlinked cart cards, and binder clips; resets saved provider credentials, endpoints, and citation preferences. Saved projects, linked sources, manuscript versions, other tool work, and repository history remain available.
                         </p>
                       </div>
 
@@ -840,7 +844,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           className="shrink-0 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          <span>Factory Reset...</span>
+                          <span>Reset Settings...</span>
                         </button>
                       )}
                     </div>
@@ -853,7 +857,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           <span>Are you absolutely certain? This will delete your stored API keys.</span>
                         </div>
                         <p className="text-[11px] text-red-800 dark:text-red-300 leading-relaxed">
-                          This action is irreversible. All local cache, private tokens, saved bibliographies, and configurations will be permanently purged.
+                          You will need to re-enter provider credentials. This does not erase projects, linked evidence, tool work, repository history, or external backups.
                         </p>
                         <div className="flex items-center gap-2 pt-1">
                           <button
@@ -862,7 +866,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             className="px-3.5 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-bold cursor-pointer transition flex items-center gap-1 shadow-xs"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                            <span>Yes, Delete Everything &amp; Reset</span>
+                            <span>Reset Workspace &amp; Settings</span>
                           </button>
                           <button
                             type="button"

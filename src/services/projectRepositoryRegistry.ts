@@ -11,7 +11,7 @@ export const REPOSITORY_TOOLS: RepositoryTool[] = [
   { id: 'instruments', name: 'Measurement & Instrument Finder', prefixes: ['InstrumentFinderPane.'], outputs: ['papers', 'searches', 'profiles'] },
   { id: 'synthetic', name: 'Synthetic Data Forge', prefixes: ['SyntheticDataForgePane.'], outputs: ['dataset', 'qualitativePackage'] },
   { id: 'irb', name: 'IRB Preparation', prefixes: ['IrbTriagePane.'], outputs: ['outputs'] },
-  { id: 'studio', name: 'Manuscript Studio', prefixes: ['ResearchStudioPane.', 'ScholarLaunchpad.', 'ResultPane.', 'App.rebuttalPackage', 'App.originalPreRevisionText', 'scholarforge_active_manuscript'], outputs: ['discoveredPapers', 'discoveredPapersForExport', 'discoveredSecondaryData', 'rebuttalPackage', 'coverLetter'] },
+  { id: 'studio', name: 'Manuscript Studio', prefixes: ['ResearchStudioPane.', 'ScholarLaunchpad.', 'ResultPane.', 'SubmissionChecklist.', 'App.rebuttalPackage', 'App.originalPreRevisionText', 'scholarforge_active_manuscript'], outputs: ['discoveredPapers', 'discoveredPapersForExport', 'discoveredSecondaryData', 'rebuttalPackage', 'coverLetter'] },
   { id: 'claims', name: 'Claims Workbench', prefixes: ['ClaimsWorkbenchPane.', 'App.claims'], outputs: ['testedClaims', 'consensusAnalysisMap', 'counterEvidenceMap'] },
   { id: 'applications', name: 'Research Applications Studio', prefixes: ['ApplicationsPane.'], outputs: [] },
   { id: 'writing', name: 'Writing Utilities', prefixes: ['WritingToolbeltPane.'], outputs: ['outputs'] },

@@ -1,3 +1,4 @@
+import { boldTextHtml } from '../services/safeHtml';
 import React, { useState } from 'react';
 import { useProjectState } from './useProjectState';
 import type { 
@@ -632,7 +633,7 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
                   return <hr key={pIdx} className="border-slate-200 dark:border-slate-800 my-4" />;
                 }
                 return (
-                  <p key={pIdx} className="font-serif text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed text-justify" dangerouslySetInnerHTML={{ __html: trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                  <p key={pIdx} className="font-serif text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed text-justify" dangerouslySetInnerHTML={{ __html: boldTextHtml(trimmed) }} />
                 );
               })}
             </div>
@@ -864,7 +865,7 @@ ${manuscriptHtml.replace(/<\/?html.*?>|<\/?head.*?>|<\/?body.*?>/gi, '')}
                       </div>
                       <div className="space-y-2 text-justify">
                         {trimmed.split('\n').map((line, lIdx) => (
-                          <p key={lIdx} dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                          <p key={lIdx} dangerouslySetInnerHTML={{ __html: boldTextHtml(line) }} />
                         ))}
                       </div>
                     </div>

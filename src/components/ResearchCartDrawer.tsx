@@ -188,6 +188,8 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
           {/* Quick Actions Strip */}
           {papers.length > 0 && (
             <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap bg-white dark:bg-slate-900">
+            <p role="note" className="px-6 py-2 text-xs text-slate-600 dark:text-slate-300">This cart is the shared project library. Sources linked to evidence, full text, or screening records are retained when you remove or clear cards.</p>
+
               <div className="flex items-center gap-2 flex-wrap">
                 {onSeedManuscript && (
                   <button
@@ -198,7 +200,7 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    Seed Manuscript Studio
+                    Create Reading Notes in Studio
                   </button>
                 )}
                 <button

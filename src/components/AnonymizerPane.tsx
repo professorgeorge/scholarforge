@@ -1,3 +1,4 @@
+import { proposeAnonymization } from '../services/anonymizationService';
 import { useProjectState } from './useProjectState';
 import { useProjectArtifact } from './useProjectArtifact';
 import React, { useState, useMemo, useEffect } from 'react';
@@ -37,7 +38,9 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
 }) => {
   const [inputText, setInputText] = useProjectState<string>('AnonymizerPane.inputText', initialText);
   const [sourceText, setSourceText] = useProjectState('AnonymizerPane.sourceText', '');
+  const [identifiers, setIdentifiers] = useProjectState('AnonymizerPane.identifiers', '');
   const [copied, setCopied] = useState<boolean>(false);
+  const [copyError, setCopyError] = useState('');
   const [studioSent, setStudioSent] = useState<boolean>(false);
 
   useEffect(() => {
@@ -48,95 +51,15 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
   }, [initialText]);
 
   const anonymizationResult = useMemo(() => {
-    if (!inputText.trim()) {
-      return { output: '', count: 0, items: [] };
-    }
-
-    let text = inputText;
-    let count = 0;
-    const items: { type: string; original: string; replacement: string }[] = [];
-
-    // 1. Self-citation patterns
-    const selfCiteRegex = /(?:in\s+our\s+(?:previous|earlier|prior|recent)\s+(?:work|study|investigation|paper|findings)|as\s+(?:we|the\s+authors|our\s+group)\s+(?:showed|demonstrated|reported|published|established))\s*\(([^)]+)\)/gi;
-    text = text.replace(selfCiteRegex, (match) => {
-      count++;
-      items.push({
-        type: 'Self-Citation Pattern',
-        original: match,
-        replacement: '[Self-citation redacted for double-blind review]'
-      });
-      return `[Self-citation and author identification redacted for double-blind review]`;
-    });
-
-    // 2. Institutional names & Universities
-    const instRegex = /\b(?:at|from|conducted\s+at|approved\s+by)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:University|College|Institute|Hospital|Center|School\s+of\s+[A-Z][a-z]+|Medical\s+Center))\b/g;
-    text = text.replace(instRegex, (_match, inst) => {
-      count++;
-      items.push({
-        type: 'Institutional Affiliation',
-        original: inst,
-        replacement: '[Institutional Affiliation Redacted]'
-      });
-      return `at [Institutional Affiliation Redacted for Review]`;
-    });
-
-    // 3. Grant / IRB / Protocol numbers
-    const grantRegex = /\b(?:NSF|NIH|Grant|Protocol|IRB|CIHR|UKRI|Wellcome\s+Trust|ERC|Horizon)\s*#?\s*([A-Z0-9-]+)\b/gi;
-    text = text.replace(grantRegex, (match) => {
-      count++;
-      items.push({
-        type: 'Grant / Ethics ID',
-        original: match,
-        replacement: '[Grant/Ethics Protocol Redacted]'
-      });
-      return `[Grant / Protocol Number Redacted for Review]`;
-    });
-
-    // 4. Institutional & Personal Email Addresses
-    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(?:edu|ac\.uk|org|com|net|gov)\b/gi;
-    text = text.replace(emailRegex, (match) => {
-      count++;
-      items.push({
-        type: 'Author Email Address',
-        original: match,
-        replacement: '[author-email-redacted@anonymous.org]'
-      });
-      return `[author-email-redacted@anonymous.org]`;
-    });
-
-    // 5. Code Repositories & User Profiles (GitHub, OSF, GitLab)
-    const repoRegex = /https?:\/\/(?:www\.)?(?:github|osf|gitlab)\.(?:com|io)\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)/gi;
-    text = text.replace(repoRegex, (match) => {
-      count++;
-      items.push({
-        type: 'Repository URL with Username',
-        original: match,
-        replacement: 'https://anonymous-repository-redacted.org'
-      });
-      return `https://anonymous-repository-redacted.org/view`;
-    });
-
-    // 6. Acknowledgments Block
-    const ackRegex = /(?:Acknowledgements?|Author\s+Contributions?|Funding\s+Disclosures?):[\s\S]*?(?=\n\n[A-Z]|\n\n#|\n\n$|$)/gi;
-    text = text.replace(ackRegex, (match) => {
-      count++;
-      items.push({
-        type: 'Acknowledgements Block',
-        original: match.slice(0, 60) + '...',
-        replacement: '[Acknowledgements Section Redacted]'
-      });
-      return `[Acknowledgements and Author Disclosures Redacted for Double-Blind Review]`;
-    });
-
-    return { output: text, count, items };
-  }, [inputText]);
+    return proposeAnonymization(inputText, identifiers);
+  }, [inputText, identifiers]);
 
   useProjectArtifact('AnonymizerPane.output', { ...anonymizationResult, status: 'Proposed redactions; review for remaining identifiers' }, !!inputText.trim());
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!anonymizationResult.output) return;
-    navigator.clipboard.writeText(anonymizationResult.output);
-    setCopied(true);
+    try { await navigator.clipboard.writeText(anonymizationResult.output); setCopied(true); setCopyError(''); }
+    catch { setCopyError('Copy failed. Select and copy the proposed output manually.'); }
     setTimeout(() => setCopied(false), 2500);
   };
 
@@ -218,9 +141,14 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
         </div>
       </div>
 
+      {copyError && <p role="alert" className="text-red-700 dark:text-red-300">{copyError}</p>}
       {/* Main Two-Pane Anonymizer Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
+        <label className="lg:col-span-2 text-sm text-slate-800 dark:text-slate-200">Additional names or identifiers to redact (one per line)
+          <textarea aria-label="Additional identifiers to redact" rows={3} value={identifiers} onChange={event => setIdentifiers(event.target.value)} className="block w-full p-3 border rounded-xl bg-white dark:bg-slate-900" placeholder="Author name, institution, project name, ORCID…" />
+          <span className="text-xs">Literal, case-insensitive matches. Inspect all proposed changes. File metadata, figures, and hidden document content are not processed.</span>
+        </label>
         {/* Left: Input Text */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs flex flex-col justify-between">
           <div className="space-y-2">
@@ -251,7 +179,7 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider font-serif flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Sanitized Double-Blind Output:</span>
+                <span>Proposed Redactions — Review Before Use:</span>
               </label>
 
               {anonymizationResult.count > 0 && (
@@ -273,7 +201,7 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white font-serif">
-                      Double-Blind Peer Review Compliance Protocol
+                      Double-Blind Review Preparation
                     </h4>
                     <p className="text-[11px] text-slate-500 font-sans">
                       Automated redaction filters for premier journal refereeing
@@ -377,7 +305,7 @@ export const AnonymizerPane: React.FC<AnonymizerPaneProps> = ({
                 Applied Redactions Audit Log ({anonymizationResult.items.length} Elements Masked):
               </h4>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono">Double-Blind Verification</span>
+            <span className="text-[10px] text-slate-400 font-mono">Proposed changes</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">

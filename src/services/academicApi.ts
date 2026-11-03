@@ -95,7 +95,8 @@ export async function searchOpenAlex(
   query: string, 
   limit = 30, 
   excludePreprints = true,
-  fromYear?: number
+  fromYear?: number,
+  throwOnError = false
 ): Promise<AcademicPaper[]> {
   const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
   if (!cleanQuery) return [];
@@ -130,8 +131,7 @@ export async function searchOpenAlex(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn(`OpenAlex returned HTTP ${response.status}`);
-      return [];
+      throw new Error(`OpenAlex returned HTTP ${response.status}. Please retry later.`);
     }
 
     const data = await response.json();
@@ -234,6 +234,7 @@ export async function searchOpenAlex(
     return papers.slice(0, limit);
   } catch (err) {
     console.warn(`OpenAlex search failed for query: "${query}"`, err);
+    if (throwOnError) throw err;
     return [];
   }
 }
@@ -246,7 +247,8 @@ export async function searchCrossref(
   query: string, 
   limit = 25, 
   excludePreprints = true,
-  fromYear?: number
+  fromYear?: number,
+  throwOnError = false
 ): Promise<AcademicPaper[]> {
   const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
   if (!cleanQuery) return [];
@@ -281,8 +283,7 @@ export async function searchCrossref(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.warn(`Crossref returned HTTP ${response.status}`);
-      return [];
+      throw new Error(`Crossref returned HTTP ${response.status}. Please retry later.`);
     }
 
     const data = await response.json();
@@ -337,6 +338,7 @@ export async function searchCrossref(
     return papers.slice(0, limit);
   } catch (err) {
     console.warn(`Crossref search failed for query: "${query}"`, err);
+    if (throwOnError) throw err;
     return [];
   }
 }

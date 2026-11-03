@@ -88,7 +88,7 @@ export const RESEARCH_STAGES: StageDef[] = [
       { id: 'methodology', label: 'Methodology Compass', icon: Compass, description: 'Quantitative, qualitative & mixed-method design wizard' },
       { id: 'instruments', label: 'Measurement & Instrument Finder', icon: Compass, description: 'Discover and compare measurement evidence, scoring and permissions' },
       { id: 'synthetic', label: 'Synthetic Data Forge', icon: Database, description: 'Monte Carlo data generator & interview discourse simulation' },
-      { id: 'irb', label: 'IRB Ethics Protocol', icon: ShieldCheck, description: 'Ethics exemption determination, risk analysis & consent drafting' },
+      { id: 'irb', label: 'IRB Ethics Protocol', icon: ShieldCheck, description: 'Ethics preparation, risk prompts & consent drafting; institutional review required' },
     ]
   },
   {

@@ -1,3 +1,4 @@
+import { escapeHtml } from './safeHtml';
 import { generateRIS } from './risExporter';
 import type { 
   AcademicPaper, 
@@ -323,7 +324,20 @@ export function formatReferenceEntryHtml(
   style: CitationStyle,
   citationNumber = 1,
   options?: Partial<CitationOptions>
-): string {
+ ): string {
+  if (style === 'bibtex') return `<pre>${escapeHtml(generateBibtexEntry(paper))}</pre>`;
+  // Reference-manager imports and registry metadata are untrusted text.
+  paper = {
+    ...paper,
+    title: escapeHtml(paper.title), venue: escapeHtml(paper.venue),
+    doi: escapeHtml(paper.doi), volume: escapeHtml(paper.volume),
+    issue: escapeHtml(paper.issue), pages: escapeHtml(paper.pages),
+    year: escapeHtml(paper.year) as unknown as number,
+    authors: (paper.authors || []).map(author => ({ ...author,
+      name: escapeHtml(author.name), givenName: escapeHtml(author.givenName),
+      familyName: escapeHtml(author.familyName),
+    })),
+  };
   const authors = paper.authors || [];
   const year = paper.year || 'n.d.';
   const title = paper.title.trim();
@@ -460,10 +474,6 @@ export function formatReferenceEntryHtml(
       return `${citationNumber}. ${authorStr} ${title}. <i>${venue}</i>${volStr}${pages} (${year}).`;
     }
 
-    case 'bibtex': {
-      return `<pre style="font-family: Consolas, monospace; font-size: 10pt; background: #f4f4f4; padding: 8px; border-radius: 4px;">${generateBibtexEntry(paper)}</pre>`;
-    }
-
     default:
       return `${paper.authors[0]?.name || 'Anonymous'} (${year}). ${title}. <i>${venue}</i>.`;
   }
@@ -577,7 +587,7 @@ export function buildAnnotatedDocument(
 
   if (options.style === 'bibtex') {
     bibliography = uniquePapers.map((paper) => generateBibtexEntry(paper));
-    bibliographyHtml = bibliography.map((entry) => `<pre style="font-family: Consolas, monospace; font-size: 9.5pt; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px;">${entry}</pre>`);
+    bibliographyHtml = bibliography.map((entry) => `<pre style="font-family: Consolas, monospace; font-size: 9.5pt; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px;">${escapeHtml(entry)}</pre>`);
   } else if (['apa', 'mla', 'chicago', 'harvard'].includes(options.style)) {
     const sortedAlphabetical = [...uniquePapers].sort((a, b) => {
       const authA = a.authors[0]?.familyName || a.authors[0]?.name || '';
@@ -728,7 +738,7 @@ export function exportToWordHtml(
 
   <!-- Academic Manuscript Body -->
   ${paragraphs.map((p) => {
-    const trimmed = p.trim();
+    const trimmed = escapeHtml(p.trim());
     if (trimmed.startsWith('# ')) {
       return `<h1 style="font-family: 'Times New Roman', Times, serif; font-size: 16.0pt; font-weight: bold; text-align: center; margin-top: 12.0pt; margin-bottom: 18.0pt; text-indent: 0in;">${trimmed.slice(2)}</h1>`;
     }
@@ -824,7 +834,7 @@ export function exportRebuttalToWordHtml(letterText: string, _manuscriptTitle = 
 </head>
 <body>
   ${paragraphs.map((p) => {
-    const trimmed = p.trim();
+    const trimmed = escapeHtml(p.trim());
     if (trimmed.startsWith('# ')) return `<h1>${trimmed.slice(2)}</h1>`;
     if (trimmed.startsWith('## ')) return `<h2>${trimmed.slice(3)}</h2>`;
     if (trimmed.startsWith('### ')) return `<h3>${trimmed.slice(4)}</h3>`;

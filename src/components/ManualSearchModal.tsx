@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useDialogFocus } from './useDialogFocus';
+import React, { useState, useEffect, useRef } from 'react';
 import type { AcademicPaper, Claim } from '../types/citation';
 import { searchOpenAlex, searchCrossref } from '../services/academicApi';
 import { Search, X, Loader2, ExternalLink, Check, AlertCircle } from 'lucide-react';
@@ -22,35 +23,38 @@ export const ManualSearchModal: React.FC<ManualSearchModalProps> = ({
   const [source, setSource] = useState<'openalex' | 'crossref'>('openalex');
   const [hasSearched, setHasSearched] = useState(false);
 
+  const [error, setError] = useState('');
+  const [searchedSource, setSearchedSource] = useState('');
+  const requestId = useRef(0);
+  const dialogRef = useDialogFocus(isOpen && !!claim, onClose);
+
   useEffect(() => {
-    if (claim) {
-      const initialQuery = claim.keywords.slice(0, 4).join(' ') || claim.text.slice(0, 50);
-      setQuery(initialQuery);
-      handleSearch(initialQuery, source);
-    }
-  }, [claim]);
+    ++requestId.current;
+    setQuery(claim ? claim.keywords.slice(0, 4).join(' ') || claim.text.slice(0, 50) : '');
+    setResults([]);
+    setLoading(false);
+    setError('');
+    setHasSearched(false);
+    return () => { ++requestId.current; };
+  }, [claim, isOpen]);
 
   const handleSearch = async (searchQuery: string, currentSource: 'openalex' | 'crossref') => {
     if (!searchQuery.trim()) return;
+    const request = ++requestId.current;
     setLoading(true);
     setHasSearched(true);
-
+    setError('');
+    setResults([]);
+    setSearchedSource(currentSource === 'openalex' ? 'OpenAlex' : 'Crossref');
     try {
-      let papers: AcademicPaper[] = [];
-      if (currentSource === 'openalex') {
-        papers = await searchOpenAlex(searchQuery, 8);
-        if (papers.length === 0) {
-          papers = await searchCrossref(searchQuery, 8);
-        }
-      } else {
-        papers = await searchCrossref(searchQuery, 8);
-      }
-      setResults(papers);
+      const papers = currentSource === 'openalex'
+        ? await searchOpenAlex(searchQuery, 8, true, undefined, true)
+        : await searchCrossref(searchQuery, 8, true, undefined, true);
+      if (request === requestId.current) setResults(papers);
     } catch (err) {
-      console.error(err);
-      setResults([]);
+      if (request === requestId.current) setError(err instanceof Error ? err.message : 'Search failed. Please retry.');
     } finally {
-      setLoading(false);
+      if (request === requestId.current) setLoading(false);
     }
   };
 
@@ -58,7 +62,7 @@ export const ManualSearchModal: React.FC<ManualSearchModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div 
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Manual academic paper search" tabIndex={-1}
         className="w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -77,6 +81,7 @@ export const ManualSearchModal: React.FC<ManualSearchModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close search"
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -106,6 +111,7 @@ export const ManualSearchModal: React.FC<ManualSearchModalProps> = ({
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
+                aria-label="Academic paper search query"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by topic, keywords, paper title, or author name..."
@@ -114,7 +120,7 @@ export const ManualSearchModal: React.FC<ManualSearchModalProps> = ({
             </div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !query.trim()}
               className="btn-academic-primary px-5 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition disabled:opacity-50 cursor-pointer shadow-xs"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
@@ -135,7 +141,7 @@ export const ManualSearchModal: React.FC<ManualSearchModalProps> = ({
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              OpenAlex (Full-Text & Concepts)
+              OpenAlex metadata
             </button>
             <button
               onClick={() => {
@@ -155,6 +161,9 @@ export const ManualSearchModal: React.FC<ManualSearchModalProps> = ({
 
         {/* Results List */}
         <div className="flex-1 overflow-y-auto px-6 py-2 space-y-3">
+          {error && <p role="alert" className="p-3 text-red-700 dark:text-red-300">{error}</p>}
+          {!hasSearched && <p className="p-3 text-slate-500">Edit the suggested query, then choose Search. Results are candidates; inspect the source before using it as evidence.</p>}
+          {hasSearched && <p role="status" className="text-xs text-slate-500">Source: {searchedSource}. Registry records do not establish peer review or support for this claim.</p>}
           {loading && (
             <div className="py-12 flex flex-col items-center justify-center text-slate-500 gap-3">
               <Loader2 className="w-8 h-8 text-blue-800 animate-spin" />
@@ -162,10 +171,10 @@ export const ManualSearchModal: React.FC<ManualSearchModalProps> = ({
             </div>
           )}
 
-          {!loading && results.length === 0 && hasSearched && (
+          {!loading && !error && results.length === 0 && hasSearched && (
             <div className="py-12 flex flex-col items-center justify-center text-slate-500 gap-2">
               <AlertCircle className="w-8 h-8 text-amber-600" />
-              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">No matching peer-reviewed works found</span>
+              <span className="text-sm font-bold text-slate-800 dark:text-slate-200">No matching records returned</span>
               <p className="text-xs text-slate-500 max-w-sm text-center">
                 Try searching broader keyword concepts (e.g. "machine learning radiography" instead of full sentences).
               </p>
@@ -255,6 +264,7 @@ export const ManualSearchModal: React.FC<ManualSearchModalProps> = ({
         <div className="px-6 py-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex justify-end">
           <button
             onClick={onClose}
+            aria-label="Close search"
             className="px-4 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition cursor-pointer"
           >
             Done

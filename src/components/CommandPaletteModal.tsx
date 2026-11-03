@@ -33,6 +33,7 @@ export interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectPillar: (pillar: AcademicPillar) => void;
+  onAuditDoi?: (doi: string) => void;
   onOpenSettings: () => void;
   onOpenHelp: () => void;
   onOpenCart?: () => void;
@@ -59,6 +60,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
   onSelectPillar,
+  onAuditDoi,
   onOpenSettings,
   onOpenHelp,
   onOpenCart,
@@ -88,21 +90,16 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
     const q = query.trim().toLowerCase();
 
     // Check for m-quotient computation (e.g. "m=..." or "h=18 span=10" or "h=18 s=10")
-    const mMatch = q.match(/h\s*=\s*(\d+).*?(?:span|years?|y|s)\s*=\s*(\d+)/i) ||
-                   q.match(/(?:span|years?|y|s)\s*=\s*(\d+).*?h\s*=\s*(\d+)/i);
-    if (mMatch) {
-      const h = parseInt(mMatch[1], 10);
-      const span = parseInt(mMatch[2], 10);
+    const hMatch = q.match(/\bh\s*=\s*(\d+)/i);
+    const spanMatch = q.match(/\b(?:span|years?|y|s)\s*=\s*(\d+)/i);
+    if (hMatch && spanMatch) {
+      const h = Number(hMatch[1]);
+      const span = Number(spanMatch[1]);
       if (span > 0) {
         const m = Number((h / span).toFixed(2));
-        const tier = m >= 2.0 ? 'Exceptional Scientific Leader (Top 1%)' :
-                     m >= 1.0 ? 'Successful Established Academic' :
-                     m >= 0.5 ? 'Moderate Steady Trajectory' : 'Emerging Scholar';
-        return {
-          label: `Hirsch m-quotient Calculation: m = ${m}`,
-          detail: `h-index = ${h}, Career Span = ${span} yrs • Interpretation: ${tier}`,
-          value: `m-quotient: ${m} (${tier})`
-        };
+        return { label: `Hirsch m-quotient: ${m}`,
+          detail: `h-index = ${h}, career span = ${span} years. Database coverage and discipline affect interpretation.`,
+          value: `m-quotient: ${m} (h=${h}, span=${span} years)` };
       }
     }
 
@@ -112,14 +109,14 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
       const doi = doiMatch[0];
       return {
         label: `Direct DOI Resolver & Audit: ${doi}`,
-        detail: `Press Enter to resolve across Crossref, OpenAlex, and verify retraction status`,
+        detail: `Open this DOI in the reference audit, then run verification`,
         isDoi: true,
         doi
       };
     }
 
     // Check for basic arithmetic expression (e.g. "250 - 180" or "50 * 12")
-    if (/^[0-9+\-*/^().\s]{3,}$/.test(q) && /[+\-*/]/.test(q)) {
+    if (/^[0-9+\-*/().\s]{3,}$/.test(q) && /[+\-*/]/.test(q)) {
       try {
         // Safe math evaluator for arithmetic
         // eslint-disable-next-line no-eval
@@ -466,7 +463,8 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
       e.preventDefault();
       if (inlineCalcResult) {
         if (inlineCalcResult.isDoi && inlineCalcResult.doi) {
-          onSelectPillar('verify');
+          if (onAuditDoi) onAuditDoi(inlineCalcResult.doi);
+          else onSelectPillar('verify');
           onClose();
           return;
         }
@@ -528,8 +526,9 @@ export const CommandPaletteModal: React.FC<CommandPaletteProps> = ({
             </div>
             <button
               onClick={() => {
-                if (inlineCalcResult.isDoi) {
-                  onSelectPillar('verify');
+                if (inlineCalcResult.isDoi && inlineCalcResult.doi) {
+                  if (onAuditDoi) onAuditDoi(inlineCalcResult.doi);
+                  else onSelectPillar('verify');
                   onClose();
                 } else if (inlineCalcResult.value) {
                   navigator.clipboard.writeText(inlineCalcResult.value);

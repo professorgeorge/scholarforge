@@ -1,3 +1,5 @@
+import { useProjectState } from './useProjectState';
+import { useDialogFocus } from './useDialogFocus';
 import React, { useState, useMemo } from 'react';
 import {
   ShieldAlert,
@@ -14,6 +16,8 @@ import {
   BarChart3
 } from 'lucide-react';
 import {
+  DEFAULT_READINESS_OPTIONS,
+  type ReadinessOptions,
   evaluateEditorialReadiness,
   generateReadinessCertificateMarkdown,
   type EditorialReadinessReport,
@@ -37,18 +41,22 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'all_checks' | 'certificate'>('overview');
   const [copiedCertificate, setCopiedCertificate] = useState(false);
+  const [copyError, setCopyError] = useState('');
+  const [profile, setProfile] = useProjectState<ReadinessOptions>('SubmissionChecklist.profile', DEFAULT_READINESS_OPTIONS);
+  const dialogRef = useDialogFocus(isOpen, onClose);
 
   // Compute live report
   const report: EditorialReadinessReport = useMemo(() => {
-    return evaluateEditorialReadiness(manuscript);
-  }, [manuscript]);
+    return evaluateEditorialReadiness(manuscript, profile);
+  }, [manuscript, profile]);
 
   if (!isOpen) return null;
 
-  const handleCopyCertificate = () => {
+  const handleCopyCertificate = async () => {
     const md = generateReadinessCertificateMarkdown(report);
-    navigator.clipboard.writeText(md);
-    setCopiedCertificate(true);
+    setCopyError('');
+    try { await navigator.clipboard.writeText(md); setCopiedCertificate(true); }
+    catch { setCopyError('Copy failed. Download the Markdown checklist instead.'); }
     setTimeout(() => setCopiedCertificate(false), 2500);
   };
 
@@ -58,7 +66,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Editorial_Readiness_Certificate_${new Date().toISOString().split('T')[0]}.md`;
+    link.download = `Submission_Checklist_${new Date().toISOString().split('T')[0]}.md`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -88,7 +96,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       
-      <div className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Submission preparation checklist" tabIndex={-1} className="w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header Bar */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-blue-50/40 to-slate-50 dark:from-slate-950 dark:via-blue-950/20 dark:to-slate-950 flex items-center justify-between gap-4">
@@ -99,14 +107,14 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-bold font-serif text-slate-900 dark:text-white">
-                  Pre-Submission Editorial Readiness Scorecard
+                  Submission Preparation Checklist
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-mono">
-                  The Confidence Engine
+                  Local text checks
                 </span>
               </div>
               <p className="text-xs text-slate-500">
-                Automated pre-flight desk-rejection risk audit against Nature, Elsevier, Springer, and APA standards.
+                Text indicators and author review prompts. No registry verification or acceptance prediction.
               </p>
             </div>
           </div>
@@ -117,14 +125,15 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
               onClick={handleDownloadCertificate}
               disabled={report.overallScore === 0}
               className="hidden sm:flex px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 items-center gap-1.5 border border-slate-200 dark:border-slate-700 cursor-pointer disabled:opacity-50"
-              title="Download Markdown Certificate"
+              title="Download Markdown Checklist"
             >
               <Download className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>Export Certificate</span>
+              <span>Export Checklist</span>
             </button>
 
             <button
               onClick={onClose}
+              aria-label="Close submission checklist"
               className="p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -133,8 +142,8 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="px-5 pt-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between text-xs font-semibold">
-          <div className="flex gap-2">
+        <div className="px-5 pt-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap items-center justify-between text-xs font-semibold">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setActiveTab('overview')}
               className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition cursor-pointer ${
@@ -144,7 +153,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
-              <span>Readiness Overview &amp; Fixes</span>
+              <span>Overview &amp; Review Tasks</span>
             </button>
 
             <button
@@ -156,7 +165,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>All 16 Editorial Checks</span>
+              <span>All Applicable Checks</span>
             </button>
 
             <button
@@ -168,7 +177,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Audit Certificate Dossier</span>
+              <span>Checklist Export</span>
             </button>
           </div>
 
@@ -180,6 +189,19 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
         {/* Content Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
           
+          <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-slate-300 dark:border-slate-700 p-4">
+            <legend className="font-semibold px-2">Submission profile (saved to this project)</legend>
+            <label>Article type
+              <select className="block w-full p-2 bg-white dark:bg-slate-900 border rounded" value={profile.articleType} onChange={event => setProfile({ ...profile, articleType: event.target.value as ReadinessOptions['articleType'] })}>
+                <option value="empirical">Empirical study</option><option value="review">Literature review</option><option value="conceptual">Conceptual / theoretical article</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2"><input type="checkbox" checked={profile.doubleBlind} onChange={event => setProfile({ ...profile, doubleBlind: event.target.checked })} />Blinded review required</label>
+            {(['abstractLimit', 'manuscriptLimit'] as const).map(key => <label key={key}>{key === 'abstractLimit' ? 'Abstract word limit' : 'Manuscript word limit'} (optional)
+              <input className="block w-full p-2 bg-white dark:bg-slate-900 border rounded" type="number" min="1" step="1" placeholder="Not supplied" value={profile[key] ?? ''} onChange={event => setProfile({ ...profile, [key]: event.target.value && Number(event.target.value) > 0 ? Math.floor(Number(event.target.value)) : null })} />
+            </label>)}
+          </fieldset>
+          {copyError && <p role="alert">{copyError}</p>}
           {/* TAB 1: OVERVIEW & PRIORITY REMEDIATIONS */}
           {activeTab === 'overview' && (
             <div className="space-y-6 animate-in fade-in duration-150">
@@ -193,7 +215,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
                       {report.overallScore}
                     </span>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">
-                      / 100 pts
+                      % text checks
                     </span>
                   </div>
 
@@ -222,7 +244,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
                   className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-white font-bold text-xs flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 shadow-2xs cursor-pointer transition shrink-0"
                 >
                   <Download className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Download Audit Certificate</span>
+                  <span>Download Checklist</span>
                 </button>
               </div>
 
@@ -272,7 +294,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
                     <span>Editorial Pre-Flight Remediation Checklist ({report.actionableRemediations.length})</span>
                   </h4>
                   <span className="text-[11px] text-slate-400">
-                    Fix items below to prevent desk rejection before submitting to journal portals.
+                    Review against the actual target journal requirements.
                   </span>
                 </div>
 
@@ -284,7 +306,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
                         Zero Editorial Deficiencies Detected!
                       </h5>
                       <p className="text-xs text-emerald-800/80 dark:text-emerald-400 mt-0.5">
-                        Your manuscript successfully passed all 16 editorial integrity and formatting checks.
+                        Review the final submission files and journal instructions.
                       </p>
                     </div>
                   </div>
@@ -306,7 +328,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
                                 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
                                 : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                             }`}>
-                              {item.status === 'fail' ? 'Desk-Reject Risk' : 'Advisory Polish'}
+                              {item.status === 'fail' ? 'Check needed' : 'Author review'}
                             </span>
                             <h5 className="font-bold text-slate-900 dark:text-white text-xs font-serif">
                               {item.title}
@@ -362,7 +384,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
                       </span>
                     </h4>
                     <span className="text-[10px] font-mono font-bold text-slate-500">
-                      {cat.percentage}% compliant
+                      {cat.percentage}% text checks satisfied
                     </span>
                   </div>
 
@@ -414,7 +436,7 @@ export const EditorialReadinessModal: React.FC<EditorialReadinessModalProps> = (
             <div className="space-y-4 animate-in fade-in duration-150">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500">
-                  Ready-to-export markdown certificate. Authors can save this dossier or include it in their submission package.
+                  Exportable working checklist for author review; not a certification for a submission package.
                 </span>
                 <div className="flex items-center gap-2">
                   <button

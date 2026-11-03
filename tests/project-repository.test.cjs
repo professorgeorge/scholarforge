@@ -14,6 +14,30 @@ const { projectZip } = require('../src/services/projectZipService.ts');
 const { emptyConceptStudy } = require('../src/services/conceptStudioService.ts');
 const paper = { id: 'p1', title: 'A retrieved source', authors: [], doi: '10.1234/example', abstract: 'Supplied abstract.', year: 2025, source: 'crossref', venue: '', url: '', citationCount: 0, openAccess: false };
 
+test('clearing the shared cart cannot orphan evidence, documents or screening decisions', async () => {
+  const cart = require('../src/services/cartService.ts');
+  const project = store.createProject('Linked sources'); store.selectProject(project.id);
+  store.updateProject({ papers: [paper, { ...paper, id: 'free' }, { ...paper, id: 'doc' }, { ...paper, id: 'screen' }],
+    evidence: [{ paperId: 'p1' }], documents: [{ paperId: 'doc' }], screening: [{ paperId: 'screen' }] });
+  cart.removePaperFromCart('p1');
+  assert.ok(store.getProject().papers.some(source => source.id === 'p1'));
+  cart.clearCart();
+  assert.deepEqual(store.getProject().papers.map(source => source.id).sort(), ['doc', 'p1', 'screen']);
+  assert.equal(store.getProject().evidence[0].paperId, 'p1');
+  await store.flushProjectWrites();
+});
+
+test('blocked preference storage falls back without crashing and reports failed writes', () => {
+  const { readPreference, writePreference } = require('../src/services/preferenceStorage.ts');
+  const original = global.localStorage;
+  try {
+    global.localStorage = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('quota'); } };
+    assert.equal(readPreference('theme'), null);
+    assert.equal(writePreference('theme', 'dark'), false);
+    assert.match(store.getStorageError(), /preference could not be saved/);
+  } finally { global.localStorage = original; }
+});
+
 test('all seventeen tools participate in automatic project collection', () => {
   assert.equal(registry.REPOSITORY_TOOLS.length, 17);
   for (const tool of registry.REPOSITORY_TOOLS) assert.equal(registry.repositoryToolForKey(`ToolAiAssistant.${tool.id}.review`).id, tool.id);
