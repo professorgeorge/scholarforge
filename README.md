@@ -15,13 +15,14 @@ npm run dev
 
 **Start here** offers four explicit tasks: develop a research idea, find literature, work on a manuscript, or check references. Material stays staged until you continue. Concept narrations, topics, and standalone reference checks preserve the active manuscript; opening a draft in Manuscript Studio makes it the active manuscript. Searches and reference verification start only when you run them in their tools. Use **Find a tool** to search the separate utility catalog.
 
-Open **Project repository** to find and download the active project's work. Tool inputs, drafts, retrieved sources, generated results, and AI reviews are collected automatically. Meaningful result changes retain snapshots; leaving a tool also records a working checkpoint. Existing saved work appears without another upload or filing step. Retrieved records remain distinct from screened evidence and the curated shared library.
+The app keeps one **Current project**, saved automatically in this browser. Rename it in the project bar. Current inputs, drafts, and tool results persist; repository snapshots and original-file copies are no longer collected. Older installations retain the active project and remove other saved projects, archived results, original-file copies, and older manuscript versions when opened.
 
-The repository offers searchable categories, readable previews, individual JSON/Markdown downloads, manuscript versions, original retained files, and a complete ZIP with a restorable backup. The ZIP includes source-reference exports when available. Downloads include full structured data even when long readable lists are abbreviated. New document and text imports retain original files up to 40 MB as well as extracted text. Older imports may have extracted text only. Keep external backups: storage is local to this browser, with no cloud synchronization.
+Use the visible **Clean up app** button beside the project name to download current work, clear literature work (including reviews, cart, binder, and linked evidence/screening), or clear all current work. Cleanup asks for confirmation and reloads the app. Project details and provider settings remain. Download a backup before deleting work you may need again.
 
-**Current manuscript** identifies the one draft shared by manuscript-oriented tools. The indicator appears only when a draft is selected; it offers **Open in Studio**, **Saved versions**, and an explanation of its role. Import or paste a draft through the home-page manuscript task or Manuscript Studio. Choosing a saved version in the repository makes it current; stopping its use leaves saved versions intact. No separate “memory activation” or upload step is needed.
+**Current manuscript** identifies the draft shared by manuscript tools and offers **Open in Studio**. Import or paste another draft to replace it. Keep original files on your device.
 
-Create, switch, rename, or restore projects through repository settings. Restoration creates a separate copy. The first project inherits existing manuscript, cart, and binder records; legacy originals remain available for recovery. The separate **Research workbench** retains logged searches, screening, evidence entry, planning, reporting, and decision-recording activities; their saved records also appear in the repository.
+The **Research workbench** supports logged searches, screening, evidence entry, planning, reporting, and decisions for the current project. Restoring a backup replaces the current project after confirmation. There is no project switcher or automatic cloud synchronization.
+
 
 ## Project workbench
 
@@ -174,7 +175,7 @@ Live connectors cover Grants.gov search and detailed conditions, EU public fundi
 
 Each API batch is bounded to 20 records per source, with explicit pagination, source counts, failures, and coverage limits. UKRI provides only recent feed leads. Source status and supplied dates are retained separately: records whose supplied dates have passed are excluded from current-result views, including when the source labels them open. Missing dates or amounts stay unknown. Local award filters use overlapping reported ranges in one currency, with no currency conversion or assumption that a programme budget is an individual award.
 
-Retrieve Grants.gov conditions explicitly, review category conflicts and remaining country/investigator/consortium rules, retain a shortlist, and write fit notes. Changed applicant context or conditions flag notes for rechecking. Searches, results, conditions, shortlists, and notes are retained in the project repository. Export the shortlist as Markdown/CSV, download all funding records as JSON, or save a brief to the binder. AI can refine terms or compare supplied records; it does not search independently, create opportunities, certify eligibility, or predict funding success.
+Retrieve Grants.gov conditions explicitly, review category conflicts and remaining country/investigator/consortium rules, retain a shortlist, and write fit notes. Changed applicant context or conditions flag notes for rechecking. Searches, results, conditions, shortlists, and notes are saved in the current project. Export the shortlist as Markdown/CSV, download all funding records as JSON, or save a brief to the binder. AI can refine terms or compare supplied records; it does not search independently, create opportunities, certify eligibility, or predict funding success.
 
 ### Running funding connectors
 

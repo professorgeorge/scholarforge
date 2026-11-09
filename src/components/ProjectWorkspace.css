@@ -407,3 +407,7 @@
     max-width: 100%;
   }
 }
+
+.sf-project-identity label { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; font-size: .85rem; }
+.sf-project-identity input { width: min(18rem, 100%); min-width: 0; padding: .45rem .6rem; border: 1px solid var(--border-color, #b8cce1); border-radius: .4rem; background: var(--bg-surface); color: inherit; font: inherit; font-weight: 600; }
+.sf-project-bar .sf-actions button { display: inline-flex; align-items: center; gap: .35rem; }

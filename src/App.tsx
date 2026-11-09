@@ -3,7 +3,7 @@ import { IrbTriagePane } from './components/IrbTriagePane';
 import { useProjectState } from './components/useProjectState';
 import { ToolAiAssistant } from './components/ToolAiAssistant';
 import { ProjectWorkspace } from './components/ProjectWorkspace';
-import { getActiveProjectId, getProject, setToolState, checkpointProjectTool } from './services/projectService';
+import { getActiveProjectId, getProject, setToolState } from './services/projectService';
 import { conceptHandoffFields } from './services/conceptStudioService';
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Navbar, type AcademicPillar, type WorkflowLensId, WORKFLOW_LENSES, RESEARCH_STAGES } from './components/Navbar';
@@ -125,13 +125,6 @@ export const App: React.FC = () => {
   useEffect(() => {
     writePreference('scholarforge_active_pillar', activePillar);
   }, [activePillar]);
-  useEffect(() => {
-    const retain = () => { if (activePillar !== 'hub') checkpointProjectTool(activePillar, projectId); };
-    const onHidden = () => { if (document.visibilityState === 'hidden') retain(); };
-    window.addEventListener('pagehide', retain);
-    document.addEventListener('visibilitychange', onHidden);
-    return () => { window.removeEventListener('pagehide', retain); document.removeEventListener('visibilitychange', onHidden); retain(); };
-  }, [activePillar, projectId]);
 
   const [activeLens, setActiveLens] = useState<WorkflowLensId>('full');
   const [isSpotlightOpen, setIsSpotlightOpen] = useState<boolean>(false);
@@ -236,7 +229,6 @@ export const App: React.FC = () => {
   const [literatureFocus, setLiteratureFocus] = useProjectState('App.literatureFocus', '');
   const [literatureAutoSearch, setLiteratureAutoSearch] = useState(false);
   const [conceptNarrative, setConceptNarrative] = useProjectState('ConceptStudio.incomingNarrative', '');
-  const [manuscriptRepositoryRequest, setManuscriptRepositoryRequest] = useState(0);
   const [standaloneReferences, setStandaloneReferences] = useState<{ text: string; filename?: string } | null>(null);
 
   useEffect(() => {
@@ -616,12 +608,11 @@ export const App: React.FC = () => {
         onSelectLens={setActiveLens}
       />
 
-      <ProjectWorkspace navigate={setActivePillar} restoreManuscript={handleManuscriptUpdate} llmConfig={llmConfig} manuscriptRequest={manuscriptRepositoryRequest} />
+      <ProjectWorkspace navigate={setActivePillar} restoreManuscript={handleManuscriptUpdate} llmConfig={llmConfig} />
 
       {/* Active Manuscript Bar (Persistent Session Memory & 1-Click Handoffs) */}
       <ActiveManuscriptBar
         manuscript={activeManuscript}
-        onViewVersions={() => setManuscriptRepositoryRequest(previous => previous + 1)}
         onClearManuscript={handleClearManuscript}
         onNavigateToPillar={(pillar) => {
           setActivePillar(pillar);

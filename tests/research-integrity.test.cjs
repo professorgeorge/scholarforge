@@ -214,15 +214,15 @@ test("screening needs two current reviewers and preserves disagreements", () => 
   assert.equal(screeningOutcome(resolved, "p", "abstract").decision, "exclude");
 });
 
-test("project switching isolates work and backup restore creates a copy without provider keys", () => {
+test("only the current project persists and backup restore replaces it without provider keys", () => {
   const a = createProject("First");
   selectProject(a.id);
   updateProject({ question: "Question one" });
   const b = createProject("Second");
   selectProject(b.id);
   updateProject({ question: "Question two" });
-  selectProject(a.id);
-  assert.equal(getProject().question, "Question one");
+  assert.equal(getProject(a.id), null);
+  assert.equal(getProject().question, "Question two");
   const backup = exportProjectBackup({
     ...getProject(),
     tools: {
@@ -234,8 +234,8 @@ test("project switching isolates work and backup restore creates a copy without 
   assert.doesNotMatch(backup, /SECRET/);
   const restored = importProjectBackup(backup);
   assert.notEqual(restored.id, a.id);
-  assert.equal(restored.question, "Question one");
-  assert.equal(getProject().id, a.id);
+  assert.equal(restored.question, "Question two");
+  assert.equal(getProject().id, restored.id);
   assert.throws(() => validateProject({ schemaVersion: 5 }));
   assert.throws(() => importProjectBackup("{broken"));
 });

@@ -1,6 +1,6 @@
 import type { AcademicPaper } from "../types/citation";
 import type { RetainedProjectFile } from './projectFileService';
-import { cleanRepositoryValue, recordRepositoryChange, repositoryContentKey, repositoryToolForKey, type RepositoryState } from './projectRepositoryRegistry';
+import { cleanRepositoryValue, type RepositoryState } from './projectRepositoryRegistry';
 
 export type ReviewDecision = "pending" | "include" | "exclude" | "uncertain";
 export interface ScreeningDecision {
@@ -146,6 +146,7 @@ async function mirror(project: ResearchProject): Promise<void> {
   try {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction("projects", "readwrite");
+      tx.objectStore("projects").clear();
       tx.objectStore("projects").put(project);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -197,14 +198,18 @@ export async function flushProjectWrites(): Promise<void> {
 }
 
 export function saveProject(project: ResearchProject): void {
-  const updated = { ...project, updatedAt: now() };
+  const updated = { ...project, repository: undefined, files: undefined, versions: project.versions.slice(-1), updatedAt: now() };
+  cache.clear();
+  activeId = project.id;
   cache.set(project.id, updated);
   let browserMirrorSaved = false;
   try {
     localStorage.setItem(PREFIX + project.id, JSON.stringify(updated));
-    const ids = getProjectIds();
-    if (!ids.includes(project.id))
-      localStorage.setItem(INDEX, JSON.stringify([...ids, project.id]));
+    for (const oldId of getProjectIds()) {
+      if (oldId !== project.id) localStorage.removeItem(PREFIX + oldId);
+    }
+    localStorage.setItem(INDEX, JSON.stringify([project.id]));
+    localStorage.setItem(ACTIVE, project.id);
     browserMirrorSaved = true;
     storageError = "";
   } catch {
@@ -346,7 +351,10 @@ export async function initializeProjects(): Promise<void> {
     }
     saveProject(project);
     selectProject(project.id);
-  } else if (!getProject()) selectProject(getProjects()[0].id);
+  } else if (!getProject()) selectProject(getProjects().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0].id);
+  // Migrate older installations to one current workspace, without archive copies.
+  saveProject(getProject()!);
+  await flushProjectWrites();
 }
 
 export function getToolState<T>(key: string, fallback: T): T {
@@ -360,19 +368,9 @@ export function setToolState(
   const current = getProject(projectId);
   if (current && JSON.stringify(current.tools[key]) === JSON.stringify(value)) return;
   updateProject(
-    (p) => ({ ...p, tools: { ...p.tools, [key]: value }, repository: recordRepositoryChange(p.tools, p.repository, key, value, now()) }),
+    (p) => ({ ...p, tools: { ...p.tools, [key]: value } }),
     projectId,
   );
-}
-
-export function checkpointProjectTool(tool: string, projectId = getActiveProjectId()): void {
-  const project = getProject(projectId);
-  if (!project) return;
-  const value = cleanRepositoryValue(Object.fromEntries(Object.entries(project.tools).filter(([key, item]) => repositoryToolForKey(key)?.id === tool && repositoryContentKey(key, item))));
-  if (!Object.keys(value).length) return;
-  const key = `checkpoint.${tool}`;
-  if (project.repository?.history.some(entry => entry.key === key && JSON.stringify(entry.value) === JSON.stringify(value))) return;
-  updateProject(current => ({ ...current, repository: { updated: { ...current.repository?.updated, [tool]: now() }, history: [...(current.repository?.history || []), { id: id(), key, tool, at: now(), value }] } }), projectId);
 }
 
 export function saveManuscriptVersion(
@@ -385,7 +383,7 @@ export function saveManuscriptVersion(
     if (p.versions.at(-1)?.text === text) return p;
     return {
       ...p,
-      versions: [...p.versions, { id: id(), text, filename, at: now() }],
+      versions: [{ id: id(), text, filename, at: now() }],
       claims: p.claims.map((c) => ({ ...c, needsReview: true })),
       reporting: Object.fromEntries(Object.entries(p.reporting).map(([key, response]) => [key, { ...response, status: 'missing' as const }])),
     };
@@ -560,7 +558,7 @@ export function validateProject(value: unknown): ResearchProject {
 export function importProjectBackup(text: string): ResearchProject {
   const raw = JSON.parse(text);
   const original = validateProject(cleanRepositoryValue(raw.project ?? raw));
-  // Always import as a copy, never overwrite an existing project or current work.
+  // A restored backup becomes the single current project.
   const project = {
     ...original,
     id: id(),
@@ -574,7 +572,7 @@ export function importProjectBackup(text: string): ResearchProject {
     ),
   );
   saveProject(project);
-  return project;
+  return getProject(project.id)!;
 }
 
 export function downloadFile(
@@ -606,4 +604,17 @@ export function exportProjectBackup(project: ResearchProject): string {
     null,
     2,
   );
+}
+
+/** Clear related review records together so no evidence links are left dangling. */
+export async function cleanUpProject(scope: 'literature' | 'all'): Promise<void> {
+  const project = getProject();
+  if (!project) return;
+  const tools = scope === 'all' ? {} : Object.fromEntries(Object.entries(project.tools).filter(([key]) =>
+    !/^(LiteratureFirstPane\.|App\.literature|ToolAiAssistant\.literature\.|workspace\.|scholarforge_universal_binder$)/.test(key)));
+  saveProject({ ...project, id: id(), tools, papers: [], documents: [], evidence: [], claims: [], screening: [], adjudications: {}, searches: [],
+    protocol: '', criteria: '', criteriaVersion: 1, reporting: {}, tasks: {},
+    ...(scope === 'all' ? { versions: [], decisions: [] } : {}), repository: undefined, files: undefined });
+  for (const key of ['scholarforge_research_cart_v1', 'scholarforge_universal_binder', ...(scope === 'all' ? ['scholarforge_active_manuscript'] : [])]) localStorage.removeItem(key);
+  await flushProjectWrites();
 }

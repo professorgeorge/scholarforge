@@ -12,11 +12,9 @@ import {
 import type { AcademicPillar } from "./Navbar";
 import { useProjectState } from "./useProjectState";
 import {
-  createProject,
   downloadFile,
   exportProjectBackup,
   getProject,
-  getProjects,
   getStorageError,
   id,
   importProjectBackup,
@@ -273,7 +271,7 @@ export function ResearchWorkbench({
           <ChevronDown aria-hidden="true" className={open ? "sf-chevron-open" : undefined} />
         </button>
       </div>
-      <button type="button" className="sf-secondary" onClick={onClose}>Back to project repository</button>
+      <button type="button" className="sf-secondary" onClick={onClose}>Back to current project</button>
       {getStorageError() && (
         <p role="alert" className="sf-alert">
           {getStorageError()}
@@ -295,14 +293,7 @@ export function ResearchWorkbench({
         <div id="research-project-details" className="sf-workspace-body">
           <div className="sf-project-management">
             <Field label="Current project">
-              <select
-                aria-label="Current project"
-                value={project.id}
-                disabled={busy}
-                onChange={(event) => selectProject(event.target.value)}
-              >
-                {getProjects().map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
-              </select>
+              <span>{project.name}</span>
             </Field>
             <button
               type="button"
@@ -341,7 +332,7 @@ export function ResearchWorkbench({
               <div>
                 <h2>Your research project</h2>
                 <p>
-                  Plan research, screen sources, enter evidence, and record decisions here. Your work is retained automatically in the project repository.
+                  Plan research, screen sources, enter evidence, and record decisions here. Your work is retained automatically in the current project.
                   Fields save when you leave them. Quick utilities remain
                   available below.
                 </p>
@@ -444,29 +435,14 @@ export function ResearchWorkbench({
                 save={(protocol) => change({ protocol })}
               />
               <div className="sf-grid">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const name = read(e.currentTarget, "name");
-                    void action(() => {
-                      const p = createProject(name);
-                      selectProject(p.id);
-                    });
-                  }}
-                >
-                  <Field label="Create another project">
-                    <input name="name" required placeholder="Project name" />
-                  </Field>
-                  <button disabled={busy}>Create project</button>
-                </form>
-                <Field label="Restore project backup as a new copy">
+                <Field label="Replace current project with a backup">
                   <input
                     type="file"
                     accept=".json"
                     disabled={busy}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file)
+                      if (file && confirm("Replace the current project with this backup? Current work will be removed."))
                         void action(async () => {
                           if (file.size > 80 * 1024 * 1024)
                             throw new Error("Backup exceeds 80 MB.");
@@ -636,7 +612,7 @@ export function ResearchWorkbench({
                     disabled={busy}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file)
+                      if (file && confirm("Replace the current project with this backup? Current work will be removed."))
                         void action(async () => {
                           const format = file.name.endsWith(".ris")
                             ? "ris"
@@ -1052,7 +1028,7 @@ export function ResearchWorkbench({
                     accept=".json"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file)
+                      if (file && confirm("Replace the current project with this backup? Current work will be removed."))
                         void action(async () => {
                           const raw = JSON.parse(await file.text());
                           if (

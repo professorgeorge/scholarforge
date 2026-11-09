@@ -157,7 +157,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onResetResearchData?.();
     setResetStatus({
       type: 'success',
-      message: 'Current draft and claims cleared; unlinked cart cards and binder clips removed. Linked sources, saved versions, other tool work, repository history, and other projects remain. Provider settings are unchanged.'
+      message: 'Current draft and claims cleared; unlinked cart cards and binder clips removed. Linked sources and other current tool work remain. Use Clean up app above the workspace to remove all work. Provider settings are unchanged.'
     });
   };
 
@@ -182,7 +182,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onFullFactoryReset?.();
     setResetStatus({
       type: 'success',
-      message: 'Provider settings and citation preferences reset; current draft, claims, unlinked cart cards, and binder clips cleared. Projects, linked sources, saved versions, tool work, and repository history remain.'
+      message: 'Provider settings and citation preferences reset; current draft, claims, unlinked cart cards, and binder clips cleared. Current project details, linked sources, and tool work remain.'
     });
   };
 
@@ -798,7 +798,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         </h4>
                       </div>
                       <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                        Clears the current draft and claims, removes unlinked cart cards, and clears binder clips. Sources linked to evidence, full text, or screening, plus saved versions and repository history, remain.
+                        Clears the current draft and claims, removes unlinked cart cards, and clears binder clips. Sources linked to evidence, full text, or screening, remain. Use Clean up app above the workspace for a complete cleanup.
                         <strong className="text-slate-900 dark:text-slate-200"> Preserves your API keys, custom endpoints, citation options, and theme</strong> so you can start a fresh inquiry without re-authenticating.
                       </p>
                       <ul className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5 pt-1">
@@ -833,7 +833,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           </h4>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                          Clears the current draft, claims, unlinked cart cards, and binder clips; resets saved provider credentials, endpoints, and citation preferences. Saved projects, linked sources, manuscript versions, other tool work, and repository history remain available.
+                          Clears the current draft, claims, unlinked cart cards, and binder clips; resets saved provider credentials, endpoints, and citation preferences. Current project details, linked sources, and other tool work remain available.
                         </p>
                       </div>
 
@@ -857,7 +857,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           <span>Are you absolutely certain? This will delete your stored API keys.</span>
                         </div>
                         <p className="text-[11px] text-red-800 dark:text-red-300 leading-relaxed">
-                          You will need to re-enter provider credentials. This does not erase projects, linked evidence, tool work, repository history, or external backups.
+                          You will need to re-enter provider credentials. This does not erase current project details, linked evidence, tool work, or external backups.
                         </p>
                         <div className="flex items-center gap-2 pt-1">
                           <button

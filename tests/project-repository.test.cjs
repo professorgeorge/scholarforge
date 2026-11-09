@@ -56,32 +56,54 @@ test('existing project work is indexed without requiring another save or upload'
   assert.equal(items.find(item => item.id === 'tool-literature').at, '');
   assert.equal(project.papers.length, 0, 'collection must not silently turn a retrieval into an endorsed library item');
 });
-test('new outputs retain result snapshots and context, including after clearing the tool', () => {
-  const project = store.createProject('Automatic results'); store.selectProject(project.id);
-  store.setToolState('LiteratureFirstPane.topic', 'Initial query');
+test('current outputs replace previous results without retaining archive snapshots', async () => {
+  const project = store.createProject('Current results'); store.selectProject(project.id);
   store.setToolState('LiteratureFirstPane.discoveredPapers', [paper]);
-  const afterFirst = store.getProject();
-  assert.equal(afterFirst.repository.history.length, 1);
-  assert.equal(afterFirst.repository.history[0].context['LiteratureFirstPane.topic'], 'Initial query');
-  store.setToolState('LiteratureFirstPane.discoveredPapers', [paper]);
-  assert.equal(store.getProject().repository.history.length, 1, 'identical writes do not create another snapshot');
   store.setToolState('LiteratureFirstPane.discoveredPapers', []);
-  assert.equal(store.getProject().repository.history.length, 1);
-  assert.equal(repo.projectRepositorySources(store.getProject())[0].title, paper.title);
-  store.setToolState('LiteratureFirstPane.discoveredPapers', [{ ...paper, id: 'p2', doi: '10.1234/second' }]);
-  assert.equal(store.getProject().repository.history.length, 2);
+  assert.equal(store.getProject().repository, undefined);
+  assert.deepEqual(repo.projectRepositorySources(store.getProject()), []);
+  const second = store.createProject('Replacement');
+  await store.flushProjectWrites();
+  assert.deepEqual(store.getProjectIds(), [second.id]);
+  assert.equal(store.getProject(project.id), null);
+  const db = await new Promise(resolve => { const request = indexedDB.open('scholarforge-projects', 1); request.onsuccess = () => resolve(request.result); });
+  const records = await new Promise(resolve => { const request = db.transaction('projects').objectStore('projects').getAll(); request.onsuccess = () => resolve(request.result); });
+  db.close();
+  assert.deepEqual(records.map(record => record.id), [second.id]);
 });
-test('automatic checkpoints preserve working drafts and isolate a departing project from the next one', () => {
-  const first = store.createProject('First'); store.selectProject(first.id);
-  store.setToolState('ConceptStudio.study', { ...emptyConceptStudy(), narrative: 'First project narration.' });
-  store.checkpointProjectTool('concept', first.id);
-  store.checkpointProjectTool('concept', first.id);
-  assert.equal(store.getProject(first.id).repository.history.length, 1);
-  const second = store.createProject('Second'); store.selectProject(second.id);
-  store.setToolState('ScholarSearchPane.candidates', [{ id: 'r1', name: 'Candidate' }], first.id);
-  assert.equal(store.getProject(second.id).repository, undefined);
-  assert.ok(store.getProject(first.id).repository.history.some(entry => entry.key === 'ScholarSearchPane.candidates'));
+
+test('opening a legacy installation keeps the active project and discards archived copies', async () => {
+  const current = store.createProject('Active legacy work');
+  await store.flushProjectWrites();
+  const archived = { ...current, id: 'old-project', name: 'Old project' };
+  localStorage.setItem('scholarforge_project_v1_old-project', JSON.stringify(archived));
+  localStorage.setItem('scholarforge_projects_v1', JSON.stringify([current.id, archived.id]));
+  await store.initializeProjects();
+  assert.equal(store.getProject().id, current.id);
+  assert.deepEqual(store.getProjectIds(), [current.id]);
+  assert.equal(localStorage.getItem('scholarforge_project_v1_old-project'), null);
+  assert.equal(store.getProject(archived.id), null);
 });
+
+test('literature cleanup removes linked records and survives reopening while preserving other work', async () => {
+  store.createProject('Cleanup');
+  store.updateProject({ papers: [paper], documents: [{ id: 'd', paperId: paper.id, text: 'Evidence' }], evidence: [{ paperId: paper.id }],
+    tools: { 'LiteratureFirstPane.topic': 'Old review', 'ToolAiAssistant.literature.review': 'Review', 'App.literatureTopic': 'Old review', 'ResearchStudioPane.draft': 'Keep draft', scholarforge_universal_binder: ['clip'] } });
+  localStorage.setItem('provider-key', 'keep');
+  await store.cleanUpProject('literature');
+  await store.initializeProjects();
+  const current = store.getProject();
+  assert.equal(current.name, 'Cleanup');
+  assert.deepEqual(current.papers, []);
+  assert.deepEqual(current.evidence, []);
+  assert.deepEqual(current.documents, []);
+  assert.deepEqual(current.tools, { 'ResearchStudioPane.draft': 'Keep draft' });
+  assert.equal(localStorage.getItem('provider-key'), 'keep');
+  await store.cleanUpProject('all');
+  assert.deepEqual(store.getProject().tools, {});
+  assert.equal(store.getProject().name, 'Cleanup');
+});
+
 test('empty or navigation-only projects stay empty rather than inventing research work', () => {
   const project = store.createProject('Empty');
   project.tools = { 'ConceptStudio.study': emptyConceptStudy(), 'ConceptStudio.step': 'frames', 'MethodologyCompassPane.currentQuestionIdx': 2 };
@@ -98,7 +120,7 @@ test('collection deduplicates sources across tools and retains manuscript versio
   for (const category of ['Sources', 'Manuscripts', 'Binder', 'Evidence & decisions']) assert.ok(items.some(item => item.category === category));
   assert.match(items.find(item => item.category === 'Binder').description, /AI-generated suggestion/);
 });
-test('backups preserve full research data, original files, and review state while excluding credentials recursively', () => {
+test('backup restoration keeps current research and review state but discards archives and credentials', () => {
   const project = store.createProject('Backup');
   project.tools['ConceptStudio.study'] = { ...emptyConceptStudy(), narrative: 'A puzzle.', gapReviewedBasis: 'REVIEW_BASIS' };
   project.tools['SyntheticDataForgePane.dataset'] = { generationConfig: { seed: 42, apiKey: 'NESTED_SECRET' }, data: [{ value: 7 }] };
@@ -110,18 +132,15 @@ test('backups preserve full research data, original files, and review state whil
   assert.notEqual(restored.id, project.id);
   assert.equal(restored.tools['ConceptStudio.study'].gapReviewedBasis, 'REVIEW_BASIS');
   assert.equal(restored.tools['SyntheticDataForgePane.dataset'].data[0].value, 7);
-  assert.equal(restored.files[0].base64, 'aGVsbG8=');
+  assert.equal(restored.files, undefined);
+  assert.equal(restored.repository, undefined);
 });
-test('new document imports retain exact original bytes once per name and content in the originating project', async () => {
-  const first = store.createProject('Original file'); store.selectProject(first.id);
-  const file = new File([new Uint8Array([0, 1, 127, 255])], 'original.bin', { type: 'application/octet-stream' });
-  const pending = fileService.retainProjectFile(file, first.id);
-  const second = store.createProject('Other project'); store.selectProject(second.id);
-  await pending; await fileService.retainProjectFile(file, first.id);
-  assert.equal(store.getProject(first.id).files.length, 1);
-  assert.deepEqual([...fileService.base64ToBytes(store.getProject(first.id).files[0].base64)], [0, 1, 127, 255]);
-  assert.equal(store.getProject(second.id).files, undefined);
+test('document imports do not accumulate original file copies', async () => {
+  const project = store.createProject('Current document');
+  await fileService.retainProjectFile(new File(['content'], 'draft.txt'), project.id);
+  assert.equal(store.getProject().files, undefined);
 });
+
 test('complete downloads contain complete JSON even when readable previews abbreviate large lists', () => {
   const project = store.createProject('Download');
   project.tools['ScholarSearchPane.candidates'] = Array.from({ length: 40 }, (_, i) => ({ id: `c${i}`, name: `Candidate ${i}` }));
