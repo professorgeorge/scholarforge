@@ -25,7 +25,7 @@ function normalizeEuropePmcAuthors(authorList?: any[]): Author[] {
   });
 }
 
-import { synthesizeBooleanSearchStrategy, extractAcademicKeywords } from './academicQueryParser';
+import { synthesizeBooleanSearchStrategy } from './academicQueryParser';
 
 /**
  * Searches Europe PMC & PubMed Central repository for peer-reviewed medical and life sciences research.
@@ -146,15 +146,7 @@ export async function searchEuropePmc(
   };
 
   try {
-    let papers = await executeFetch(cleanQuery);
-
-    // Fallback if 0 results: try broader core keywords
-    if (papers.length === 0) {
-      const fallbackKeywords = extractAcademicKeywords(trimmed).slice(0, 3).join(' ');
-      if (fallbackKeywords && fallbackKeywords !== cleanQuery) {
-        papers = await executeFetch(fallbackKeywords);
-      }
-    }
+    const papers = await executeFetch(cleanQuery);
 
     CACHE.set(cacheKey, papers);
     return papers.slice(0, limit);

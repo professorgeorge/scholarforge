@@ -111,6 +111,7 @@ export const PrismaFlowModal: React.FC<PrismaFlowModalProps> = ({
                   <span>Excluded below citation impact threshold:</span>
                   <strong className="font-mono">{stats.screening.excludedLowCitations}</strong>
                 </div>
+                <div className="flex justify-between"><span>Weak title/abstract topic matches removed:</span><strong className="font-mono">{stats.screening.excludedOffTopic || 0}</strong></div>
                 <div className="flex justify-between"><span>Excluded by year, DOI, or open-access filters:</span><strong className="font-mono">{stats.screening.excludedOtherFilters || 0}</strong></div>
                 <div className="flex justify-between border-t border-amber-200 dark:border-amber-900 pt-1 font-bold">
                   <span>Total Excluded:</span>

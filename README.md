@@ -189,3 +189,9 @@ npm start
 The built application is served at `http://127.0.0.1:4173/` by default. `PORT` and `SCHOLARFORGE_HOST` configure the server. A plain static-file host does not supply `/api/funding/search` and `/api/funding/detail`; deploy the Node server or provide equivalent routes. The UI reports a missing connector rather than treating it as a valid zero-result search. Upstream requests use allowlisted official hosts, bounded responses, timeouts, five-minute caching, and no applicant credentials or application-submission endpoints.
 
 Source documentation: [Grants.gov API](https://www.grants.gov/api/api-guide), [Grants.gov API terms](https://www.grants.gov/api/terms-conditions), [EU Funding & Tenders APIs](https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/support/apis), [UKRI funding finder and feed](https://www.ukri.org/opportunity/).
+
+### Literature relevance
+
+Literature discovery retains every extracted topic concept, preserves explicit Boolean/phrase queries for OpenAlex and Europe PMC, and does not silently retry with shortened queries. Results are ranked by whole-word query coverage in supplied titles and abstracts, with acronym expansion and simple plural matching. Weak matches are removed and counted separately in the retrieval summary; an additional focus must also match. Title-only searches apply the relevance check to titles alone. Citation counts, DOI availability, recency, and provider-specific scores do not increase the topical-match score.
+
+The displayed percentage is query-term coverage, not a probability of relevance. This lexical filter can miss synonyms or records with incomplete metadata and does not match Google Scholar's index or ranking. Re-run existing saved searches to apply the corrected retrieval and ranking.

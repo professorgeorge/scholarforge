@@ -9,7 +9,7 @@ import { DEFAULT_SCHOLARLY_SOURCES, type ScholarlySourceId } from './scholarlySo
 import { RegistryRequestError } from './registryRequestService';
 import { mergeDiscoveryPapers } from './discoveryMergeService';
 import { checkPaperRetraction } from './retractionSentinel';
-import { extractAcademicKeywords, synthesizeBooleanSearchStrategy } from './academicQueryParser';
+import { synthesizeBooleanSearchStrategy } from './academicQueryParser';
 import { rankPapersByRelevance } from './relevanceScoringService';
 
 export interface FederatedSearchOptions {
@@ -21,6 +21,7 @@ export interface FederatedSearchOptions {
   minCitations?: number;
   requireDoi?: boolean;
   queryMode?: 'adaptive' | 'literal';
+  focusQuery?: string;
   searchScope?: 'default' | 'title_only' | 'title_abstract';
   enabledSources?: Partial<Record<ScholarlySourceId, boolean>>;
 }
@@ -46,6 +47,7 @@ export interface PrismaFlowStats {
     excludedLowCitations: number;
     totalExcluded: number;
     excludedOtherFilters?: number;
+    excludedOffTopic?: number;
   };
   included: {
     totalIncluded: number;
@@ -89,27 +91,9 @@ export async function executeFederatedSearch(
   const initiatingProjectId = getActiveProjectId();
   const sourceStatuses: SearchRun['sources'] = [];
   const rawTrimmed = query.trim();
-  const hasBooleanOrQuotes = /["\(\)]|\b(AND|OR|NOT)\b/i.test(rawTrimmed);
-
-  // 1. Prepare registry-optimized query representations
-  let europePmcQuery: string;
-  let fullTextKeywordQuery: string;
-
-  if (options.queryMode === 'literal') {
-    europePmcQuery = rawTrimmed;
-    fullTextKeywordQuery = rawTrimmed;
-  } else if (hasBooleanOrQuotes) {
-    europePmcQuery = rawTrimmed;
-    // For full-text search APIs (OpenAlex, Crossref, S2), extract the clean core words without quotes/parens
-    const cleanTokens = extractAcademicKeywords(rawTrimmed);
-    fullTextKeywordQuery = cleanTokens.slice(0, 5).join(' ') || rawTrimmed.replace(/[^\w\s-]/g, ' ').trim();
-  } else {
-    // Natural Language: Synthesize high-fidelity Boolean query for Europe PMC
-    // and concise core concept keywords for OpenAlex / Crossref / Semantic Scholar
-    const strategy = synthesizeBooleanSearchStrategy(rawTrimmed);
-    europePmcQuery = strategy.booleanQuery;
-    fullTextKeywordQuery = strategy.coreKeywords;
-  }
+  const strategy = synthesizeBooleanSearchStrategy(rawTrimmed);
+  const europePmcQuery = options.queryMode === 'literal' ? rawTrimmed : strategy.booleanQuery;
+  const fullTextKeywordQuery = options.queryMode === 'literal' ? rawTrimmed : strategy.coreKeywords;
 
 
   const wrapSource = async (
@@ -134,7 +118,7 @@ export async function executeFederatedSearch(
       clearTimeout(timerId);
 
       const entry = { source: sourceName, papers: Array.isArray(papers) ? papers : [] };
-      sourceStatuses.push({ name: sourceName, query: sourceQuery, status: timedOut ? 'timed out' : papers.length ? 'records returned (bounded discovery)' : ['pubmed', 'datacite', 'semanticscholar'].includes(sourceName) ? 'no records returned' : 'empty or unavailable', count: entry.papers.length, detail: 'Discovery adapters may simplify or relax queries. Empty responses do not establish zero database matches. Use logged review search for explicit requests.' });
+      sourceStatuses.push({ name: sourceName, query: sourceQuery, status: timedOut ? 'timed out' : papers.length ? 'records returned (bounded discovery)' : ['pubmed', 'datacite', 'semanticscholar'].includes(sourceName) ? 'no records returned' : 'empty or unavailable', count: entry.papers.length, detail: 'All topic concepts are retained; queries are not automatically broadened. Provider syntax and metadata coverage vary. Results are checked against the original topic using available titles and abstracts.' });
 
       if (papers && papers.length > 0) {
         onProgress?.(`✓ ${label} returned ${papers.length} publications. Harmonizing...`);
@@ -157,7 +141,8 @@ export async function executeFederatedSearch(
       wrapSource(
         'openalex',
         'OpenAlex (250M+ Works)',
-        searchOpenAlex(fullTextKeywordQuery, limitPerSource, excludePreprints, fromYear)
+        searchOpenAlex(europePmcQuery, limitPerSource, excludePreprints, fromYear),
+        europePmcQuery
       )
     );
   }
@@ -197,7 +182,7 @@ export async function executeFederatedSearch(
   }
 
   if (enabledSources.semanticscholar) {
-    const s2Keywords = options.queryMode === 'literal' ? fullTextKeywordQuery : extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
+    const s2Keywords = fullTextKeywordQuery;
     tasks.push(
       wrapSource(
         'semanticscholar',
@@ -213,7 +198,7 @@ export async function executeFederatedSearch(
   }
 
   if (enabledSources.arxiv && !excludePreprints) {
-    const arxivKeywords = options.queryMode === 'literal' ? fullTextKeywordQuery : extractAcademicKeywords(fullTextKeywordQuery).slice(0, 4).join(' ');
+    const arxivKeywords = fullTextKeywordQuery;
     tasks.push(
       wrapSource(
         'arxiv',
@@ -291,11 +276,13 @@ export async function executeFederatedSearch(
     screened.push(paper);
   }
 
-  // Sort and optionally filter off-topic papers using the shared verifier-grade relevance scorer.
-  // filterOffTopic=false keeps all papers but still sorts them — ensures zero result-count regression.
-  const ranked = rankPapersByRelevance(screened, query, false);
-
-  const totalExcluded = excludedPreprints + excludedLowCitations + excludedOtherFilters;
+  // Match against all requested concepts; provider scores are not comparable across sources.
+  const scoped = searchScope === 'title_only' ? screened.map(paper => ({ ...paper, abstract: '' })) : screened;
+  const focused = options.focusQuery?.trim() ? rankPapersByRelevance(scoped, options.focusQuery, true) : scoped;
+  const rankedIds = rankPapersByRelevance(focused, query, true);
+  const ranked = rankedIds.map(paper => ({ ...screened.find(original => original.id === paper.id)!, relevanceExplanation: paper.relevanceExplanation }));
+  const excludedOffTopic = screened.length - ranked.length;
+  const totalExcluded = excludedPreprints + excludedLowCitations + excludedOtherFilters + excludedOffTopic;
   const retractedCount = ranked.filter((p) => p.isRetracted).length;
 
   const prismaStats: PrismaFlowStats = {
@@ -311,13 +298,14 @@ export async function executeFederatedSearch(
       excludedLowCitations,
       totalExcluded,
       excludedOtherFilters,
+      excludedOffTopic,
     },
     included: {
       totalIncluded: ranked.length,
     },
   };
 
-  onProgress?.(`Discovery complete: ${ranked.length} candidate records retained. Eligibility and support require review.`);
+  onProgress?.(`Discovery complete: ${ranked.length} candidate records retained; ${excludedOffTopic} weak topic matches removed. Eligibility and support require review.`);
   const project = getProject(initiatingProjectId);
   if (project) {
     try { saveProject({ ...project, searches: [...project.searches, { id: id(), query, at: now(), mode: 'rapid discovery: bounded, query transformation possible', sources: sourceStatuses, count: ranked.length, options }] }); } catch { /* Workspace displays storage errors. */ }
@@ -348,6 +336,6 @@ export function generatePrismaProse(query: string, stats: PrismaFlowStats): stri
   return `### Discovery retrieval summary (not a completed systematic review)
 **Input query:** "${query}"
 **Returned records:** ${dbStrings.join(', ') || 'No records returned; services may be unavailable'}.
-${stats.identification.totalIdentified} records were returned within the configured source limits. ${stats.identification.duplicatesRemoved} duplicates were removed. ${stats.screening.excludedPreprints} preprints and ${stats.screening.excludedLowCitations} records below the optional citation filter were removed. ${stats.screening.excludedOtherFilters || 0} records were excluded by year, DOI, or open-access filters. ${stats.included.totalIncluded} candidate records remain.
+${stats.identification.totalIdentified} records were returned within the configured source limits. ${stats.identification.duplicatesRemoved} duplicates were removed. ${stats.screening.excludedPreprints} preprints and ${stats.screening.excludedLowCitations} records below the optional citation filter were removed. ${stats.screening.excludedOtherFilters || 0} records were excluded by year, DOI, or open-access filters. ${stats.screening.excludedOffTopic || 0} records were removed by the title/abstract topic-match filter. ${stats.included.totalIncluded} candidate records remain.
 These counts describe bounded discovery, not exhaustive database matches, peer-review verification, eligibility decisions, full-text appraisal, or completed synthesis. Citation-count filtering is a discovery preference, not a default systematic-review eligibility rule. Use the project screening ledger to record actual eligibility decisions and exclusion reasons. Consult the full PRISMA reporting guidance before reporting a systematic review.`;
 }

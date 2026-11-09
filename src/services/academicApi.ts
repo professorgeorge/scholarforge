@@ -98,7 +98,7 @@ export async function searchOpenAlex(
   fromYear?: number,
   throwOnError = false
 ): Promise<AcademicPaper[]> {
-  const cleanQuery = query.replace(/[^\w\s-]/g, ' ').trim();
+  const cleanQuery = query.trim();
   if (!cleanQuery) return [];
 
   const cacheKey = `openalex_${cleanQuery}_${limit}_${excludePreprints}_${fromYear || 'all'}`;
@@ -137,7 +137,7 @@ export async function searchOpenAlex(
     const data = await response.json();
     const results: any[] = data.results || [];
 
-    let papers: AcademicPaper[] = results
+    const papers: AcademicPaper[] = results
       .filter((work) => {
         if (!work.doi) return false;
         if (excludePreprints && isPreprintOrQuestionable(work)) {
@@ -170,65 +170,6 @@ export async function searchOpenAlex(
           pages: work.biblio?.first_page ? `${work.biblio.first_page}-${work.biblio.last_page || ''}` : '',
         };
       });
-
-    // If 0 results, fall back to core keywords if input had many terms
-    if (papers.length === 0) {
-      const kw = cleanQuery.split(/\s+/);
-      if (kw.length > 3) {
-        const fallback = kw.slice(0, 3).join(' ');
-        const fallbackUrl = new URL('https://api.openalex.org/works');
-        fallbackUrl.searchParams.set('search', fallback);
-        fallbackUrl.searchParams.set('per-page', String(Math.min(Math.max(limit * 2, 40), 100)));
-        fallbackUrl.searchParams.set('sort', 'relevance_score:desc');
-        fallbackUrl.searchParams.set('filter', filterString);
-        fallbackUrl.searchParams.set('mailto', 'citation-filler-app@gmail.com');
-
-        const fbController = new AbortController();
-        const fbTimeoutId = setTimeout(() => fbController.abort(), 5000);
-
-        try {
-          const fbRes = await fetch(fallbackUrl.toString(), {
-            signal: fbController.signal,
-            headers: {
-              'Accept': 'application/json',
-            },
-          });
-          clearTimeout(fbTimeoutId);
-          if (fbRes.ok) {
-            const fbData = await fbRes.json();
-            const fbResults: any[] = fbData.results || [];
-            papers = fbResults
-              .filter((work) => work.doi && (!excludePreprints || !isPreprintOrQuestionable(work)))
-              .map((work) => {
-                const rawAbstract = reconstructAbstract(work.abstract_inverted_index);
-                const doiClean = (work.doi || '').replace(/^https?:\/\/doi\.org\//i, '');
-                const venue = work.primary_location?.source?.display_name || 
-                              work.host_venue?.display_name || 
-                              'Peer-Reviewed Scholarly Journal';
-                return {
-                  id: work.id || `openalex_${doiClean}`,
-                  title: (work.title || 'Untitled Scholarly Publication').replace(/\n+/g, ' ').trim(),
-                  authors: normalizeAuthors(work.authorships?.map((a: any) => a.author) || []),
-                  year: work.publication_year || new Date().getFullYear(),
-                  venue,
-                  doi: doiClean,
-                  url: work.doi || `https://doi.org/${doiClean}`,
-                  citationCount: work.cited_by_count || 0,
-                  abstract: rawAbstract || '',
-                  openAccess: Boolean(work.open_access?.is_oa),
-                  source: 'openalex',
-                  relevanceScore: work.relevance_score || 0,
-                  volume: work.biblio?.volume || '',
-                  issue: work.biblio?.issue || '',
-                  pages: work.biblio?.first_page ? `${work.biblio.first_page}-${work.biblio.last_page || ''}` : '',
-                };
-              });
-          }
-        } catch {
-          // ignore fallback error
-        }
-      }
-    }
 
     CACHE.set(cacheKey, papers);
     return papers.slice(0, limit);

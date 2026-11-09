@@ -98,7 +98,7 @@ export function extractAcademicKeywords(text: string): string[] {
   }
 
   // Remove punctuation (except hyphens inside words)
-  cleaned = cleaned.replace(/[^\w\s-]/g, ' ');
+  cleaned = cleaned.replace(/[^\p{L}\p{N}\s-]/gu, ' ');
 
   // Split into tokens
   const tokens = cleaned
@@ -128,15 +128,15 @@ export function synthesizeBooleanSearchStrategy(query: string): {
   searchTiers: string[];
 } {
   const cleanQ = query.trim();
-  const hasUserBoolean = /["\(\)]|\b(AND|OR|NOT)\b/i.test(cleanQ);
+  const hasUserBoolean = /["]|\b(AND|OR|NOT)\b/.test(cleanQ);
 
   if (hasUserBoolean) {
     // If the user already provided boolean/quotes, respect it
     const kw = extractAcademicKeywords(cleanQ);
     return {
       booleanQuery: cleanQ,
-      coreKeywords: kw.slice(0, 4).join(' '),
-      searchTiers: [cleanQ, kw.slice(0, 3).join(' ')].filter(Boolean),
+      coreKeywords: kw.join(' '),
+      searchTiers: [cleanQ],
     };
   }
 
@@ -162,7 +162,7 @@ export function synthesizeBooleanSearchStrategy(query: string): {
       if (
         ['machine learning', 'deep learning', 'skin cancer', 'heart failure', 'remote work', 'social media', 'higher education', 'mental health', 'critical care', 'ejection fraction'].includes(bigram)
       ) {
-        conceptBlocks.push([`"${bigram}"`, bigram]);
+        conceptBlocks.push([`"${bigram}"`]);
         idx += 2;
         continue;
       }
@@ -177,15 +177,15 @@ export function synthesizeBooleanSearchStrategy(query: string): {
   }
 
   // Build Boolean formulation
-  // Take the top 2-3 most essential concepts to avoid over-constraining the query
-  const primaryBlocks = conceptBlocks.slice(0, Math.min(conceptBlocks.length, 3));
+  // Keep every concept, including populations and outcomes at the end.
+  const primaryBlocks = conceptBlocks;
   const booleanParts = primaryBlocks.map((b) => {
     if (b.length === 1) return b[0];
     return `(${b.join(' OR ')})`;
   });
 
   const booleanQuery = booleanParts.join(' AND ');
-  const coreKeywords = keywords.slice(0, 4).join(' ');
+  const coreKeywords = keywords.join(' ');
   const searchTiers = generateAcademicSearchTiers(cleanQ);
 
   return {
@@ -195,66 +195,8 @@ export function synthesizeBooleanSearchStrategy(query: string): {
   };
 }
 
-/**
- * Deconstructs a loose conversational query into structured, progressive search tiers.
- * Guarantees that OpenAlex and Crossref will find high-relevance peer-reviewed papers.
- */
-export function generateAcademicSearchTiers(
-  topic: string, 
-  focus?: string
-): string[] {
-  const cleanTopic = topic.trim();
-  const cleanFocus = focus?.trim() || '';
-
-  const topicKeywords = extractAcademicKeywords(cleanTopic);
-  const focusKeywords = cleanFocus ? extractAcademicKeywords(cleanFocus) : [];
-  const allKeywords = Array.from(new Set([...topicKeywords, ...focusKeywords]));
-
-  const queryTiers: string[] = [];
-  const seenQueries = new Set<string>();
-
-  const addQuery = (q: string) => {
-    const normalized = q.toLowerCase().replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
-    if (normalized && normalized.length >= 2 && !seenQueries.has(normalized)) {
-      seenQueries.add(normalized);
-      queryTiers.push(normalized);
-    }
-  };
-
-  // Tier 1: Core Subject Phrase (Top 3-4 keywords together)
-  if (topicKeywords.length >= 2) {
-    addQuery(topicKeywords.slice(0, 4).join(' '));
-  }
-
-  // Tier 2: Topic + Focus synthesis
-  if (topicKeywords.length >= 1 && focusKeywords.length >= 1) {
-    addQuery(`${topicKeywords.slice(0, 2).join(' ')} ${focusKeywords.slice(0, 2).join(' ')}`);
-  }
-
-  // Tier 3: Consecutive Keyword Bigrams (e.g. "organizational justice", "employee turnover")
-  for (let i = 0; i < topicKeywords.length - 1; i++) {
-    addQuery(`${topicKeywords[i]} ${topicKeywords[i + 1]}`);
-  }
-
-  // Tier 4: First and Last salient concepts combined
-  if (topicKeywords.length >= 3) {
-    addQuery(`${topicKeywords[0]} ${topicKeywords[topicKeywords.length - 1]}`);
-    addQuery(`${topicKeywords[1]} ${topicKeywords[topicKeywords.length - 1]}`);
-  }
-
-  // Tier 5: The raw sanitized query as fallback
-  const rawSanitized = cleanTopic.replace(/[^\w\s-]/g, ' ').replace(/\s+/g, ' ').trim();
-  if (rawSanitized.split(' ').length <= 5) {
-    addQuery(rawSanitized);
-  }
-
-  // Tier 6: High-frequency individual core terms
-  for (const kw of allKeywords.slice(0, 3)) {
-    if (kw.length >= 3 || ACADEMIC_ACRONYMS.has(kw)) {
-      addQuery(kw);
-    }
-  }
-
-  return queryTiers;
+/** Preserve the entire topic; broadening must be an explicit user action. */
+export function generateAcademicSearchTiers(topic: string, focus?: string): string[] {
+  const query = [topic.trim(), focus?.trim()].filter(Boolean).join(' ');
+  return query ? [query] : [];
 }
-

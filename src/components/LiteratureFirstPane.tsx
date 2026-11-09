@@ -154,7 +154,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
     setSelectedPaperIds(new Set());
 
     try {
-      const hasBooleanInTopic = /["()]|\b(AND|OR|NOT)\b/i.test(searchTopic);
+      const hasBooleanInTopic = /["]|\b(AND|OR|NOT)\b/.test(searchTopic);
       let fullQuery = searchTopic;
       if (searchFocus) {
         if (hasBooleanInTopic) {
@@ -169,6 +169,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
         fullQuery,
         {
           limitPerSource: 35,
+          focusQuery: searchFocus,
           excludePreprints: options.excludePreprints,
           requireDoi: options.requireDoi,
           searchScope,
@@ -179,7 +180,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
 
       setPrismaStats(result.prismaStats);
       setSourceStatuses(result.sourceStatuses);
-      setSearchProgressMsg(result.sourceStatuses.map(s => `${s.name}: ${s.status} (${s.count})`).join(' · '));
+      setSearchProgressMsg(`${result.papers.length} results retained; ${result.prismaStats.screening.excludedOffTopic || 0} weak topic matches removed. ` + result.sourceStatuses.map(s => `${s.name}: ${s.status} (${s.count})`).join(' · '));
       const incomplete = result.sourceStatuses.filter(s => /timed out|unavailable|failed|rate limited|paused/.test(s.status));
       if (incomplete.length) setErrorMsg('Search coverage may be incomplete: ' + incomplete.map(s => `${s.name}: ${s.status}`).join('; '));
       setHasSearched(true);
@@ -475,7 +476,7 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-blue-700 dark:text-blue-400 font-medium">
-                  ✦ <strong>Intelligent Academic IR Mode:</strong> Natural language questions are converted into source-specific search terms. Coverage and query syntax vary by provider.
+                  ✦ <strong>Intelligent Academic IR Mode:</strong> All topic concepts are included. Weak title/abstract matches are removed; searches are never silently broadened. Coverage varies by provider.
                 </span>
               )}
             </div>
@@ -943,10 +944,10 @@ export const LiteratureFirstPane: React.FC<LiteratureFirstPaneProps> = ({
                           {paper.relevanceExplanation && (
                             <span
                               className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100/90 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800 shadow-2xs"
-                              title={`Topical Match Score: ${paper.relevanceExplanation.matchPercentage}%\n• ${paper.relevanceExplanation.summary}\n• Title Similarity: ${paper.relevanceExplanation.titleSimilarity}%\n• Keyword Coverage: ${paper.relevanceExplanation.keywordCoveragePct}%`}
+                              title={`Query-term coverage: ${paper.relevanceExplanation.matchPercentage}%\n• ${paper.relevanceExplanation.summary}\n• Title term coverage: ${paper.relevanceExplanation.titleSimilarity}%\n• Keyword Coverage: ${paper.relevanceExplanation.keywordCoveragePct}%`}
                             >
                               <Sparkles className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
-                              <span>{paper.relevanceExplanation.matchPercentage}% Match</span>
+                              <span>{paper.relevanceExplanation.matchPercentage}% terms matched</span>
                             </span>
                           )}
                           <span

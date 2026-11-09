@@ -54,14 +54,14 @@ test('research searches retain partial coverage, deduplicate sources and preserv
   t.mock.method(global,'fetch',async input => {
     const url=new URL(input); urls.push(url);
     if(url.searchParams.get('query')?.includes('failed fixture')) return new Response('',{status:503});
-    return new Response(JSON.stringify({data:[{attributes:{doi:paper.doi,titles:[{title:paper.title}],publicationYear:2024,types:{resourceTypeGeneral:'Report'},descriptions:[{descriptionType:'Abstract',description:paper.abstract}]}}]}),{headers:{'Content-Type':'application/json'}});
+    return new Response(JSON.stringify({data:[{attributes:{doi:paper.doi,titles:[{title:'Wellbeing replication with null results'}],publicationYear:2024,types:{resourceTypeGeneral:'Report'},descriptions:[{descriptionType:'Abstract',description:paper.abstract}]}}]}),{headers:{'Content-Type':'application/json'}});
   });
   const sources={openalex:false,europepmc:false,crossref:false,pubmed:false,datacite:true,semanticscholar:false,arxiv:false};
-  const result=await service.searchResearchQueries(['wellbeing null results fixture','failed fixture','wellbeing replication fixture'],sources);
+  const result=await service.searchResearchQueries(['wellbeing null results','failed fixture','wellbeing replication'],sources);
   assert.equal(result.papers.length,1);
   assert.equal(result.searches.length,3);
   assert.equal(result.searches[1].statuses[0].status,'failed');
-  assert.match(urls[0].searchParams.get('query'),/wellbeing null results fixture/);
+  assert.match(urls[0].searchParams.get('query'),/wellbeing null results/);
   await assert.rejects(service.searchResearchQueries([],sources),/one to three/);
   await assert.rejects(service.searchResearchQueries(['one'],{...sources,datacite:false}),/at least one/);
 });

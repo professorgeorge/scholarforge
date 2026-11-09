@@ -76,7 +76,7 @@ test('federated search retains successful sources when Semantic Scholar is rate 
     if (url.pathname.endsWith('esearch.fcgi')) return json({ esearchresult: { idlist: ['987'] } });
     return json({ result: { 987: { title: 'Independent PubMed result about resilience', pubdate: '2024', authors: [], articleids: [] } } });
   });
-  const result = await executeFederatedSearch('resilience fixture query', { enabledSources: { ...sourceSelection, pubmed: true, datacite: true, semanticscholar: true } });
+  const result = await executeFederatedSearch('resilience', { enabledSources: { ...sourceSelection, pubmed: true, datacite: true, semanticscholar: true } });
   assert.equal(result.papers.length, 2);
   assert.equal(result.sourceStatuses.find(source => source.name === 'semanticscholar').status, 'rate limited');
   assert.equal(result.prismaStats.identification.databaseCounts.datacite, 1);
