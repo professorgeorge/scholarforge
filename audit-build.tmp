@@ -1,0 +1,54 @@
+
+> scholarforge-suite@1.0.0 build
+> tsc -b && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 2212 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                     2.22 kB │ gzip:     0.98 kB
+dist/assets/planningWorker-NLSjHm6D.js              2.39 kB
+dist/assets/pdf.worker.min-CjEcRF4W.mjs         1,264.34 kB
+dist/assets/FundingFinderPane-xtNaLYhE.css          3.06 kB │ gzip:     0.93 kB
+dist/assets/ResearchToolsShared-DGDeTQdL.css        3.38 kB │ gzip:     1.14 kB
+dist/assets/ConceptStudioPane-veMRHvWl.css          4.46 kB │ gzip:     1.21 kB
+dist/assets/index-BQtTjQx6.css                    183.64 kB │ gzip:    23.27 kB
+dist/assets/pdf.worker.min-DI4FfYVf.js              0.08 kB │ gzip:     0.10 kB
+dist/assets/rolldown-runtime-BCiCTKAo.js            1.30 kB │ gzip:     0.71 kB
+dist/assets/preload-helper-CRzLMJPS.js              1.53 kB │ gzip:     0.80 kB
+dist/assets/webLlmService-CBKirMFZ.js               1.73 kB │ gzip:     0.97 kB
+dist/assets/ResearchDiscovery-B0Tk0XvJ.js           1.96 kB │ gzip:     1.02 kB
+dist/assets/ReferenceImportPanel-lkUgNJQR.js        5.89 kB │ gzip:     2.28 kB
+dist/assets/ApplicationsPane-DMyAcRGd.js            6.32 kB │ gzip:     2.17 kB
+dist/assets/CounterevidencePane-CuIVqrs7.js         6.40 kB │ gzip:     2.44 kB
+dist/assets/InstrumentFinderPane-DxYuzA2I.js        8.03 kB │ gzip:     2.51 kB
+dist/assets/useProjectState-CoSdjDse.js             9.98 kB │ gzip:     3.68 kB
+dist/assets/confetti.module-CAXNRs-2.js            10.56 kB │ gzip:     4.19 kB
+dist/assets/ResearchToolsShared-SQ8P4Dwa.js        11.93 kB │ gzip:     4.44 kB
+dist/assets/federatedSearchEngine-1WQTNNPB.js      16.01 kB │ gzip:     6.44 kB
+dist/assets/AnonymizerPane-DE9-ehCc.js             16.44 kB │ gzip:     4.76 kB
+dist/assets/FundingFinderPane-NU0OKmUk.js          23.49 kB │ gzip:     7.15 kB
+dist/assets/llmService-BkjWJJkk.js                 28.46 kB │ gzip:     9.40 kB
+dist/assets/ConceptStudioPane-_oABO4Cu.js          28.92 kB │ gzip:     8.30 kB
+dist/assets/vendor-lucide-24ubmQtd.js              32.42 kB │ gzip:    11.24 kB
+dist/assets/ClaimsWorkbenchPane-BI64Bs5d.js        35.07 kB │ gzip:     8.31 kB
+dist/assets/WritingToolbeltPane-CFyu2CqI.js        41.18 kB │ gzip:     8.74 kB
+dist/assets/VerifierPane-O-7qPss-.js               49.09 kB │ gzip:    10.73 kB
+dist/assets/JournalSentinelPane-UYvtE8bu.js        74.03 kB │ gzip:    17.01 kB
+dist/assets/LiteratureFirstPane-CnVbbBGp.js        74.49 kB │ gzip:    15.76 kB
+dist/assets/ScholarSearchPane-Cl1En3oW.js         112.97 kB │ gzip:    30.07 kB
+dist/assets/SyntheticDataForgePane-BKgC9Rt3.js    132.96 kB │ gzip:    33.28 kB
+dist/assets/vendor-react-core-BVFgW08E.js         182.04 kB │ gzip:    57.29 kB
+dist/assets/MethodologyCompassPane-2xxbegYO.js    211.90 kB │ gzip:    57.63 kB
+dist/assets/pdf-ULJPBbF3.js                       430.16 kB │ gzip:   129.27 kB
+dist/assets/vendor-mammoth-CG7IrIDR.js            497.25 kB │ gzip:   125.59 kB
+dist/assets/index-rl3ppc0G.js                     692.55 kB │ gzip:   179.35 kB
+dist/assets/vendor-webllm-BjxqVyat.js           6,038.48 kB │ gzip: 2,168.93 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 1200 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.62s
