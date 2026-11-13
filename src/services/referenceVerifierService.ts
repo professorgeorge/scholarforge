@@ -7,11 +7,12 @@
  * and provides verified, corrected citations in standard academic formats.
  */
 
-import { formatReferenceEntryHtml, generateBibtexEntry } from './citationFormatter';
+import { formatReferenceEntryPlain, generateBibtexEntry } from './citationFormatter';
 import type { AcademicPaper, Author } from '../types/citation';
 import { searchEuropePmc } from './europePmcService';
 import { searchArxiv } from './arxivService';
 import { checkPaperRetraction } from './retractionSentinel';
+import { escapeHtml } from './safeHtml';
 
 export interface ParsedCitation {
   raw: string;
@@ -491,10 +492,68 @@ async function searchOpenAlexPolite(parsed: ParsedCitation): Promise<AcademicPap
 }
 
 /**
- * Strips HTML tags from formatted reference strings.
+ * Thoroughly decodes HTML entities back to natural plain text characters.
  */
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+export function decodeHtmlEntities(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;|&#x27;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&ndash;/g, '–')
+    .replace(/&mdash;/g, '—')
+    .replace(/&hellip;/g, '…')
+    .replace(/&#(\d+);/g, (_, dec) => {
+      try {
+        return String.fromCharCode(parseInt(dec, 10));
+      } catch {
+        return _;
+      }
+    })
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
+      try {
+        return String.fromCharCode(parseInt(hex, 16));
+      } catch {
+        return _;
+      }
+    });
+}
+
+/**
+ * Strips HTML tags and decodes all HTML entities from formatted reference strings.
+ */
+export function stripHtml(html: string): string {
+  if (!html) return '';
+  return decodeHtmlEntities(html.replace(/<[^>]*>/g, '')).trim();
+}
+
+/**
+ * Ensures citation has exactly one properly-formatted index number based on citation style.
+ * Prevents double-bracket bugs (e.g. `[1] [1]`) and hardcoded single indices.
+ */
+export function formatCitationWithNumber(
+  rawOrFormatted: string,
+  style: string,
+  index: number
+): string {
+  if (!rawOrFormatted) return '';
+  const s = style.toLowerCase();
+  const clean = decodeHtmlEntities(
+    rawOrFormatted
+      .replace(/^\[\d+\]\s*/, '')
+      .replace(/^\d+[\.\)]\s*/, '')
+  ).trim();
+
+  if (s === 'ieee') {
+    return `[${index}] ${clean}`;
+  }
+  if (s === 'vancouver' || s === 'nature') {
+    return `${index}. ${clean}`;
+  }
+  return clean;
 }
 
 /**
@@ -654,15 +713,15 @@ export async function verifySingleReference(rawCitation: string): Promise<Verifi
   confidence = Math.max(15, Math.min(100, confidence));
   const status = discrepancies.length === 0 ? 'verified' : 'discrepancy';
 
-  // Generate corrected citations in standard styles
+  // Generate corrected citations in standard styles without hardcoded leading index numbers
   const correctedCitations: Record<string, string> = {
-    apa: stripHtml(formatReferenceEntryHtml(candidate, 'apa', 1)),
-    mla: stripHtml(formatReferenceEntryHtml(candidate, 'mla', 1)),
-    chicago: stripHtml(formatReferenceEntryHtml(candidate, 'chicago', 1)),
-    ieee: stripHtml(formatReferenceEntryHtml(candidate, 'ieee', 1)),
-    harvard: stripHtml(formatReferenceEntryHtml(candidate, 'harvard', 1)),
-    vancouver: stripHtml(formatReferenceEntryHtml(candidate, 'vancouver', 1)),
-    nature: stripHtml(formatReferenceEntryHtml(candidate, 'nature', 1)),
+    apa: stripHtml(formatReferenceEntryPlain(candidate, 'apa')),
+    mla: stripHtml(formatReferenceEntryPlain(candidate, 'mla')),
+    chicago: stripHtml(formatReferenceEntryPlain(candidate, 'chicago')),
+    ieee: stripHtml(formatReferenceEntryPlain(candidate, 'ieee', 1)).replace(/^\[\d+\]\s*/, ''),
+    harvard: stripHtml(formatReferenceEntryPlain(candidate, 'harvard')),
+    vancouver: stripHtml(formatReferenceEntryPlain(candidate, 'vancouver', 1)).replace(/^\d+\.\s*/, ''),
+    nature: stripHtml(formatReferenceEntryPlain(candidate, 'nature', 1)).replace(/^\d+\.\s*/, ''),
     bibtex: generateBibtexEntry(candidate),
   };
 
@@ -762,13 +821,14 @@ export async function verifyReferenceBatch(
 /**
  * Generates an official Microsoft Word (.doc) document for verification results.
  * Supports:
- * - mode = 'clean': Clean, publication-ready bibliography in standard style with hanging indents.
+ * - mode = 'adaptation': Manual adaptation guide with original references, corrected ones directly below in green, and unverifiable references in red.
+ * - mode = 'clean': Clean, publication-ready bibliography in standard style with hanging indents (unverifiable in red if selected).
  * - mode = 'audit': Comprehensive audit report with verification badges, discrepancy diffs, and retraction notices.
  */
 export function generateVerificationWordReport(
   report: BatchVerificationReport,
   style: string = 'apa',
-  mode: 'clean' | 'audit' = 'audit',
+  mode: 'clean' | 'audit' | 'adaptation' = 'audit',
   cleanOptions?: CleanExportOptions
 ): string {
   const s = style.toLowerCase();
@@ -777,8 +837,136 @@ export function generateVerificationWordReport(
   else if (s === 'chicago') title = 'Bibliography';
   else if (s === 'ieee') title = 'References';
 
+  // 1. Manual Adaptation Mode: Built for reviewing, comparing original vs corrected, and adapting unverifiable entries
+  if (mode === 'adaptation') {
+    const itemsHtml = report.results.map((item, idx) => {
+      const isIeee = s === 'ieee';
+      const citePrefix = isIeee ? `[${idx + 1}] ` : '';
+      const rawCite = item.correctedCitations[s] || item.correctedCitations.apa || item.raw;
+      const formattedCite = escapeHtml(formatCitationWithNumber(rawCite, s, idx + 1));
+      const safeRaw = escapeHtml(item.raw);
+
+      if (item.isRetracted) {
+        return `
+        <div style="margin-bottom: 16pt; padding: 8pt 10pt; background-color: #fef2f2; border: 1.5pt solid #f87171; border-radius: 4pt; font-family: 'Times New Roman', Times, serif;">
+          <div style="color: #991b1b; font-weight: bold; font-size: 10pt; margin-bottom: 3pt;">
+            Reference #${idx + 1} &nbsp;<span style="background-color: #fee2e2; color: #991b1b; padding: 1pt 5pt; border: 1pt solid #fca5a5; border-radius: 2pt;">RETRACTED PUBLICATION</span>
+          </div>
+          <p style="margin: 0 0 3pt 0; color: #991b1b; font-size: 11pt; font-weight: bold; line-height: 1.45;">
+            <strong>${citePrefix}[Original Reference]:</strong> ${safeRaw}
+          </p>
+          <p style="margin: 0; color: #b91c1c; font-size: 9.5pt; font-style: italic;">
+            ⚠️ Retraction Watch Alert: ${escapeHtml(item.retractionDetails || 'This work has been formally indexed as retracted or received an expression of concern.')}
+          </p>
+        </div>`;
+      }
+
+      if (item.status === 'discrepancy') {
+        const issues = item.discrepancies.length > 0
+          ? `<div style="margin-top: 4pt; font-size: 9.5pt; color: #92400e; background-color: #fffbeb; padding: 4pt 8pt; border-left: 2.5pt solid #f59e0b;">
+              <strong>Discrepancies identified:</strong>
+              <ul style="margin: 2pt 0 0 14pt; padding: 0;">` +
+              item.discrepancies.map(d => `<li style="margin-bottom: 1pt;">${escapeHtml(d.message)}</li>`).join('') +
+            `</ul></div>`
+          : '';
+
+        return `
+        <div style="margin-bottom: 16pt; padding-bottom: 10pt; border-bottom: 0.5pt solid #e2e8f0; font-family: 'Times New Roman', Times, serif;">
+          <div style="font-size: 9.5pt; font-weight: bold; color: #475569; margin-bottom: 3pt;">
+            Reference #${idx + 1} &nbsp;<span style="background-color: #fef3c7; color: #92400e; padding: 1pt 5pt; font-size: 8.5pt; border: 0.5pt solid #fcd34d; border-radius: 2pt;">DISCREPANCY DETECTED &amp; CORRECTED</span>
+          </div>
+          <p style="margin: 0 0 3pt 0; color: #475569; font-size: 11pt; line-height: 1.45;">
+            <strong>[Original]:</strong> ${safeRaw}
+          </p>
+          <p style="margin: 0 0 4pt 0; color: #15803d; font-weight: bold; font-size: 11.5pt; line-height: 1.45; ${isIeee ? 'margin-left: 0.25in;' : 'margin-left: 0.35in;'}">
+            <strong>[Corrected ${s.toUpperCase()}]:</strong> ${formattedCite}
+          </p>
+          ${issues}
+        </div>`;
+      }
+
+      if (item.status === 'not_found') {
+        return `
+        <div style="margin-bottom: 16pt; padding-bottom: 10pt; border-bottom: 0.5pt solid #fecaca; font-family: 'Times New Roman', Times, serif;">
+          <div style="font-size: 9.5pt; font-weight: bold; color: #dc2626; margin-bottom: 3pt;">
+            Reference #${idx + 1} &nbsp;<span style="background-color: #fee2e2; color: #991b1b; padding: 1pt 5pt; border: 0.5pt solid #fca5a5; border-radius: 2pt;">UNINDEXED / UNVERIFIABLE IN REGISTRIES</span>
+          </div>
+          <p style="margin: 0 0 3pt 0; color: #dc2626; font-weight: bold; font-size: 11.5pt; line-height: 1.45;">
+            <strong>${citePrefix}[Unverifiable from Source]:</strong> ${safeRaw}
+          </p>
+          <p style="margin: 0; color: #b91c1c; font-size: 9.5pt; font-style: italic;">
+            Note: Not indexed in Crossref, OpenAlex, or Europe PMC. Retain for manual verification (e.g., book chapters, non-DOI archives, regional publications, or spelling check).
+          </p>
+        </div>`;
+      }
+
+      // Verified genuine
+      return `
+      <div style="margin-bottom: 16pt; padding-bottom: 10pt; border-bottom: 0.5pt solid #e2e8f0; font-family: 'Times New Roman', Times, serif;">
+        <div style="font-size: 9.5pt; font-weight: bold; color: #166534; margin-bottom: 3pt;">
+          Reference #${idx + 1} &nbsp;<span style="background-color: #dcfce7; color: #166534; padding: 1pt 5pt; font-size: 8.5pt; border: 0.5pt solid #86efac; border-radius: 2pt;">REGISTRY CONFIRMED</span>
+        </div>
+        <p style="margin: 0 0 2pt 0; color: #0f172a; font-size: 11.5pt; line-height: 1.45; ${
+          isIeee ? 'margin-left: 0.25in; text-indent: -0.25in;' : 'margin-left: 0.35in; text-indent: -0.35in;'
+        }">
+          <strong>${citePrefix}Verified:</strong> ${formattedCite}
+          ${item.verifiedPaper?.doi ? `<span style="font-size: 9pt; color: #0369a1; font-weight: normal; margin-left: 6pt;">(DOI: ${escapeHtml(item.verifiedPaper.doi)})</span>` : ''}
+        </p>
+      </div>`;
+    }).join('\n');
+
+    return `<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset="utf-8">
+  <title>Reference Verification &amp; Manual Adaptation Guide (${style.toUpperCase()}) - ScholarForge</title>
+  <style>
+    @page {
+      size: 8.5in 11.0in;
+      margin: 1.0in 1.0in 1.0in 1.0in;
+      mso-header-margin: 0.5in;
+      mso-footer-margin: 0.5in;
+    }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 11pt;
+      color: #0f172a;
+      line-height: 1.45;
+    }
+    h1 {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 14pt;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 12pt;
+    }
+  </style>
+</head>
+<body>
+  <h1>Reference Verification &amp; Manual Adaptation Guide (${style.toUpperCase()})</h1>
+  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20pt; font-family: 'Times New Roman', Times, serif; font-size: 10pt; border: 1pt solid #cbd5e1; background-color: #f8fafc;">
+    <tr>
+      <td style="padding: 8pt 12pt; background-color: #0f172a; color: #ffffff; font-weight: bold; font-size: 10.5pt;">
+        Manual Adaptation Legend &amp; Color Coding
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8pt 12pt; color: #334155; line-height: 1.5;">
+        • <span style="color: #0f172a; font-weight: bold;">Standard Black Font:</span> Verified authentic references matching scholarly registries.<br/>
+        • <span style="color: #475569; font-weight: bold;">Muted Gray Font [Original]:</span> Original citation text from your submitted draft.<br/>
+        • <span style="color: #15803d; font-weight: bold;">Green Font [Corrected]:</span> Standardized reference corrected against publisher registries (placed directly below each original).<br/>
+        • <span style="color: #dc2626; font-weight: bold;">Red Font [Unverifiable]:</span> Citations from your source not indexed in Crossref, OpenAlex, or Europe PMC. Review these manually for non-DOI sources, book chapters, or spelling check.<br/>
+        • <span style="color: #991b1b; font-weight: bold;">[RETRACTED]:</span> Articles flagged by Retraction Watch.
+      </td>
+    </tr>
+  </table>
+  ${itemsHtml}
+</body>
+</html>`;
+  }
+
   // Determine which items to include and how to format each discrepancy entry.
-  // We track a parallel array that records the text to use for each exported item.
   interface ExportItem {
     result: VerifiedReferenceResult;
     useOriginal: boolean; // true → use r.raw; false → use correctedCitations[style]
@@ -787,7 +975,7 @@ export function generateVerificationWordReport(
   let exportItems: ExportItem[] = [];
 
   if (mode === 'audit') {
-    // Audit mode: always export everything, always show corrected citation
+    // Audit mode: always export everything, show corrected citation where available
     exportItems = report.results.map((r) => ({ result: r, useOriginal: false }));
   } else {
     // Clean mode: apply fine-grained inclusion options
@@ -804,11 +992,9 @@ export function generateVerificationWordReport(
       if (r.status === 'verified' && opts.includeVerified) {
         exportItems.push({ result: r, useOriginal: false });
       } else if (r.status === 'discrepancy') {
-        // Both options can be true simultaneously — user gets BOTH versions
         if (opts.includeDiscrepancyCorrected) {
           exportItems.push({ result: r, useOriginal: false });
         } else if (opts.includeDiscrepancyOriginal) {
-          // Only fall back to original if corrected is not selected
           exportItems.push({ result: r, useOriginal: true });
         }
       } else if (r.status === 'not_found' && opts.includeNotFound) {
@@ -844,17 +1030,21 @@ export function generateVerificationWordReport(
       const rawText = exportItem.useOriginal
         ? item.raw
         : (item.correctedCitations[s] || item.correctedCitations.apa || item.raw);
-      const formattedCite = rawText;
       const isIeee = s === 'ieee';
+      const formattedCite = escapeHtml(formatCitationWithNumber(rawText, s, idx + 1));
       const citePrefix = isIeee ? `[${idx + 1}] ` : '';
 
       if (mode === 'clean') {
-        return `<p style="margin-top: 0; margin-bottom: 12pt; text-align: left; line-height: 2.0; font-family: 'Times New Roman', Times, serif; font-size: 12pt; ${
+        const isNotFound = item.status === 'not_found';
+        const colorStyle = isNotFound ? 'color: #dc2626; font-weight: bold;' : 'color: #000000;';
+        const noteBadge = isNotFound ? ' <span style="font-size: 9.5pt; font-weight: normal; color: #b91c1c;">[Unverifiable in Registries - Manual Adaptation Required]</span>' : '';
+
+        return `<p style="margin-top: 0; margin-bottom: 12pt; text-align: left; line-height: 2.0; font-family: 'Times New Roman', Times, serif; font-size: 12pt; ${colorStyle} ${
           isIeee ? 'margin-left: 0.3in; text-indent: -0.3in;' : 'margin-left: 0.5in; text-indent: -0.5in;'
-        }">${citePrefix}${formattedCite}</p>`;
+        }">${citePrefix}${formattedCite}${noteBadge}</p>`;
       }
 
-      // Audit Mode: include badge, discrepancies, and diffs
+      // Audit Mode: include badge, discrepancies, and diffs with clear colors
       let badgeHtml = '';
       if (item.isRetracted) {
         badgeHtml = `<span style="background-color: #fee2e2; color: #991b1b; padding: 2pt 6pt; font-size: 9pt; font-weight: bold; border-radius: 3pt; border: 1pt solid #fca5a5;">RETRACTED PUBLICATION</span>`;
@@ -869,7 +1059,7 @@ export function generateVerificationWordReport(
       let discrepancyDetails = '';
       if (item.discrepancies.length > 0) {
         const issues = item.discrepancies
-          .map((d) => `<li style="margin-bottom: 2pt;">${d.message}</li>`)
+          .map((d) => `<li style="margin-bottom: 2pt;">${escapeHtml(d.message)}</li>`)
           .join('');
         discrepancyDetails = `
         <div style="margin-top: 4pt; margin-bottom: 6pt; font-size: 9.5pt; color: #78350f; background-color: #fffbeb; padding: 6pt 10pt; border-left: 3pt solid #f59e0b;">
@@ -879,9 +1069,24 @@ export function generateVerificationWordReport(
       }
 
       const rawPastedBlock = `
-        <div style="font-size: 9pt; color: #64748b; background-color: #f8fafc; padding: 4pt 8pt; border: 1pt solid #e2e8f0; margin-bottom: 4pt;">
-          <strong>Original Input:</strong> <em>${item.raw}</em>
+        <div style="font-size: 9.5pt; color: #475569; background-color: #f8fafc; padding: 4pt 8pt; border: 1pt solid #e2e8f0; margin-bottom: 4pt;">
+          <strong>Original Input:</strong> <em>${escapeHtml(item.raw)}</em>
         </div>`;
+
+      if (item.status === 'not_found') {
+        return `
+        <div style="margin-bottom: 16pt; font-family: 'Times New Roman', Times, serif;">
+          <div style="display: flex; align-items: center; gap: 8pt; margin-bottom: 4pt;">
+            <strong>Reference #${idx + 1}</strong> &nbsp; ${badgeHtml}
+          </div>
+          <p style="margin-top: 0; margin-bottom: 4pt; text-align: left; line-height: 1.5; font-size: 11pt; color: #dc2626; font-weight: bold;">
+            <strong>${citePrefix}Unverifiable in Registries:</strong> ${escapeHtml(item.raw)}
+          </p>
+          <div style="margin-top: 4pt; margin-bottom: 6pt; font-size: 9.5pt; color: #b91c1c; background-color: #fee2e2; padding: 6pt 10pt; border-left: 3pt solid #dc2626;">
+            <strong>Registry Status:</strong> Not indexed in Crossref, OpenAlex, or Europe PMC. Retain for manual verification.
+          </div>
+        </div>`;
+      }
 
       return `
       <div style="margin-bottom: 16pt; font-family: 'Times New Roman', Times, serif;">
@@ -889,10 +1094,10 @@ export function generateVerificationWordReport(
           <strong>Reference #${idx + 1}</strong> &nbsp; ${badgeHtml}
         </div>
         ${rawPastedBlock}
-        <p style="margin-top: 0; margin-bottom: 4pt; text-align: left; line-height: 1.5; font-size: 11pt; color: #0f172a; ${
-          isIeee ? 'margin-left: 0.25in; text-indent: -0.25in;' : 'margin-left: 0.4in; text-indent: -0.4in;'
-        }">
-          <strong>${isIeee ? citePrefix : ''}Corrected Citation:</strong> ${formattedCite}
+        <p style="margin-top: 0; margin-bottom: 4pt; text-align: left; line-height: 1.5; font-size: 11pt; ${
+          item.status === 'discrepancy' ? 'color: #15803d; font-weight: bold;' : 'color: #0f172a;'
+        } ${isIeee ? 'margin-left: 0.25in;' : 'margin-left: 0.4in;'}">
+          <strong>${isIeee ? citePrefix : ''}${item.status === 'discrepancy' ? 'Corrected Citation' : 'Verified Citation'}:</strong> ${formattedCite}
         </p>
         ${discrepancyDetails}
       </div>`;
@@ -941,7 +1146,7 @@ export function generateVerificationWordReport(
 export function downloadVerificationWordDocument(
   report: BatchVerificationReport,
   style: string = 'apa',
-  mode: 'clean' | 'audit' = 'audit',
+  mode: 'clean' | 'audit' | 'adaptation' = 'audit',
   cleanOptions?: CleanExportOptions
 ): void {
   const docHtml = generateVerificationWordReport(report, style, mode, cleanOptions);
@@ -950,7 +1155,12 @@ export function downloadVerificationWordDocument(
   const a = document.createElement('a');
   a.href = url;
   const timestamp = new Date().toISOString().slice(0, 10);
-  a.download = `ScholarForge_Verification_${mode === 'audit' ? 'Audit_Report' : 'Clean_Bibliography'}_${timestamp}.doc`;
+  const modeSuffix = mode === 'audit'
+    ? 'Audit_Report'
+    : mode === 'adaptation'
+    ? 'Manual_Adaptation'
+    : 'Clean_Bibliography';
+  a.download = `ScholarForge_Verification_${modeSuffix}_${timestamp}.doc`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

@@ -20,13 +20,15 @@ import {
   FileText,
   BookmarkPlus,
   BookOpen,
-  Zap
+  Zap,
+  FileEdit
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
   verifyReferenceBatch,
   downloadVerificationWordDocument,
   extractBibliographyFromManuscript,
+  formatCitationWithNumber,
   type BatchVerificationReport,
   type CleanExportOptions
 } from '../services/referenceVerifierService';
@@ -269,8 +271,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
     if (!report) return;
     const correctedList = report.results.map((r, idx) => {
       const formatted = r.correctedCitations[selectedOutputStyle] || r.correctedCitations.apa || r.raw;
-      const isIeee = selectedOutputStyle === 'ieee';
-      return isIeee ? `[${idx + 1}] ${formatted}` : formatted;
+      return formatCitationWithNumber(formatted, selectedOutputStyle, idx + 1);
     });
     setRawBibliography(correctedList.join('\n\n'));
     handleCopyText(correctedList.join('\n\n'), 'applied');
@@ -280,8 +281,7 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
     if (!report || !onUpdateBibliography) return;
     const correctedList = report.results.map((r, idx) => {
       const formatted = r.correctedCitations[selectedOutputStyle] || r.correctedCitations.apa || r.raw;
-      const isIeee = selectedOutputStyle === 'ieee';
-      return isIeee ? `[${idx + 1}] ${formatted}` : formatted;
+      return formatCitationWithNumber(formatted, selectedOutputStyle, idx + 1);
     });
     const bibText = correctedList.join('\n\n');
     onUpdateBibliography(bibText);
@@ -342,6 +342,11 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
   const handleDownloadWordAudit = () => {
     if (!report) return;
     downloadVerificationWordDocument(report, selectedOutputStyle, 'audit');
+  };
+
+  const handleDownloadWordAdaptation = () => {
+    if (!report) return;
+    downloadVerificationWordDocument(report, selectedOutputStyle, 'adaptation');
   };
 
   const handleDownloadWordClean = () => {
@@ -1022,6 +1027,16 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                   </div>
 
                   <button
+                    type="button"
+                    onClick={handleDownloadWordAdaptation}
+                    className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition shadow-2xs"
+                    title="Download Word file with original references, corrected versions directly below in green, and unverifiable references in red font for manual adaptation"
+                  >
+                    <FileEdit className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>Adaptation Word (.doc)</span>
+                  </button>
+
+                  <button
                     onClick={handleDownloadWordAudit}
                     className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-900 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold flex items-center gap-1 cursor-pointer"
                     title="Download complete Word verification audit report with color-coded markers"
@@ -1047,26 +1062,27 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
               )}
 
               {/* Cards List */}
-              <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+              <div className="space-y-3.5 max-h-[640px] overflow-y-auto pr-1.5">
                 {filteredResults.map((item, idx) => {
-                  const formattedCite = item.correctedCitations[selectedOutputStyle] || item.correctedCitations.apa || item.raw;
+                  const rawCite = item.correctedCitations[selectedOutputStyle] || item.correctedCitations.apa || item.raw;
+                  const formattedCite = formatCitationWithNumber(rawCite, selectedOutputStyle, idx + 1);
                   const isIeee = selectedOutputStyle === 'ieee';
 
                   return (
                     <div
                       key={item.id}
-                      className={`p-4 rounded-xl border transition ${
+                      className={`p-4 rounded-xl border transition shadow-2xs ${
                         item.isRetracted
-                          ? 'bg-red-50/60 dark:bg-red-950/30 border-red-300 dark:border-red-900'
+                          ? 'bg-red-50/70 dark:bg-red-950/40 border-red-300 dark:border-red-900'
                           : item.status === 'verified'
-                          ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60'
+                          ? 'bg-emerald-50/30 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60'
                           : item.status === 'discrepancy'
-                          ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60'
-                          : 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/60'
+                          ? 'bg-amber-50/30 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60'
+                          : 'bg-rose-50/30 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/60'
                       }`}
                     >
                       {/* Header Line */}
-                      <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 pb-2 border-b border-slate-100 dark:border-slate-800/80">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-mono">
                             #{idx + 1}
@@ -1085,12 +1101,12 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                           ) : item.status === 'discrepancy' ? (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 flex items-center gap-1">
                               <AlertTriangle className="w-3 h-3 text-amber-600" />
-                              DISCREPANCY FIXED ({item.confidence}% Match)
+                              DISCREPANCY DETECTED ({item.confidence}% Match)
                             </span>
                           ) : (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 flex items-center gap-1">
                               <XCircle className="w-3 h-3 text-rose-600" />
-                              UNINDEXED / UNCONFIRMED
+                              UNINDEXED / UNVERIFIABLE
                             </span>
                           )}
                         </div>
@@ -1100,33 +1116,69 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                           <span className="text-[11px] font-mono text-slate-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded-md">
                             {isIeee
                               ? `[${idx + 1}]`
-                              : `(${item.verifiedPaper.authors[0]?.familyName || 'Author'}, ${item.verifiedPaper.year})`}
+                              : `(${item.verifiedPaper.authors[0]?.familyName || 'Author'}, ${item.verifiedPaper.year || 'n.d.'})`}
                           </span>
                         )}
                       </div>
 
-                      {/* Original Input Text */}
-                      <div className="p-2.5 rounded-lg bg-white/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 font-mono mb-2">
-                        <span className="font-sans font-semibold text-slate-500 block text-[10px] uppercase">
-                          Original Input:
-                        </span>
-                        {item.raw}
-                      </div>
+                      {/* Reference Content Section */}
+                      {item.isRetracted ? (
+                        <div className="p-3 rounded-lg bg-red-100/70 dark:bg-red-950/60 border border-red-300 dark:border-red-900 text-xs text-red-950 dark:text-red-200 font-serif leading-relaxed mb-2.5">
+                          <div className="font-sans font-bold text-red-800 dark:text-red-300 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1">
+                            <ShieldAlert className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                            <span>Retracted Publication from Source:</span>
+                          </div>
+                          <p className="break-words font-medium">{item.raw}</p>
+                          {item.retractionDetails && (
+                            <p className="font-sans text-[11px] text-red-800 dark:text-red-300 mt-1.5 font-semibold">
+                              Alert: {item.retractionDetails}
+                            </p>
+                          )}
+                        </div>
+                      ) : item.status === 'discrepancy' ? (
+                        <div className="space-y-2 mb-2.5">
+                          {/* Original Reference from source */}
+                          <div className="p-2.5 rounded-lg bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 font-serif leading-relaxed">
+                            <span className="font-sans font-bold text-slate-500 dark:text-slate-400 block text-[10px] uppercase tracking-wider mb-0.5">
+                              Original Reference (from source):
+                            </span>
+                            <p className="break-words italic">{item.raw}</p>
+                          </div>
 
-                      {/* Corrected Citation */}
-                      {item.verifiedPaper && (
-                        <div className="p-2.5 rounded-lg bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-slate-900 dark:text-white font-serif leading-relaxed mb-2">
-                          <span className="font-sans font-semibold text-blue-900 dark:text-blue-300 block text-[10px] uppercase mb-0.5">
-                            Corrected {selectedOutputStyle.toUpperCase()} Reference:
+                          {/* Corrected Reference just below each in distinct Emerald Green */}
+                          <div className="p-3 rounded-lg bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-xs text-emerald-950 dark:text-emerald-100 font-serif leading-relaxed">
+                            <span className="font-sans font-bold text-emerald-800 dark:text-emerald-300 block text-[10px] uppercase tracking-wider mb-1">
+                              ✓ Corrected {selectedOutputStyle.toUpperCase()} Reference (Registry Confirmed):
+                            </span>
+                            <p className="break-words font-medium leading-relaxed">{formattedCite}</p>
+                          </div>
+                        </div>
+                      ) : item.status === 'not_found' ? (
+                        <div className="p-3.5 rounded-lg bg-rose-50/90 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-900 text-xs leading-relaxed mb-2.5 space-y-1.5">
+                          <div className="flex items-center gap-1.5 font-sans font-bold text-rose-800 dark:text-rose-300 text-[10px] uppercase tracking-wider">
+                            <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                            <span>Unverifiable Reference (Requires Manual Check):</span>
+                          </div>
+                          <p className="break-words font-serif font-semibold text-rose-700 dark:text-rose-300 text-xs leading-relaxed">
+                            {item.raw}
+                          </p>
+                          <p className="font-sans text-[11px] text-rose-800/90 dark:text-rose-400 leading-snug">
+                            Not indexed in Crossref, OpenAlex, or Europe PMC. Retain for manual verification (e.g. books, book chapters, conference proceedings, or non-DOI literature).
+                          </p>
+                        </div>
+                      ) : (
+                        /* Fully verified genuine */
+                        <div className="p-3 rounded-lg bg-white/90 dark:bg-slate-900/80 border border-emerald-200 dark:border-emerald-900/60 text-xs text-slate-900 dark:text-slate-100 font-serif leading-relaxed mb-2.5">
+                          <span className="font-sans font-bold text-emerald-800 dark:text-emerald-400 block text-[10px] uppercase tracking-wider mb-1">
+                            Verified {selectedOutputStyle.toUpperCase()} Reference:
                           </span>
-                          {isIeee && `[${idx + 1}] `}
-                          {formattedCite}
+                          <p className="break-words leading-relaxed">{formattedCite}</p>
                         </div>
                       )}
 
                       {/* Discrepancies Details List */}
-                      {item.discrepancies.length > 0 && (
-                        <div className="space-y-1 mb-2">
+                      {item.status === 'discrepancy' && item.discrepancies.length > 0 && (
+                        <div className="space-y-1 mb-2.5">
                           {item.discrepancies.map((d, dIdx) => (
                             <div
                               key={dIdx}
