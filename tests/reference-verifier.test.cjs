@@ -101,17 +101,20 @@ test('generateVerificationWordReport adaptation mode includes original, correcte
 
   const html = generateVerificationWordReport(mockReport, 'apa', 'adaptation');
 
-  // Verify adaptation header and instructions
-  assert.ok(html.includes('Reference Verification &amp; Manual Adaptation Guide'), 'Should include adaptation title');
-  assert.ok(html.includes('Manual Adaptation Legend &amp; Color Coding'), 'Should include legend');
+  // Verify standard heading
+  assert.ok(html.includes('<h1>References</h1>'), 'Should include standard References heading');
+
+  // Verify verified reference: given exactly as in input
+  assert.ok(html.includes('Vaswani, A. (2017). Attention is all you need.'), 'Verified reference must be present as in input');
 
   // Verify discrepancy entry: Original shown, and corrected placed just below in green (#15803d)
-  assert.ok(html.includes('[Original]:</strong> George, B. (2025)'), 'Original reference must be displayed');
-  assert.ok(html.includes('color: #15803d; font-weight: bold;'), 'Corrected citation must be styled in green font');
+  assert.ok(html.includes('George, B. (2025). Longitudinal neural architectures. Nature Machine Intelligence.'), 'Original reference must be displayed');
+  assert.ok(html.includes('color: #15803d;'), 'Corrected citation must be styled in green font');
+  assert.ok(html.includes('<strong>[Corrected]:</strong>'), 'Must include [Corrected] marker');
   assert.ok(html.includes('Longitudinal neural architectures in clinical diagnosis'), 'Corrected text must be displayed');
 
-  // Verify unverifiable entry: shown with red color font (#dc2626)
-  assert.ok(html.includes('color: #dc2626; font-weight: bold;'), 'Unverifiable reference must be styled in red font');
-  assert.ok(html.includes('NonexistentAuthor, X. (2024). Hallucinated empirical study'), 'Unverifiable citation text must be present');
-  assert.ok(html.includes('UNINDEXED / UNVERIFIABLE IN REGISTRIES'), 'Should have unindexed marker');
+  // Verify unverifiable entry: original shown, with note below in red (#dc2626)
+  assert.ok(html.includes('color: #dc2626;'), 'Unverifiable note must be styled in red font');
+  assert.ok(html.includes('NonexistentAuthor, X. (2024). Hallucinated empirical study'), 'Unverifiable original citation must be present');
+  assert.ok(html.includes('[Unverifiable in scholarly registries — please check and verify manually]'), 'Should include unverifiable note');
 });

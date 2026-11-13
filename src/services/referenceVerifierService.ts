@@ -828,7 +828,7 @@ export async function verifyReferenceBatch(
 export function generateVerificationWordReport(
   report: BatchVerificationReport,
   style: string = 'apa',
-  mode: 'clean' | 'audit' | 'adaptation' = 'audit',
+  mode: 'clean' | 'audit' | 'adaptation' = 'adaptation',
   cleanOptions?: CleanExportOptions
 ): string {
   const s = style.toLowerCase();
@@ -837,89 +837,64 @@ export function generateVerificationWordReport(
   else if (s === 'chicago') title = 'Bibliography';
   else if (s === 'ieee') title = 'References';
 
-  // 1. Manual Adaptation Mode: Built for reviewing, comparing original vs corrected, and adapting unverifiable entries
+  // 1. Adaptation Mode: Output exactly what the author requested for manual review and adaptation:
+  // - Correct references as they are given in the input.
+  // - Minor discrepancies: original input, followed below by the correct version in green.
+  // - Unverifiable: original input, followed below with a red color note.
   if (mode === 'adaptation') {
     const itemsHtml = report.results.map((item, idx) => {
-      const isIeee = s === 'ieee';
-      const citePrefix = isIeee ? `[${idx + 1}] ` : '';
       const rawCite = item.correctedCitations[s] || item.correctedCitations.apa || item.raw;
       const formattedCite = escapeHtml(formatCitationWithNumber(rawCite, s, idx + 1));
       const safeRaw = escapeHtml(item.raw);
 
       if (item.isRetracted) {
         return `
-        <div style="margin-bottom: 16pt; padding: 8pt 10pt; background-color: #fef2f2; border: 1.5pt solid #f87171; border-radius: 4pt; font-family: 'Times New Roman', Times, serif;">
-          <div style="color: #991b1b; font-weight: bold; font-size: 10pt; margin-bottom: 3pt;">
-            Reference #${idx + 1} &nbsp;<span style="background-color: #fee2e2; color: #991b1b; padding: 1pt 5pt; border: 1pt solid #fca5a5; border-radius: 2pt;">RETRACTED PUBLICATION</span>
-          </div>
-          <p style="margin: 0 0 3pt 0; color: #991b1b; font-size: 11pt; font-weight: bold; line-height: 1.45;">
-            <strong>${citePrefix}[Original Reference]:</strong> ${safeRaw}
+        <div style="margin-bottom: 14pt; line-height: 1.5; font-family: 'Times New Roman', Times, serif;">
+          <p style="margin: 0 0 2pt 0; color: #000000; font-size: 12pt;">
+            ${safeRaw}
           </p>
-          <p style="margin: 0; color: #b91c1c; font-size: 9.5pt; font-style: italic;">
-            ⚠️ Retraction Watch Alert: ${escapeHtml(item.retractionDetails || 'This work has been formally indexed as retracted or received an expression of concern.')}
+          <p style="margin: 2pt 0 0 18pt; color: #991b1b; font-size: 11pt; font-weight: bold;">
+            [RETRACTED PUBLICATION — Retraction Watch Alert: ${escapeHtml(item.retractionDetails || 'Work is formally recorded as retracted.')}]
           </p>
         </div>`;
       }
 
       if (item.status === 'discrepancy') {
-        const issues = item.discrepancies.length > 0
-          ? `<div style="margin-top: 4pt; font-size: 9.5pt; color: #92400e; background-color: #fffbeb; padding: 4pt 8pt; border-left: 2.5pt solid #f59e0b;">
-              <strong>Discrepancies identified:</strong>
-              <ul style="margin: 2pt 0 0 14pt; padding: 0;">` +
-              item.discrepancies.map(d => `<li style="margin-bottom: 1pt;">${escapeHtml(d.message)}</li>`).join('') +
-            `</ul></div>`
-          : '';
-
         return `
-        <div style="margin-bottom: 16pt; padding-bottom: 10pt; border-bottom: 0.5pt solid #e2e8f0; font-family: 'Times New Roman', Times, serif;">
-          <div style="font-size: 9.5pt; font-weight: bold; color: #475569; margin-bottom: 3pt;">
-            Reference #${idx + 1} &nbsp;<span style="background-color: #fef3c7; color: #92400e; padding: 1pt 5pt; font-size: 8.5pt; border: 0.5pt solid #fcd34d; border-radius: 2pt;">DISCREPANCY DETECTED &amp; CORRECTED</span>
-          </div>
-          <p style="margin: 0 0 3pt 0; color: #475569; font-size: 11pt; line-height: 1.45;">
-            <strong>[Original]:</strong> ${safeRaw}
+        <div style="margin-bottom: 14pt; line-height: 1.5; font-family: 'Times New Roman', Times, serif;">
+          <p style="margin: 0 0 2pt 0; color: #000000; font-size: 12pt;">
+            ${safeRaw}
           </p>
-          <p style="margin: 0 0 4pt 0; color: #15803d; font-weight: bold; font-size: 11.5pt; line-height: 1.45; ${isIeee ? 'margin-left: 0.25in;' : 'margin-left: 0.35in;'}">
-            <strong>[Corrected ${s.toUpperCase()}]:</strong> ${formattedCite}
+          <p style="margin: 2pt 0 0 18pt; color: #15803d; font-weight: 500; font-size: 12pt;">
+            <strong>[Corrected]:</strong> ${formattedCite}
           </p>
-          ${issues}
         </div>`;
       }
 
       if (item.status === 'not_found') {
         return `
-        <div style="margin-bottom: 16pt; padding-bottom: 10pt; border-bottom: 0.5pt solid #fecaca; font-family: 'Times New Roman', Times, serif;">
-          <div style="font-size: 9.5pt; font-weight: bold; color: #dc2626; margin-bottom: 3pt;">
-            Reference #${idx + 1} &nbsp;<span style="background-color: #fee2e2; color: #991b1b; padding: 1pt 5pt; border: 0.5pt solid #fca5a5; border-radius: 2pt;">UNINDEXED / UNVERIFIABLE IN REGISTRIES</span>
-          </div>
-          <p style="margin: 0 0 3pt 0; color: #dc2626; font-weight: bold; font-size: 11.5pt; line-height: 1.45;">
-            <strong>${citePrefix}[Unverifiable from Source]:</strong> ${safeRaw}
+        <div style="margin-bottom: 14pt; line-height: 1.5; font-family: 'Times New Roman', Times, serif;">
+          <p style="margin: 0 0 2pt 0; color: #000000; font-size: 12pt;">
+            ${safeRaw}
           </p>
-          <p style="margin: 0; color: #b91c1c; font-size: 9.5pt; font-style: italic;">
-            Note: Not indexed in Crossref, OpenAlex, or Europe PMC. Retain for manual verification (e.g., book chapters, non-DOI archives, regional publications, or spelling check).
+          <p style="margin: 2pt 0 0 18pt; color: #dc2626; font-size: 11pt; font-style: italic;">
+            [Unverifiable in scholarly registries — please check and verify manually]
           </p>
         </div>`;
       }
 
-      // Verified genuine
+      // Correct reference: given exactly as in the input
       return `
-      <div style="margin-bottom: 16pt; padding-bottom: 10pt; border-bottom: 0.5pt solid #e2e8f0; font-family: 'Times New Roman', Times, serif;">
-        <div style="font-size: 9.5pt; font-weight: bold; color: #166534; margin-bottom: 3pt;">
-          Reference #${idx + 1} &nbsp;<span style="background-color: #dcfce7; color: #166534; padding: 1pt 5pt; font-size: 8.5pt; border: 0.5pt solid #86efac; border-radius: 2pt;">REGISTRY CONFIRMED</span>
-        </div>
-        <p style="margin: 0 0 2pt 0; color: #0f172a; font-size: 11.5pt; line-height: 1.45; ${
-          isIeee ? 'margin-left: 0.25in; text-indent: -0.25in;' : 'margin-left: 0.35in; text-indent: -0.35in;'
-        }">
-          <strong>${citePrefix}Verified:</strong> ${formattedCite}
-          ${item.verifiedPaper?.doi ? `<span style="font-size: 9pt; color: #0369a1; font-weight: normal; margin-left: 6pt;">(DOI: ${escapeHtml(item.verifiedPaper.doi)})</span>` : ''}
-        </p>
-      </div>`;
+      <p style="margin: 0 0 14pt 0; color: #000000; font-size: 12pt; line-height: 1.5; font-family: 'Times New Roman', Times, serif;">
+        ${safeRaw}
+      </p>`;
     }).join('\n');
 
     return `<!DOCTYPE html>
 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head>
   <meta charset="utf-8">
-  <title>Reference Verification &amp; Manual Adaptation Guide (${style.toUpperCase()}) - ScholarForge</title>
+  <title>${title} - ScholarForge</title>
   <style>
     @page {
       size: 8.5in 11.0in;
@@ -929,9 +904,9 @@ export function generateVerificationWordReport(
     }
     body {
       font-family: 'Times New Roman', Times, serif;
-      font-size: 11pt;
-      color: #0f172a;
-      line-height: 1.45;
+      font-size: 12pt;
+      color: #000000;
+      line-height: 1.5;
     }
     h1 {
       font-family: 'Times New Roman', Times, serif;
@@ -939,28 +914,12 @@ export function generateVerificationWordReport(
       font-weight: bold;
       text-align: center;
       margin-top: 0;
-      margin-bottom: 12pt;
+      margin-bottom: 18pt;
     }
   </style>
 </head>
 <body>
-  <h1>Reference Verification &amp; Manual Adaptation Guide (${style.toUpperCase()})</h1>
-  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20pt; font-family: 'Times New Roman', Times, serif; font-size: 10pt; border: 1pt solid #cbd5e1; background-color: #f8fafc;">
-    <tr>
-      <td style="padding: 8pt 12pt; background-color: #0f172a; color: #ffffff; font-weight: bold; font-size: 10.5pt;">
-        Manual Adaptation Legend &amp; Color Coding
-      </td>
-    </tr>
-    <tr>
-      <td style="padding: 8pt 12pt; color: #334155; line-height: 1.5;">
-        • <span style="color: #0f172a; font-weight: bold;">Standard Black Font:</span> Verified authentic references matching scholarly registries.<br/>
-        • <span style="color: #475569; font-weight: bold;">Muted Gray Font [Original]:</span> Original citation text from your submitted draft.<br/>
-        • <span style="color: #15803d; font-weight: bold;">Green Font [Corrected]:</span> Standardized reference corrected against publisher registries (placed directly below each original).<br/>
-        • <span style="color: #dc2626; font-weight: bold;">Red Font [Unverifiable]:</span> Citations from your source not indexed in Crossref, OpenAlex, or Europe PMC. Review these manually for non-DOI sources, book chapters, or spelling check.<br/>
-        • <span style="color: #991b1b; font-weight: bold;">[RETRACTED]:</span> Articles flagged by Retraction Watch.
-      </td>
-    </tr>
-  </table>
+  <h1>${title}</h1>
   ${itemsHtml}
 </body>
 </html>`;
@@ -1146,7 +1105,7 @@ export function generateVerificationWordReport(
 export function downloadVerificationWordDocument(
   report: BatchVerificationReport,
   style: string = 'apa',
-  mode: 'clean' | 'audit' | 'adaptation' = 'audit',
+  mode: 'clean' | 'audit' | 'adaptation' = 'adaptation',
   cleanOptions?: CleanExportOptions
 ): void {
   const docHtml = generateVerificationWordReport(report, style, mode, cleanOptions);
@@ -1158,9 +1117,9 @@ export function downloadVerificationWordDocument(
   const modeSuffix = mode === 'audit'
     ? 'Audit_Report'
     : mode === 'adaptation'
-    ? 'Manual_Adaptation'
+    ? 'Adaptation'
     : 'Clean_Bibliography';
-  a.download = `ScholarForge_Verification_${modeSuffix}_${timestamp}.doc`;
+  a.download = `ScholarForge_References_${modeSuffix}_${timestamp}.doc`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
