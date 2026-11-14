@@ -23,6 +23,7 @@ import { CITATION_STYLES } from '../services/citationFormatter';
 import { testLLMConnection, DEFAULT_LLM_CONFIG, type LLMConfig } from '../services/llmService';
 import { getCartPapers, clearCart } from '../services/cartService';
 import { getBinderItems, clearBinder } from '../services/binderService';
+import { cleanAllUserData, cleanEverythingIncludingSettings } from '../services/projectService';
 import {
   isWebGPUSupported,
   SAFE_UNRESTRICTED_WEBLM_MODELS,
@@ -41,6 +42,8 @@ interface SettingsModalProps {
   setSensitivity: (s: 'all' | 'moderate' | 'high') => void;
   onResetResearchData?: () => void;
   onFullFactoryReset?: () => void;
+  onCleanUserData?: () => void;
+  onCleanEverything?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -54,6 +57,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   setSensitivity,
   onResetResearchData,
   onFullFactoryReset,
+  onCleanUserData,
+  onCleanEverything,
 }) => {
   const [activeTab, setActiveTab] = useState<'llm' | 'quality' | 'citation' | 'claims' | 'data'>('llm');
   const [tempLLMConfig, setTempLLMConfig] = useState<LLMConfig>(llmConfig);
@@ -67,6 +72,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     availableModels?: string[];
   } | null>(null);
   const [resetStatus, setResetStatus] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
+  const [showConfirmUserData, setShowConfirmUserData] = useState(false);
   const [showConfirmFactory, setShowConfirmFactory] = useState(false);
   const [cartCount, setCartCount] = useState<number>(() => getCartPapers().length);
   const [binderCount, setBinderCount] = useState<number>(() => getBinderItems().length);
@@ -149,41 +155,54 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     } catch { setActiveTab('data'); setResetStatus({ type: 'error', message: 'Settings could not be saved. Browser storage may be full or unavailable. Existing project records have not been deleted.' }); }
   };
 
-  const handleResetResearchOnly = () => {
+  const handleCleanUserData = async () => {
     clearCart();
     clearBinder();
-    setCartCount(getCartPapers().length);
+    setCartCount(0);
     setBinderCount(0);
+    setShowConfirmUserData(false);
+    try {
+      await cleanAllUserData();
+    } catch (e) {
+      console.error('Clean user data error', e);
+    }
+    onCleanUserData?.();
     onResetResearchData?.();
     setResetStatus({
       type: 'success',
-      message: 'Current draft and claims cleared; unlinked cart cards and binder clips removed. Linked sources and other current tool work remain. Use Clean up app above the workspace to remove all work. Provider settings are unchanged.'
+      message: 'All user data (drafts, manuscripts, cart papers, binder clips, and tool states) has been permanently cleaned. Saved settings and API keys were preserved.'
     });
+    setTimeout(() => {
+      window.location.reload();
+    }, 600);
   };
 
-  const handleFactoryReset = () => {
+  const handleCleanEverything = async () => {
     clearCart();
     clearBinder();
-    setCartCount(getCartPapers().length);
+    setCartCount(0);
     setBinderCount(0);
+    setShowConfirmFactory(false);
     try {
-      localStorage.removeItem('citation_filler_llm_config');
-      localStorage.removeItem('scholarforge_citation_options');
-      localStorage.removeItem('scholarforge_claim_sensitivity');
-      localStorage.removeItem('scholarforge_research_cart_v1');
-      localStorage.removeItem('scholarforge_universal_binder');
+      await cleanEverythingIncludingSettings();
     } catch (e) {
-      console.error('Storage clear error', e);
-      setResetStatus({ type: 'error', message: 'Workspace clearing started, but saved provider settings could not be fully removed. Browser storage is unavailable; do not assume credentials were erased.' });
+      console.error('Clean everything error', e);
+      setResetStatus({
+        type: 'error',
+        message: 'Could not fully clear browser storage. Please check browser permissions.'
+      });
       return;
     }
     setTempLLMConfig(DEFAULT_LLM_CONFIG);
-    setShowConfirmFactory(false);
+    onCleanEverything?.();
     onFullFactoryReset?.();
     setResetStatus({
       type: 'success',
-      message: 'Provider settings and citation preferences reset; current draft, claims, unlinked cart cards, and binder clips cleared. Current project details, linked sources, and tool work remain.'
+      message: 'Everything has been cleaned, including all user data and saved settings. ScholarForge has been restored to factory defaults.'
     });
+    setTimeout(() => {
+      window.location.reload();
+    }, 600);
   };
 
   return (
@@ -267,7 +286,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
 
           <button
-            onClick={() => { setActiveTab('data'); setResetStatus(null); setShowConfirmFactory(false); }}
+            onClick={() => { setActiveTab('data'); setResetStatus(null); setShowConfirmFactory(false); setShowConfirmUserData(false); }}
             className={`shrink-0 whitespace-nowrap px-4 py-2.5 rounded-t-lg font-bold flex items-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === 'data'
                 ? 'border-red-600 text-red-700 dark:text-red-400 bg-white dark:bg-slate-900'
@@ -275,7 +294,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             }`}
           >
             <RotateCcw className="w-4 h-4" />
-            <span>5. Workspace & Reset</span>
+            <span>5. Clean Data &amp; Reset</span>
           </button>
         </div>
 
@@ -785,8 +804,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Two Reset Options */}
               <div className="space-y-4">
                 
-                {/* OPTION 1: Reset Research Workspace (Keep API Keys & Config) */}
-                <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60">
+                {/* OPTION 1: Clean All User Data (Keep Settings & API Keys) */}
+                <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 space-y-3">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -794,92 +813,123 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           Option 1
                         </span>
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                          Reset Research Data &amp; Workspace
+                          Clean All User Data
                         </h4>
+                        <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                          Preserves Settings &amp; API Keys
+                        </span>
                       </div>
                       <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                        Clears the current draft and claims, removes unlinked cart cards, and clears binder clips. Sources linked to evidence, full text, or screening, remain. Use Clean up app above the workspace for a complete cleanup.
-                        <strong className="text-slate-900 dark:text-slate-200"> Preserves your API keys, custom endpoints, citation options, and theme</strong> so you can start a fresh inquiry without re-authenticating.
+                        Permanently cleans all research data across the entire suite (draft manuscripts, claim extraction buffers, literature cart items, binder clips, search queries, and tool states).
+                        <strong className="text-slate-900 dark:text-slate-200"> Keeps all your saved API keys, provider endpoints, and citation preferences safe</strong> so you can start a fresh research session immediately.
                       </p>
-                      <ul className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5 pt-1">
-                        <li>• Removes unlinked cart cards and clears Research Binder clips</li>
-                        <li>• Clears current draft manuscript &amp; claim extraction buffer</li>
-                        <li>• Keeps all Google Gemini, OpenAI, Groq, or Ollama credentials intact</li>
-                      </ul>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleResetResearchOnly}
-                      className="shrink-0 px-3.5 py-2 rounded-xl bg-white hover:bg-amber-100 dark:bg-amber-900/50 dark:hover:bg-amber-800/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Reset Research Only</span>
-                    </button>
+                    {!showConfirmUserData && (
+                      <button
+                        type="button"
+                        onClick={() => { setShowConfirmUserData(true); setShowConfirmFactory(false); }}
+                        className="shrink-0 px-3.5 py-2 rounded-xl bg-white hover:bg-amber-100 dark:bg-amber-900/50 dark:hover:bg-amber-800/60 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Clean All User Data...</span>
+                      </button>
+                    )}
                   </div>
-                </div>
 
-                {/* OPTION 2: Full Factory Reset (Purge Everything Including API Keys) */}
-                <div className="p-4 rounded-xl bg-red-50/60 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60">
-                  <div className="space-y-3">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-red-200 dark:bg-red-900 text-red-900 dark:text-red-200 uppercase tracking-wide">
-                            Option 2
-                          </span>
-                          <h4 className="text-sm font-bold text-red-950 dark:text-red-300">
-                            Reset Workspace and Provider Settings
-                          </h4>
-                        </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                          Clears the current draft, claims, unlinked cart cards, and binder clips; resets saved provider credentials, endpoints, and citation preferences. Current project details, linked sources, and other tool work remain available.
-                        </p>
+                  {/* Inline Confirmation Card for User Data Clean */}
+                  {showConfirmUserData && (
+                    <div className="p-3.5 rounded-xl bg-amber-100/80 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 animate-in fade-in duration-150 space-y-2.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-amber-950 dark:text-amber-200">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Confirm: Clean all user research data?</span>
                       </div>
-
-                      {!showConfirmFactory && (
+                      <p className="text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed">
+                        This will permanently delete all draft texts, cart papers, binder clips, and search results. Saved settings, provider credentials, and API keys will NOT be deleted.
+                      </p>
+                      <div className="flex items-center gap-2 pt-1">
                         <button
                           type="button"
-                          onClick={() => setShowConfirmFactory(true)}
-                          className="shrink-0 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                          onClick={handleCleanUserData}
+                          className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer transition flex items-center gap-1 shadow-xs"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Reset Settings...</span>
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Yes, Clean All User Data</span>
                         </button>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmUserData(false)}
+                          className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-medium cursor-pointer transition hover:bg-slate-100"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* OPTION 2: Clean Everything (Including Settings Saved) */}
+                <div className="p-4 rounded-xl bg-red-50/60 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60 space-y-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-red-200 dark:bg-red-900 text-red-900 dark:text-red-200 uppercase tracking-wide">
+                          Option 2
+                        </span>
+                        <h4 className="text-sm font-bold text-red-950 dark:text-red-300">
+                          Clean Everything, Including Settings Saved
+                        </h4>
+                        <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-rose-200 dark:bg-rose-950 text-rose-900 dark:text-rose-300 border border-rose-300 dark:border-rose-800">
+                          Full Factory Reset
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        Full system factory reset. Permanently deletes all user research data <strong className="text-red-950 dark:text-red-200">AND erases all saved provider credentials, API keys, custom endpoints, citation options, and preferences</strong> back to original installation defaults.
+                      </p>
                     </div>
 
-                    {/* Inline Confirmation Card for Factory Reset */}
-                    {showConfirmFactory && (
-                      <div className="p-3.5 rounded-xl bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 animate-in fade-in duration-150 space-y-2.5">
-                        <div className="flex items-center gap-2 text-xs font-bold text-red-900 dark:text-red-200">
-                          <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                          <span>Are you absolutely certain? This will delete your stored API keys.</span>
-                        </div>
-                        <p className="text-[11px] text-red-800 dark:text-red-300 leading-relaxed">
-                          You will need to re-enter provider credentials. This does not erase current project details, linked evidence, tool work, or external backups.
-                        </p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <button
-                            type="button"
-                            onClick={handleFactoryReset}
-                            className="px-3.5 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-bold cursor-pointer transition flex items-center gap-1 shadow-xs"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Reset Workspace &amp; Settings</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmFactory(false)}
-                            className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-medium cursor-pointer transition hover:bg-slate-100"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
+                    {!showConfirmFactory && (
+                      <button
+                        type="button"
+                        onClick={() => { setShowConfirmFactory(true); setShowConfirmUserData(false); }}
+                        className="shrink-0 px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Clean Everything...</span>
+                      </button>
                     )}
-
                   </div>
+
+                  {/* Inline Confirmation Card for Factory Reset */}
+                  {showConfirmFactory && (
+                    <div className="p-3.5 rounded-xl bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 animate-in fade-in duration-150 space-y-2.5">
+                      <div className="flex items-center gap-2 text-xs font-bold text-red-900 dark:text-red-200">
+                        <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                        <span>Are you absolutely certain? This will delete all data AND all stored API keys.</span>
+                      </div>
+                      <p className="text-[11px] text-red-800 dark:text-red-300 leading-relaxed">
+                        You will need to re-enter your API keys and configure your providers again. Everything in browser storage will be wiped.
+                      </p>
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleCleanEverything}
+                          className="px-3.5 py-1.5 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-bold cursor-pointer transition flex items-center gap-1 shadow-xs"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Yes, Clean Everything</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmFactory(false)}
+                          className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-medium cursor-pointer transition hover:bg-slate-100"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
               </div>

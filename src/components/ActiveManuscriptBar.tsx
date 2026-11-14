@@ -26,7 +26,7 @@ export function ActiveManuscriptBar({ manuscript, onClearManuscript, onNavigateT
     </div>
     {details && <div id="current-manuscript-details" className="current-manuscript-details">
       <p>This is the draft currently shared with Manuscript Studio, reference auditing, journal fit, writing utilities, and anonymization. Open another draft in Studio to change it.</p>
-      <p>Your current project is saved automatically. Using a draft here does not run an AI review or a reference check.</p>
+      <p>Your work is saved automatically. Using a draft here does not run an AI review or a reference check.</p>
       {manuscript.abstract && <details><summary>Parsed abstract</summary><p>{manuscript.abstract}</p></details>}
       <div className="current-manuscript-actions"><button type="button" onClick={() => setChecks(true)}>Submission checks</button><button type="button" onClick={onClearManuscript}>Stop using this draft</button></div>
     </div>}

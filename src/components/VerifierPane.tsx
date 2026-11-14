@@ -927,21 +927,21 @@ export const VerifierPane: React.FC<VerifierPaneProps> = ({
                     <span>Sort A-Z</span>
                   </button>
 
-                  {/* Clean Word export with inline options popover */}
+                  {/* Filtered Word export with inline options popover */}
                   <div className="relative" ref={cleanExportMenuRef}>
                     <button
                       onClick={() => setShowCleanExportMenu(v => !v)}
                       className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 border border-slate-200 dark:border-slate-700 cursor-pointer"
-                      title="Choose which reference groups to include in the clean Word export"
+                      title="Choose which reference groups to include in the exported document"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Clean Word (.doc)</span>
+                      <span>Filtered Export (.doc)</span>
                     </button>
 
                     {showCleanExportMenu && (
                       <div className="absolute right-0 top-full mt-1.5 z-50 w-72 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl p-3 space-y-2 animate-in fade-in duration-100">
                         <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider pb-1 border-b border-slate-100 dark:border-slate-800">
-                          Include in Clean Export:
+                          Include in Bibliography Export:
                         </p>
 
                         {/* Verified */}

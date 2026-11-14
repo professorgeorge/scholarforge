@@ -2,7 +2,6 @@ import { readPreference, writePreference } from './services/preferenceStorage';
 import { IrbTriagePane } from './components/IrbTriagePane';
 import { useProjectState } from './components/useProjectState';
 import { ToolAiAssistant } from './components/ToolAiAssistant';
-import { ProjectWorkspace } from './components/ProjectWorkspace';
 import { getActiveProjectId, getProject, setToolState } from './services/projectService';
 import { conceptHandoffFields } from './services/conceptStudioService';
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
@@ -607,8 +606,6 @@ export const App: React.FC = () => {
         activeLens={activeLens}
         onSelectLens={setActiveLens}
       />
-
-      <ProjectWorkspace navigate={setActivePillar} restoreManuscript={handleManuscriptUpdate} llmConfig={llmConfig} />
 
       {/* Active Manuscript Bar (Persistent Session Memory & 1-Click Handoffs) */}
       <ActiveManuscriptBar

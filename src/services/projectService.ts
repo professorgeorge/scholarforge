@@ -618,3 +618,37 @@ export async function cleanUpProject(scope: 'literature' | 'all'): Promise<void>
   for (const key of ['scholarforge_research_cart_v1', 'scholarforge_universal_binder', ...(scope === 'all' ? ['scholarforge_active_manuscript'] : [])]) localStorage.removeItem(key);
   await flushProjectWrites();
 }
+
+/**
+ * (1) Clean all user data:
+ * Wipes all research data, drafts, manuscripts, literature cart, binder clips,
+ * empirical claims, search runs, and tool states from IndexedDB and localStorage.
+ * Preserves user settings, API keys, provider configurations, and citation preferences.
+ */
+export async function cleanAllUserData(): Promise<void> {
+  try {
+    localStorage.removeItem('scholarforge_active_manuscript');
+    localStorage.removeItem('scholarforge_research_cart_v1');
+    localStorage.removeItem('scholarforge_universal_binder');
+  } catch (err) {
+    console.error('LocalStorage cleanup error', err);
+  }
+  await cleanUpProject('all');
+}
+
+/**
+ * (2) Clean everything, including settings saved:
+ * Full factory reset. Cleans all user research data AND purges all saved
+ * provider credentials, API keys, custom endpoints, citation options, and preferences.
+ */
+export async function cleanEverythingIncludingSettings(): Promise<void> {
+  await cleanAllUserData();
+  try {
+    localStorage.removeItem('citation_filler_llm_config');
+    localStorage.removeItem('scholarforge_citation_options');
+    localStorage.removeItem('scholarforge_claim_sensitivity');
+    localStorage.removeItem('scholarforge_active_pillar');
+  } catch (err) {
+    console.error('Settings cleanup error', err);
+  }
+}
