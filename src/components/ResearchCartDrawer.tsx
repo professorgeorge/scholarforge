@@ -9,7 +9,8 @@ import {
   BookOpen, 
   Crown,
   Check,
-  Download
+  Download,
+  RotateCcw
 } from 'lucide-react';
 import type { AcademicPaper, CitationStyle } from '../types/citation';
 import { 
@@ -17,6 +18,7 @@ import {
   removePaperFromCart, 
   clearCart 
 } from '../services/cartService';
+import { cleanAllUserData } from '../services/projectService';
 import { calculateDatasetMetrics, getCitationTier } from '../services/datasetScientometrics';
 import { extractAcademicTags } from '../services/academicTagger';
 import { generateCOinS } from '../services/coinsGenerator';
@@ -260,6 +262,19 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Clean all user data? This will permanently wipe your cart, binder, and drafts while preserving saved API keys and settings.')) {
+                      await cleanAllUserData();
+                      window.location.reload();
+                    }
+                  }}
+                  className="px-2 py-1 text-xs font-semibold rounded-md border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-1 transition-colors"
+                  title="Clean All User Data (wipes cart, binder, drafts; preserves settings)"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Clean All User Data</span>
+                </button>
               </div>
             </div>
           )}
@@ -272,9 +287,22 @@ export const ResearchCartDrawer: React.FC<ResearchCartDrawerProps> = ({
                 <h4 className="text-base font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Your Research Cart is Empty
                 </h4>
-                <p className="text-xs max-w-sm">
+                <p className="text-xs max-w-sm mb-4">
                   Click the <strong>+ Cart</strong> button on any discovered paper across the Literature Studio, Evidence Pane, or DOI Verifier to accumulate papers here.
                 </p>
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Clean all user data? This will permanently wipe your cart, binder, and drafts while preserving saved API keys and settings.')) {
+                      await cleanAllUserData();
+                      window.location.reload();
+                    }
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-800 flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Clean all drafts, cart papers, and binder clips while preserving saved API keys and settings"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Clean All User Data</span>
+                </button>
               </div>
             ) : (
               papers.map((paper, idx) => {

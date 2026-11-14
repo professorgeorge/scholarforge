@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Search,
   ShieldCheck,
@@ -16,11 +16,16 @@ import {
   FileText,
   Zap,
   UploadCloud,
-  RefreshCw
+  RefreshCw,
+  RotateCcw,
+  AlertTriangle
 } from 'lucide-react';
 import type { AcademicPillar, ResearchStage } from './Navbar';
 import { extractTextFromManuscriptFile } from '../services/fileImportService';
 import { RESEARCH_START_OPTIONS, prepareResearchStart, type ResearchStartMode, type ResearchStartRequest } from '../services/researchStartService';
+import { cleanAllUserData } from '../services/projectService';
+import { getCartPapers } from '../services/cartService';
+import { getBinderItems } from '../services/binderService';
 
 export interface UtilityTileDef {
   id: AcademicPillar;
@@ -451,6 +456,42 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('all');
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showCleanModal, setShowCleanModal] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const [binderCount, setBinderCount] = useState(0);
+
+  useEffect(() => {
+    const refreshCounts = () => {
+      try {
+        setCartCount(getCartPapers().length);
+        setBinderCount(getBinderItems().length);
+      } catch {
+        // ignore
+      }
+    };
+    refreshCounts();
+    window.addEventListener('storage', refreshCounts);
+    window.addEventListener('scholarforge_cart_updated', refreshCounts);
+    window.addEventListener('scholarforge_binder_updated', refreshCounts);
+    return () => {
+      window.removeEventListener('storage', refreshCounts);
+      window.removeEventListener('scholarforge_cart_updated', refreshCounts);
+      window.removeEventListener('scholarforge_binder_updated', refreshCounts);
+    };
+  }, []);
+
+  const handleExecuteCleanAllUserData = async () => {
+    setIsCleaning(true);
+    try {
+      await cleanAllUserData();
+      setShowCleanModal(false);
+      window.location.reload();
+    } catch (err) {
+      console.error('Failed to clean user data:', err);
+      setIsCleaning(false);
+    }
+  };
 
   const handleProcessFile = async (file: File) => {
     setFileError('');
@@ -512,6 +553,39 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
   return (
     <div className="sf-hub space-y-8 animate-in fade-in duration-200 pb-6">
       
+      {/* Active Workspace / Session Bar & Clean Data */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 p-4 sm:px-6 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
+        <div className="flex flex-wrap items-center gap-2 text-slate-600 dark:text-slate-400">
+          <span className="font-semibold text-slate-800 dark:text-slate-200">Active Workspace:</span>
+          {currentManuscriptWordCount > 0 ? (
+            <span className="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-medium">
+              Draft: {currentManuscriptWordCount.toLocaleString()} words
+            </span>
+          ) : (
+            <span className="text-slate-500 dark:text-slate-400">No active draft</span>
+          )}
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <span className="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-medium">
+            Cart: {cartCount} {cartCount === 1 ? 'paper' : 'papers'}
+          </span>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <span className="px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 font-medium">
+            Binder: {binderCount} {binderCount === 1 ? 'item' : 'items'}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowCleanModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900 bg-white dark:bg-slate-900 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 font-medium transition cursor-pointer shadow-2xs"
+            title="Clean all research session drafts, cart papers, and binder clips while preserving saved API keys and preferences"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Clean All User Data</span>
+          </button>
+        </div>
+      </div>
+
       <section className="sf-research-start rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-8" aria-labelledby="research-start-title">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="space-y-2">
@@ -718,6 +792,56 @@ export const ScholarHubView: React.FC<ScholarHubViewProps> = ({
           </div>
 
         </div>
+
+      {/* Clean All User Data Confirmation Modal */}
+      {showCleanModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-red-200 dark:border-red-900 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Clean All User Data?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  This will permanently clear your research session data:
+                </p>
+              </div>
+            </div>
+
+            <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 pl-3 border-l-2 border-red-200 dark:border-red-800 py-1">
+              <li>• Active manuscript drafts, working text, and saved versions</li>
+              <li>• Research Cart papers ({cartCount} saved)</li>
+              <li>• Research Binder items ({binderCount} saved)</li>
+              <li>• Extracted claims, citation audit caches, and tool history</li>
+            </ul>
+
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-lg border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300">
+              ✓ <strong>Settings Preserved:</strong> Your configured AI API keys, endpoints, citation styles, and UI preferences will remain intact.
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isCleaning}
+                onClick={() => setShowCleanModal(false)}
+                className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isCleaning}
+                onClick={handleExecuteCleanAllUserData}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isCleaning ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                {isCleaning ? 'Cleaning...' : 'Yes, Clean All User Data'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

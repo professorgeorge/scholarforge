@@ -12,7 +12,8 @@ import {
   BookOpen,
   CheckCircle2,
   Compass,
-  FileCheck
+  FileCheck,
+  RotateCcw
 } from 'lucide-react';
 import {
   getBinderItems,
@@ -21,6 +22,7 @@ import {
   addBinderItem,
   type BinderItem
 } from '../services/binderService';
+import { cleanAllUserData } from '../services/projectService';
 
 export interface ResearchBinderDrawerProps {
   isOpen: boolean;
@@ -183,6 +185,20 @@ ${notes.length > 0 ? notes.map((n) => `- **${n.title}** (${n.timestamp}): ${n.sn
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
+
+            <button
+              onClick={async () => {
+                if (window.confirm('Clean all user data? This will permanently wipe your binder, cart, and drafts while preserving saved API keys and settings.')) {
+                  await cleanAllUserData();
+                  window.location.reload();
+                }
+              }}
+              className="px-2 py-1 rounded-lg border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+              title="Clean All User Data (wipes binder, cart, drafts; preserves settings)"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Clean All User Data</span>
+            </button>
           </div>
         </div>
 
@@ -216,12 +232,27 @@ ${notes.length > 0 ? notes.map((n) => `- **${n.title}** (${n.timestamp}): ${n.sn
         {/* Items List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {items.length === 0 ? (
-            <div className="p-12 text-center text-xs text-slate-500 space-y-2">
+            <div className="p-12 text-center text-xs text-slate-500 space-y-3">
               <FolderKanban className="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto" />
               <p className="font-semibold text-slate-700 dark:text-slate-300">Your Research Binder is Empty</p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
                 Clip items across Literature Search, Claims Workbench, Synthetic Data, or Journal Sentinel to assemble your unified research brief.
               </p>
+              <div className="pt-2">
+                <button
+                  onClick={async () => {
+                    if (window.confirm('Clean all user data? This will permanently wipe your binder, cart, and drafts while preserving saved API keys and settings.')) {
+                      await cleanAllUserData();
+                      window.location.reload();
+                    }
+                  }}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-800 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Clean all drafts, cart papers, and binder clips while preserving saved API keys and settings"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Clean All User Data</span>
+                </button>
+              </div>
             </div>
           ) : (
             items.map((item) => (
